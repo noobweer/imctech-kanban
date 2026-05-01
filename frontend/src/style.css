@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+:root {
+  /* Colors */
+  --color-primary: #5800d8;
+  --color-primary-container: #7132f5;
+  --color-on-primary: #ffffff;
+  --color-secondary: #5740d8;
+  --color-surface: #fdf7ff;
+  --color-surface-white: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8f1ff;
+  --color-surface-container: #f2ebfa;
+  --color-on-surface: #1d1a25;
+  --color-text-primary: #101114;
+  --color-text-secondary: #9497a9;
+  --color-neutral-gray: #686b82;
+  --color-border-gray: #dedee5;
+  --color-outline: #7a7488;
+  --color-error: #ba1a1a;
+}
+
+/* Utility classes */
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary-container { background-color: var(--color-primary-container); }
+.bg-surface-white { background-color: var(--color-surface-white); }
+.bg-surface-container-low { background-color: var(--color-surface-container-low); }
+.bg-surface-container-lowest { background-color: var(--color-surface-container-lowest); }
+
+.text-primary { color: var(--color-primary); }
+.text-primary-container { color: var(--color-primary-container); }
+.text-text-primary { color: var(--color-text-primary); }
+.text-text-secondary { color: var(--color-text-secondary); }
+.text-neutral-gray { color: var(--color-neutral-gray); }
+.text-outline { color: var(--color-outline); }
+.text-error { color: var(--color-error); }
+
+.border-border-gray { border-color: var(--color-border-gray); }
+.border-border-gray\/50 { border-color: rgba(222, 222, 229, 0.5); }
+.border-primary-container { border-color: var(--color-primary-container); }
+
+.focus\:border-primary-container:focus { border-color: var(--color-primary-container); }
+.focus\:ring-2:focus { box-shadow: 0 0 0 2px rgba(113, 50, 245, 0.2); }
+
+/* Spacing */
+.p-xs { padding: 4px; }
+.p-sm { padding: 8px; }
+.p-md { padding: 12px; }
+.p-lg { padding: 24px; }
+.p-xl { padding: 32px; }
+.p-gutter { padding: 16px; }
+
+.px-lg { padding-left: 24px; padding-right: 24px; }
+.px-md { padding-left: 12px; padding-right: 12px; }
+.py-md { padding-top: 12px; padding-bottom: 12px; }
+
+.space-y-base > * + * { margin-top: 16px; }
+.space-y-sm > * + * { margin-top: 8px; }
+.space-y-lg > * + * { margin-top: 24px; }
+
+.mb-sm { margin-bottom: 8px; }
+
+/* Border radius */
+.rounded-xl { border-radius: 12px; }
