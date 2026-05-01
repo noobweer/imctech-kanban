@@ -23,9 +23,7 @@ const validate = (): boolean => {
   errors.value = {}
 
   if (!email.value) {
-    errors.value.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.value.email = 'Invalid email format'
+    errors.value.email = 'Login is required'
   }
 
   if (!password.value) {
@@ -90,7 +88,7 @@ const handleSubmit = () => {
     <button
       type="submit"
       :disabled="loading"
-      class="w-full bg-primary-container text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+      class="w-full bg-primary-container cursor-pointer text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {{ loading ? 'Logging in...' : 'Log In' }}
     </button>

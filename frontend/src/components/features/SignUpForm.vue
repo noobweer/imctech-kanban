@@ -25,9 +25,7 @@ const validate = (): boolean => {
   errors.value = {}
 
   if (!email.value) {
-    errors.value.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.value.email = 'Invalid email format'
+    errors.value.email = 'Login is required'
   }
 
   if (!password.value) {
@@ -128,7 +126,7 @@ const handleSubmit = () => {
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             userType === 'student'
               ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
-              : 'text-neutral-gray hover:text-text-primary'
+              : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
           @click="userType = 'student'"
         >
@@ -141,7 +139,7 @@ const handleSubmit = () => {
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             userType === 'mentor'
               ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
-              : 'text-neutral-gray hover:text-text-primary'
+              : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
           @click="userType = 'mentor'"
         >
@@ -154,7 +152,7 @@ const handleSubmit = () => {
     <button
       type="submit"
       :disabled="loading"
-      class="w-full bg-primary-container text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+      class="w-full bg-primary-container cursor-pointer text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {{ loading ? 'Signing up...' : 'Complete Sign Up' }}
     </button>

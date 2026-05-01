@@ -18,7 +18,7 @@ const setTab = (tab: TabType) => {
           'text-[18px] font-semibold transition-colors pb-2 border-b-2',
           activeTab === 'login'
             ? 'text-primary border-primary'
-            : 'text-text-secondary border-transparent hover:text-on-surface',
+            : 'text-text-secondary border-transparent hover:text-on-surface cursor-pointer',
         ]"
         @click="setTab('login')"
       >
@@ -29,7 +29,7 @@ const setTab = (tab: TabType) => {
           'text-[18px] font-semibold transition-colors pb-2 border-b-2',
           activeTab === 'signup'
             ? 'text-primary border-primary'
-            : 'text-text-secondary border-transparent hover:text-on-surface',
+            : 'text-text-secondary border-transparent hover:text-on-surface cursor-pointer',
         ]"
         @click="setTab('signup')"
       >
