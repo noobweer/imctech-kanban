@@ -34,12 +34,6 @@ const handleSignUp = async (data: SignUpData) => {
 
     <!-- Right: Auth form -->
     <section class="flex-1 bg-surface-white flex flex-col justify-center items-center p-gutter lg:p-xl relative">
-      <!-- Mobile branding -->
-      <div class="md:hidden absolute top-gutter left-gutter flex items-center gap-2">
-        <span class="text-primary-container font-bold text-[28px] tracking-tighter">
-          Kraken Kanban
-        </span>
-      </div>
 
       <div class="w-full max-w-md space-y-lg">
         <!-- Header -->

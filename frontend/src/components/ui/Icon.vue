@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Mail, LockOpen, User, GraduationCap, Star } from 'lucide-vue-next'
+import { AtSign, LockOpen, User, GraduationCap, Star } from 'lucide-vue-next'
 
 interface Props {
   name: string
@@ -18,7 +18,7 @@ const sizeMap = {
 }
 
 const iconMap: Record<string, any> = {
-  alternate_email: Mail,
+  alternate_email: AtSign,
   lock_open: LockOpen,
   person: User,
   school: GraduationCap,
