@@ -15,15 +15,15 @@ const emit = defineEmits<{
   submit: [credentials: LoginCredentials]
 }>()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
-const errors = ref<{ email?: string; password?: string }>({})
+const errors = ref<{ username?: string; password?: string }>({})
 
 const validate = (): boolean => {
   errors.value = {}
 
-  if (!email.value) {
-    errors.value.email = 'Login is required'
+  if (!username.value) {
+    errors.value.username = 'Username is required'
   }
 
   if (!password.value) {
@@ -36,7 +36,7 @@ const validate = (): boolean => {
 const handleSubmit = () => {
   if (validate()) {
     emit('submit', {
-      email: email.value,
+      username: username.value,
       password: password.value,
     })
   }
@@ -47,13 +47,13 @@ const handleSubmit = () => {
   <form class="space-y-base" @submit.prevent="handleSubmit">
     <div class="space-y-sm">
       <label class="block text-[14px] font-medium text-text-primary" for="login">
-        Login
+        Username
       </label>
       <div class="relative">
         <input
           id="login"
-          v-model="email"
-          type="email"
+          v-model="username"
+          type="text"
           placeholder="Username"
           :disabled="loading"
           class="w-full pl-4 pr-12 py-3 rounded-xl border border-border-gray/50 bg-surface-container-lowest text-[16px] font-medium transition-colors focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
@@ -62,7 +62,7 @@ const handleSubmit = () => {
           <Icon name="alternate_email" size="sm" />
         </div>
       </div>
-      <p v-if="errors.email" class="text-[14px] text-error">{{ errors.email }}</p>
+      <p v-if="errors.username" class="text-[14px] text-error">{{ errors.username }}</p>
     </div>
 
     <div class="space-y-sm">

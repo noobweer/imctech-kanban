@@ -1,6 +1,10 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { AuthUser, LoginCredentials, SignUpData } from '@/types/auth'
+import { authApi } from '@/api/auth'
+
+const ACCESS_TOKEN_KEY = 'access_token'
+const REFRESH_TOKEN_KEY = 'refresh_token'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)
@@ -14,17 +18,11 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      })
+      const tokens = await authApi.login(credentials)
+      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
+      localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
 
-      if (!response.ok) {
-        throw new Error('Login failed')
-      }
-
-      user.value = await response.json()
+      user.value = await authApi.getCurrentUser(tokens.access)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Login failed'
       throw e
@@ -38,17 +36,8 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        throw new Error('Sign up failed')
-      }
-
-      user.value = await response.json()
+      await authApi.register(data)
+      await login({ username: data.username, password: data.password })
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Sign up failed'
       throw e
@@ -57,9 +46,43 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+    if (!refreshToken) {
+      throw new Error('No refresh token')
+    }
+
+    try {
+      const { access } = await authApi.refreshToken(refreshToken)
+      localStorage.setItem(ACCESS_TOKEN_KEY, access)
+      return access
+    } catch (e) {
+      logout()
+      throw e
+    }
+  }
+
+  async function initializeAuth() {
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
+    if (!accessToken) return
+
+    try {
+      user.value = await authApi.getCurrentUser(accessToken)
+    } catch (e) {
+      try {
+        const newToken = await refreshAccessToken()
+        user.value = await authApi.getCurrentUser(newToken)
+      } catch {
+        logout()
+      }
+    }
+  }
+
   function logout() {
     user.value = null
     error.value = null
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
   }
 
   return {
@@ -70,5 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     signUp,
     logout,
+    refreshAccessToken,
+    initializeAuth,
   }
 })

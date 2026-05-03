@@ -1,20 +1,26 @@
 export interface LoginCredentials {
-  email: string
+  username: string
   password: string
 }
 
 export interface SignUpData {
-  email: string
+  username: string
   password: string
-  displayName: string
-  userType: 'student' | 'mentor'
+  name: string
+  role: 'student' | 'mentor'
 }
 
 export interface AuthUser {
-  id: string
-  email: string
-  displayName: string
-  userType: 'student' | 'mentor'
+  username: string
+  name: string
+  role: 'student' | 'mentor'
+  created_at: string
+  updated_at: string
+}
+
+export interface TokenPair {
+  access: string
+  refresh: string
 }
 
 export interface AuthState {

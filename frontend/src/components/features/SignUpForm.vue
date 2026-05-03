@@ -15,17 +15,17 @@ const emit = defineEmits<{
   submit: [data: SignUpData]
 }>()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
-const displayName = ref('')
-const userType = ref<'student' | 'mentor'>('student')
-const errors = ref<{ email?: string; password?: string; displayName?: string }>({})
+const name = ref('')
+const role = ref<'student' | 'mentor'>('student')
+const errors = ref<{ username?: string; password?: string; name?: string }>({})
 
 const validate = (): boolean => {
   errors.value = {}
 
-  if (!email.value) {
-    errors.value.email = 'Login is required'
+  if (!username.value) {
+    errors.value.username = 'Username is required'
   }
 
   if (!password.value) {
@@ -34,8 +34,8 @@ const validate = (): boolean => {
     errors.value.password = 'Password must be at least 6 characters'
   }
 
-  if (!displayName.value) {
-    errors.value.displayName = 'Display name is required'
+  if (!name.value) {
+    errors.value.name = 'Name is required'
   }
 
   return Object.keys(errors.value).length === 0
@@ -44,10 +44,10 @@ const validate = (): boolean => {
 const handleSubmit = () => {
   if (validate()) {
     emit('submit', {
-      email: email.value,
+      username: username.value,
       password: password.value,
-      displayName: displayName.value,
-      userType: userType.value,
+      name: name.value,
+      role: role.value,
     })
   }
 }
@@ -56,14 +56,14 @@ const handleSubmit = () => {
 <template>
   <form class="space-y-base" @submit.prevent="handleSubmit">
     <div class="space-y-sm">
-      <label class="block text-[14px] font-medium text-text-primary" for="email">
-        Login
+      <label class="block text-[14px] font-medium text-text-primary" for="username">
+        Username
       </label>
       <div class="relative">
         <input
-          id="email"
-          v-model="email"
-          type="email"
+          id="username"
+          v-model="username"
+          type="text"
           placeholder="Username"
           :disabled="loading"
           class="w-full pl-4 pr-12 py-3 rounded-xl border border-border-gray/50 bg-surface-container-lowest text-[16px] font-medium transition-colors focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
@@ -72,7 +72,7 @@ const handleSubmit = () => {
           <Icon name="alternate_email" size="sm" />
         </div>
       </div>
-      <p v-if="errors.email" class="text-[14px] text-error">{{ errors.email }}</p>
+      <p v-if="errors.username" class="text-[14px] text-error">{{ errors.username }}</p>
     </div>
 
     <div class="space-y-sm">
@@ -96,13 +96,13 @@ const handleSubmit = () => {
     </div>
 
     <div class="space-y-sm">
-      <label class="block text-[14px] font-medium text-text-primary" for="display-name">
-        Display Name
+      <label class="block text-[14px] font-medium text-text-primary" for="name">
+        Name
       </label>
       <div class="relative">
         <input
-          id="display-name"
-          v-model="displayName"
+          id="name"
+          v-model="name"
           type="text"
           placeholder="Alex Rivera"
           :disabled="loading"
@@ -112,7 +112,7 @@ const handleSubmit = () => {
           <Icon name="person" size="sm" />
         </div>
       </div>
-      <p v-if="errors.displayName" class="text-[14px] text-error">{{ errors.displayName }}</p>
+      <p v-if="errors.name" class="text-[14px] text-error">{{ errors.name }}</p>
     </div>
 
     <div class="space-y-sm">
@@ -124,11 +124,11 @@ const handleSubmit = () => {
           type="button"
           :class="[
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
-            userType === 'student'
+            role === 'student'
               ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
               : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
-          @click="userType = 'student'"
+          @click="role = 'student'"
         >
           <Icon name="school" size="sm" />
           <span>Student</span>
@@ -137,11 +137,11 @@ const handleSubmit = () => {
           type="button"
           :class="[
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
-            userType === 'mentor'
+            role === 'mentor'
               ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
               : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
-          @click="userType = 'mentor'"
+          @click="role = 'mentor'"
         >
           <Icon name="star" size="sm" />
           <span>Mentor</span>
