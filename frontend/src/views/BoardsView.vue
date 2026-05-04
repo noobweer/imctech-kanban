@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Search, Plus, LayoutDashboard, CheckSquare } from 'lucide-vue-next'
+import { Search, Plus, LayoutDashboard, CheckSquare, Menu, Settings } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useBoardsStore } from '@/stores/boards'
 import BoardCard from '@/components/features/BoardCard.vue'
@@ -18,11 +18,65 @@ function handleCreateBoard() {
 
 <template>
   <div class="min-h-screen bg-background">
-    <!-- Fixed Header -->
-    <header
-      class="bg-white border-b border-border-gray"
-    >
-      <div class="flex justify-between items-center w-full px-6 py-3 max-w-full">
+    <!-- Header -->
+    <header class="bg-white border-b border-border-gray sticky top-0 z-50">
+      <!-- Mobile Layout -->
+      <div class="md:hidden flex flex-col px-4 pt-4 pb-4 gap-4">
+        <!-- Row 1: Menu + Title + Create -->
+        <div class="flex justify-between items-center gap-4">
+          <div class="relative w-full">
+            <Search
+              :size="20"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-gray"
+            />
+            <input
+              v-model="boardsStore.searchQuery"
+              class="w-full pl-10 pr-4 py-3 bg-white border border-border-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all"
+              placeholder="Search boards..."
+              type="text"
+            />
+          </div>
+
+          <button
+            v-if="isMentor"
+            class="bg-primary-container text-white px-4 py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1"
+            @click="handleCreateBoard"
+          >
+            <Plus :size="18" />
+            Create
+          </button>
+          <div v-else class="w-[88px]"></div>
+        </div>
+
+        <!-- Row 3: Toggle -->
+        <div class="bg-surface-container-low p-1 rounded-xl flex w-full">
+          <button
+            :class="[
+              'flex-1 py-2 text-sm font-semibold rounded-lg transition-all',
+              boardsStore.activeTab === 'active'
+                ? 'bg-white text-primary-container shadow-sm'
+                : 'text-neutral-gray',
+            ]"
+            @click="boardsStore.activeTab = 'active'"
+          >
+            Active
+          </button>
+          <button
+            :class="[
+              'flex-1 py-2 text-sm font-semibold rounded-lg transition-all',
+              boardsStore.activeTab === 'archived'
+                ? 'bg-white text-primary-container shadow-sm'
+                : 'text-neutral-gray',
+            ]"
+            @click="boardsStore.activeTab = 'archived'"
+          >
+            Archived
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop Layout -->
+      <div class="hidden md:flex justify-between items-center w-full px-6 py-3 max-w-full">
         <!-- Left: Toggle + Create Button -->
         <div class="flex items-center gap-4 flex-1">
           <div class="inline-flex p-1 bg-surface-container-high rounded-xl">
@@ -31,7 +85,7 @@ function handleCreateBoard() {
                 'px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
                 boardsStore.activeTab === 'active'
                   ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
-                  : 'text-neutral-gray hover:text-primary-container',
+                  : 'text-neutral-gray hover:text-primary-container cursor-pointer',
               ]"
               @click="boardsStore.activeTab = 'active'"
             >
@@ -42,7 +96,7 @@ function handleCreateBoard() {
                 'px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors',
                 boardsStore.activeTab === 'archived'
                   ? 'bg-white text-primary-container shadow-sm'
-                  : 'text-neutral-gray hover:text-primary-container',
+                  : 'text-neutral-gray hover:text-primary-container cursor-pointer',
               ]"
               @click="boardsStore.activeTab = 'archived'"
             >
@@ -51,7 +105,7 @@ function handleCreateBoard() {
           </div>
           <button
             v-if="isMentor"
-            class="bg-primary-container text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
+            class="bg-primary-container cursor-pointer text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
             @click="handleCreateBoard"
           >
             <Plus :size="18" />
@@ -95,7 +149,7 @@ function handleCreateBoard() {
     </header>
 
     <!-- Main Content -->
-    <main class=" px-6 py-10 max-w-7xl mx-auto">
+    <main class="px-6 py-10 pb-24 md:pb-10 max-w-7xl mx-auto">
       <!-- Board Grid -->
       <div v-if="hasBoards">
         <div class="mb-10">
@@ -155,7 +209,7 @@ function handleCreateBoard() {
               No boards found
             </h1>
             <p class="font-['Inter'] text-[16px] leading-[1.38] text-neutral-gray max-w-sm mx-auto">
-              Organize your high-stakes projects and digital assets in one place. Start by creating
+              Organize your projects. Start by creating
               your very first workspace.
             </p>
           </div>
@@ -172,8 +226,8 @@ function handleCreateBoard() {
           </div>
         </div>
 
-        <!-- Decorative Blobs -->
-        <div class="fixed bottom-0 left-0 right-0 pointer-events-none overflow-hidden h-32">
+        <!-- Decorative Blobs (desktop only) -->
+        <div class="hidden md:block fixed bottom-0 left-0 right-0 pointer-events-none overflow-hidden h-32">
           <div
             class="absolute bottom-[-100px] left-[-50px] w-[500px] h-[500px] bg-purple-subtle rounded-full blur-[100px] opacity-30"
           ></div>
@@ -183,5 +237,19 @@ function handleCreateBoard() {
         </div>
       </div>
     </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border-gray px-6 pb-6 pt-3 flex justify-around items-center shadow-[0_-1px_4px_rgba(16,24,40,0.04)] z-50"
+    >
+      <button class="flex flex-col items-center gap-1">
+        <LayoutDashboard :size="24" class="text-primary-container" />
+        <span class="text-xs font-semibold text-primary-container">Boards</span>
+      </button>
+      <button class="flex flex-col items-center gap-1">
+        <Settings :size="24" class="text-neutral-gray" />
+        <span class="text-xs font-medium text-neutral-gray">Settings</span>
+      </button>
+    </nav>
   </div>
 </template>
