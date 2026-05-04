@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import type { LoginCredentials, SignUpData } from '@/types/auth'
 import LoginForm from '@/components/features/LoginForm.vue'
 import SignUpForm from '@/components/features/SignUpForm.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const activeTab = ref<'login' | 'signup'>('signup')
 
 const handleLogin = async (credentials: LoginCredentials) => {
   try {
     await authStore.login(credentials)
+    router.push('/boards')
   } catch (error) {
     console.error('Login error:', error)
   }
@@ -19,6 +22,7 @@ const handleLogin = async (credentials: LoginCredentials) => {
 const handleSignUp = async (data: SignUpData) => {
   try {
     await authStore.signUp(data)
+    router.push('/boards')
   } catch (error) {
     console.error('Sign up error:', error)
   }
@@ -38,7 +42,7 @@ const handleSignUp = async (data: SignUpData) => {
       <div class="w-full max-w-md space-y-lg">
         <!-- Header -->
         <div class="text-center md:text-left">
-          <h1 class="text-[28px] md:text-[48px] font-bold text-text-primary tracking-tighter mb-sm">
+          <h1 class="text-[28px] font-['Space_Grotesk'] md:text-[48px] font-bold text-text-primary tracking-tighter mb-sm">
             Welcome to Kanban
           </h1>
           <p class="text-[16px] text-text-secondary">
