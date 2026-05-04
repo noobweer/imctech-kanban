@@ -29,7 +29,7 @@ const formattedDate = computed(() => {
     </button>
 
     <div class="mb-4">
-      <h3 class="text-xl font-bold text-text-primary">{{ board.title }}</h3>
+      <h3 class="text-xl font-semibold text-text-primary">{{ board.title }}</h3>
       <p class="text-sm text-text-secondary">{{ board.category }}</p>
     </div>
 
