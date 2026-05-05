@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Board } from '@/types/board'
+import type { Board, BoardMember } from '@/types/board'
 
 export const useBoardsStore = defineStore('boards', () => {
   const boards = ref<Board[]>([
@@ -104,6 +104,39 @@ export const useBoardsStore = defineStore('boards', () => {
     console.log('Create board clicked')
   }
 
+  function updateBoard(id: string, updates: Partial<Board>) {
+    const board = boards.value.find((b) => b.id === id)
+    if (board) {
+      Object.assign(board, updates)
+    }
+  }
+
+  function archiveBoard(id: string) {
+    updateBoard(id, { archived: true })
+  }
+
+  function restoreBoard(id: string) {
+    updateBoard(id, { archived: false })
+  }
+
+  function deleteBoard(id: string) {
+    boards.value = boards.value.filter((b) => b.id !== id)
+  }
+
+  function addBoardMember(boardId: string, member: BoardMember) {
+    const board = boards.value.find((b) => b.id === boardId)
+    if (board && !board.members.find((m) => m.username === member.username)) {
+      board.members.push(member)
+    }
+  }
+
+  function removeBoardMember(boardId: string, username: string) {
+    const board = boards.value.find((b) => b.id === boardId)
+    if (board) {
+      board.members = board.members.filter((m) => m.username !== username)
+    }
+  }
+
   return {
     boards,
     loading,
@@ -112,5 +145,11 @@ export const useBoardsStore = defineStore('boards', () => {
     filteredBoards,
     fetchBoards,
     createBoard,
+    updateBoard,
+    archiveBoard,
+    restoreBoard,
+    deleteBoard,
+    addBoardMember,
+    removeBoardMember,
   }
 })

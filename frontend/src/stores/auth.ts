@@ -85,6 +85,12 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(REFRESH_TOKEN_KEY)
   }
 
+  function updateProfile(name: string) {
+    if (user.value) {
+      user.value.name = name
+    }
+  }
+
   return {
     user,
     loading,
@@ -95,5 +101,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     refreshAccessToken,
     initializeAuth,
+    updateProfile,
   }
 })

@@ -134,7 +134,7 @@ function handleCreate() {
               </div>
               <div class="md:w-3/4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-neutral-badge-text mb-1.5">
+                  <label class="block text-xs font-medium text-neutral-badge-text mb-2">
                     Project Name
                   </label>
                   <input
@@ -145,7 +145,7 @@ function handleCreate() {
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-neutral-badge-text mb-1.5">
+                  <label class="block text-xs font-medium text-neutral-badge-text mb-2">
                     Description (Optional)
                   </label>
                   <input

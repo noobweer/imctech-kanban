@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const variantClasses = {
-  primary: 'bg-primary text-white hover:bg-primary/90 shadow-sm',
+  primary: 'bg-primary-container text-white hover:bg-primary/90 shadow-sm',
   secondary: 'bg-secondary text-on-secondary hover:bg-secondary/90',
   outlined: 'bg-transparent border-2 border-primary text-primary hover:bg-primary/5',
   ghost: 'bg-transparent text-primary hover:bg-primary/10',
@@ -31,7 +31,7 @@ const sizeClasses = {
   <button
     :type="type"
     :class="[
-      'rounded-lg font-semibold transition-all',
+      'rounded-xl font-semibold transition-all cursor-pointer',
       'disabled:opacity-50 disabled:cursor-not-allowed',
       variantClasses[variant],
       sizeClasses[size],

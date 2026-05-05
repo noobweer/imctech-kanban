@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Calendar, MoreVertical } from 'lucide-vue-next'
+import { Calendar } from 'lucide-vue-next'
 import type { Board } from '@/types/board'
+import BoardCardDropdown from './BoardCardDropdown.vue'
 
 const props = defineProps<{
   board: Board
@@ -21,12 +22,9 @@ const formattedDate = computed(() => {
   <div
     class="bg-white rounded-xl cursor-pointer p-[16px] shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-border-gray flex flex-col hover:shadow-indigo-500/15 transition-shadow relative"
   >
-    <button
-      v-if="showMenu"
-      class="absolute top-4 right-4 text-neutral-gray hover:text-text-primary transition-colors"
-    >
-      <MoreVertical :size="20" />
-    </button>
+    <div v-if="showMenu" class="absolute top-4 right-4">
+      <BoardCardDropdown :board="board" />
+    </div>
 
     <div class="mb-4">
       <h3 class="text-xl font-semibold text-text-primary">{{ board.title }}</h3>

@@ -5,6 +5,7 @@ import { Search, Plus, LayoutDashboard, CheckSquare, Menu, Settings } from 'luci
 import { useAuthStore } from '@/stores/auth'
 import { useBoardsStore } from '@/stores/boards'
 import BoardCard from '@/components/features/BoardCard.vue'
+import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -133,19 +134,7 @@ function handleCreateBoard() {
 
         <!-- Right: Nav + Avatar -->
         <div class="flex items-center justify-end gap-6 flex-1">
-          <nav class="flex items-center gap-6 text-sm font-semibold tracking-tight">
-            <button class="text-neutral-gray hover:text-primary-container transition-colors">
-              Settings
-            </button>
-          </nav>
-          <div class="h-8 w-8 rounded-full overflow-hidden border border-border-gray">
-            <img
-              v-if="authStore.user"
-              :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user.name)}&background=7132f5&color=fff`"
-              :alt="authStore.user.name"
-              class="w-full h-full object-cover"
-            />
-          </div>
+          <UserProfileDropdown />
         </div>
       </div>
     </header>
