@@ -17,7 +17,7 @@ services:
       context: ./frontend
       target: development
     container_name: kanban_frontend
-    command: bun run dev --host 0.0.0.0
+    command: sh -c "bun install & bun run dev --host 0.0.0.0"
     volumes:
       - ./frontend:/app
       - /app/node_modules

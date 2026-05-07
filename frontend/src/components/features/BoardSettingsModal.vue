@@ -96,7 +96,7 @@ function handleDelete() {
       <div class="space-y-3 pt-4 border-t border-border-gray">
         <div>
           <Button
-            variant="secondary"
+            variant="outlined"
             size="md"
             class="w-full flex items-center justify-center gap-2"
             @click="handleArchive"
@@ -110,9 +110,9 @@ function handleDelete() {
 
         <div>
           <Button
-            variant="outlined"
+            variant="ghost"
             size="md"
-            class="w-full flex items-center justify-center gap-2 !text-error !border-error hover:!bg-red-50"
+            class="w-full flex items-center justify-center gap-2 !bg-red-100 !text-[#fc3d03] !border-error hover:!bg-red-50"
             @click="handleDelete"
           >
             <span class="text-sm">

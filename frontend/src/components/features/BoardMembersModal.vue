@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import type { Board, BoardMember } from '@/types/board'
-import { useBoardsStore } from '@/stores/boards'
+import { ref, computed } from 'vue'
+import type { Board } from '@/types/board'
 import Modal from '@/components/ui/Modal.vue'
-import Input from '@/components/ui/Input.vue'
-import Button from '@/components/ui/Button.vue'
-import { Search, X } from 'lucide-vue-next'
+import Icon from '@/components/ui/Icon.vue'
+import { useBoardsStore } from '@/stores/boards'
 
 interface Props {
   modelValue: boolean
@@ -18,156 +16,182 @@ const emit = defineEmits<{
 }>()
 
 const boardsStore = useBoardsStore()
-const searchQuery = ref('')
-const inviteUsername = ref('')
-const inviteError = ref('')
 
-watch(
-  () => props.modelValue,
-  (isOpen) => {
-    if (isOpen) {
-      searchQuery.value = ''
-      inviteUsername.value = ''
-      inviteError.value = ''
-    }
-  }
-)
-
-const filteredMembers = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return props.board.members
-  }
-
-  const query = searchQuery.value.toLowerCase()
-  return props.board.members.filter(
-    (member) =>
-      member.name.toLowerCase().includes(query) ||
-      member.username.toLowerCase().includes(query)
-  )
-})
+// Invite link state
+const inviteLink = ref(`https://kanban.app/join/${props.board.id}-${Math.random().toString(36).substr(2, 6)}`)
+const linkExpiration = ref('7 days')
+const linkMaxUses = ref('Unlimited')
 
 function close() {
   emit('update:modelValue', false)
+}
+
+function handleCopyLink() {
+  navigator.clipboard.writeText(inviteLink.value)
+  // TODO: Show toast notification
+}
+
+function handleGenerateLink() {
+  inviteLink.value = `https://kanban.app/join/${props.board.id}-${Math.random().toString(36).substr(2, 6)}`
+  // TODO: API call to generate new link
 }
 
 function handleRemoveMember(username: string) {
   boardsStore.removeBoardMember(props.board.id, username)
 }
 
-function handleInvite() {
-  inviteError.value = ''
-
-  if (!inviteUsername.value.trim()) {
-    inviteError.value = 'Username is required'
-    return
-  }
-
-  const username = inviteUsername.value.trim().replace('@', '')
-
-  // Check if already a member
-  if (props.board.members.find((m) => m.username === username)) {
-    inviteError.value = 'User is already a member'
-    return
-  }
-
-  // Mock: Create a new member
-  const newMember: BoardMember = {
-    username,
-    name: username.charAt(0).toUpperCase() + username.slice(1),
-    avatar: undefined,
-  }
-
-  boardsStore.addBoardMember(props.board.id, newMember)
-  inviteUsername.value = ''
+function handleLeaveTeam() {
+  // TODO: Implement leave team logic
+  console.log('Leave team:', props.board.id)
+  close()
 }
 </script>
 
 <template>
-  <Modal :model-value="modelValue" title="Board Members" max-width="550px" @update:model-value="emit('update:modelValue', $event)">
-    <div class="space-y-6">
-      <!-- Search -->
-      <div class="relative">
-        <Search :size="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-gray" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search members..."
-          class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-border-gray rounded-xl text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
-        />
-      </div>
+  <Modal
+    :model-value="modelValue"
+    title="Board Members"
+    max-width="550px"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
+    <!-- Scrollable Content -->
+    <div class="overflow-y-auto max-h-[600px] -mx-6 -my-6">
+      <!-- Section 1: Invite New Members -->
+      <section class="px-6 py-6">
+        <div class="flex items-center gap-2 mb-4">
+          <Icon name="user_plus" size="sm" class="text-primary-container" />
+          <h3 class="font-semibold text-[22px] text-text-primary">Invite New Members</h3>
+        </div>
+        <p class="text-sm text-text-secondary mb-3">
+          Share this link with your team to grant them access to the board.
+        </p>
 
-      <!-- Members List -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-text-primary">
-            Members ({{ filteredMembers.length }})
-          </h3>
+        <!-- Invite link + Copy button -->
+        <div class="flex gap-2 mb-6">
+          <input
+            readonly
+            :value="inviteLink"
+            class="flex-1 px-4 py-3 bg-surface-container-low border border-outline/24 rounded-xl text-sm text-text-primary focus:outline-none focus:border-primary-container transition-all"
+          />
+          <button
+            class="px-4 py-3 bg-white font-semibold border border-secondary-container text-secondary-container rounded-xl hover:bg-surface-container transition-all flex items-center gap-2 shadow-[0_4px_24px_rgba(0,0,0,0.03)] active:scale-95"
+            @click="handleCopyLink"
+          >
+            <Icon name="copy" size="sm" />
+            Copy
+          </button>
         </div>
 
-        <div class="space-y-2 max-h-[300px] overflow-y-auto">
-          <div
-            v-for="member in filteredMembers"
-            :key="member.username"
-            class="flex items-center gap-3 p-3 rounded-lg border border-border-gray hover:bg-surface-container-low transition-colors"
-          >
-            <div class="h-10 w-10 rounded-full overflow-hidden border border-border-gray flex-shrink-0">
-              <img
-                :src="member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=7132f5&color=fff`"
-                :alt="member.name"
-                class="w-full h-full object-cover"
-              />
+        <!-- Expiration + Max Uses dropdowns -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="text-xs">Expiration</label>
+            <div class="relative">
+              <select
+                v-model="linkExpiration"
+                class="w-full appearance-none px-4 py-3 bg-white border border-outline/24 rounded-xl text-sm text-text-primary focus:outline-none focus:border-primary-container transition-all"
+              >
+                <option>7 days</option>
+                <option>24 hours</option>
+                <option>30 days</option>
+                <option>Never</option>
+              </select>
+              <Icon name="chevron_down" size="sm" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline" />
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-text-primary truncate">
-                {{ member.name }}
-              </p>
-              <p class="text-xs text-neutral-gray truncate">
-                @{{ member.username }}
-              </p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs">Max Uses</label>
+            <div class="relative">
+              <select
+                v-model="linkMaxUses"
+                class="w-full appearance-none px-4 py-3 bg-white border border-outline/24 rounded-xl text-sm text-text-primary focus:outline-none focus:border-primary-container transition-all"
+              >
+                <option>Unlimited</option>
+                <option>5 uses</option>
+                <option>10 uses</option>
+                <option>50 uses</option>
+              </select>
+              <Icon name="chevron_down" size="sm" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate button -->
+        <button
+          class="w-full mt-6 py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-[0_4px_24px_rgba(88,0,216,0.12)] active:scale-[0.98]"
+          @click="handleGenerateLink"
+        >
+          Generate New Link
+        </button>
+      </section>
+
+      <!-- Divider -->
+      <div class="h-px bg-border-gray mx-6"></div>
+
+      <!-- Section 2: Current Team Members -->
+      <section class="px-6 py-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <Icon name="users" size="sm" class="text-primary-container" />
+            <h3 class="font-semibold text-[22px] text-text-primary">Current Team Members</h3>
+          </div>
+          <span class="text-xs text-text-secondary bg-surface-container px-2 py-1 rounded-lg">
+            {{ board.members.length }} Members
+          </span>
+        </div>
+
+        <div class="space-y-0">
+          <div
+            v-for="member in board.members"
+            :key="member.username"
+            class="flex items-center justify-between p-3 bg-white border border-transparent hover:border-border-gray hover:shadow-[0_4px_24px_rgba(0,0,0,0.03)] rounded-xl transition-all group"
+          >
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full border-2 border-primary-container/20 overflow-hidden flex-shrink-0">
+                <img
+                  :src="member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=7132f5&color=fff`"
+                  :alt="member.name"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-text-primary leading-tight">
+                  {{ member.name }}
+                </p>
+                <span
+                  v-if="member.role"
+                  :class="[
+                    'inline-flex items-center gap-1 text-xs font-semibold px-2 py-[2px] rounded-full mt-1',
+                    member.role === 'Mentor'
+                      ? 'text-success-green-text bg-success-subtle'
+                      : 'text-neutral-gray bg-neutral-gray/12'
+                  ]"
+                >
+                  {{ member.role }}
+                </span>
+              </div>
             </div>
             <button
-              class="text-neutral-gray hover:text-error transition-colors p-1.5 rounded-lg hover:bg-red-50"
+              class="text-outline hover:text-error p-2 rounded-lg hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100"
               @click="handleRemoveMember(member.username)"
             >
-              <X :size="18" />
+              <Icon name="user_minus" size="sm" />
             </button>
           </div>
-
-          <div v-if="filteredMembers.length === 0" class="text-center py-8 text-neutral-gray text-sm">
-            No members found
-          </div>
         </div>
-      </div>
-
-      <!-- Invite Section -->
-      <div class="pt-4 border-t border-border-gray">
-        <h3 class="text-sm font-semibold text-text-primary mb-3">
-          Invite Members
-        </h3>
-        <div class="flex gap-2">
-          <div class="flex-1">
-            <Input
-              v-model="inviteUsername"
-              placeholder="Enter username"
-              :error="inviteError"
-              @keyup.enter="handleInvite"
-            />
-            <p v-if="inviteError" class="mt-1 text-xs text-error">
-              {{ inviteError }}
-            </p>
-          </div>
-          <Button variant="primary" size="md" @click="handleInvite">
-            Invite
-          </Button>
-        </div>
-      </div>
+      </section>
     </div>
 
+    <!-- Footer -->
     <template #footer>
-      <div class="flex justify-end">
-        <Button variant="primary" @click="close">
-          Close
-        </Button>
+      <div class="flex justify-center px-2">
+        <button
+          class="text-error hover:bg-error/5 px-6 py-3 rounded-xl transition-all flex items-center gap-2 active:scale-95 font-medium"
+          @click="handleLeaveTeam"
+        >
+          <Icon name="logout" size="sm" />
+          Leave Team
+        </button>
       </div>
     </template>
   </Modal>

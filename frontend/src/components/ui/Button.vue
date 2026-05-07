@@ -14,10 +14,17 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const variantClasses = {
-  primary: 'bg-primary-container text-white hover:bg-primary/90 shadow-sm',
-  secondary: 'bg-secondary text-on-secondary hover:bg-secondary/90',
-  outlined: 'bg-transparent border-2 border-primary text-primary hover:bg-primary/5',
-  ghost: 'bg-transparent text-primary hover:bg-primary/10',
+  primary: 'bg-primary-container text-white shadow-sm',
+  secondary: 'bg-secondary text-on-secondary',
+  outlined: 'bg-transparent border-[1px] border-primary text-primary',
+  ghost: 'bg-transparent text-primary',
+}
+
+const variantHoverClasses = {
+  primary: 'hover:bg-primary/90',
+  secondary: 'hover:bg-secondary/90',
+  outlined: 'hover:bg-primary/5',
+  ghost: 'hover:bg-primary/10',
 }
 
 const sizeClasses = {
@@ -32,9 +39,10 @@ const sizeClasses = {
     :type="type"
     :class="[
       'rounded-xl font-semibold transition-all cursor-pointer',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
       variantClasses[variant],
       sizeClasses[size],
+      !disabled && variantHoverClasses[variant],
+      disabled && 'opacity-50 cursor-not-allowed',
     ]"
     :disabled="disabled"
   >

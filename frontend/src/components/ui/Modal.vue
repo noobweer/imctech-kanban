@@ -89,7 +89,7 @@ onUnmounted(() => {
                 <h2 class="text-xl font-semibold text-text-primary">{{ title }}</h2>
               </slot>
               <button
-                class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface-container-low"
+                class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg bg-white hover:bg-gray-100 cursor-pointer"
                 @click="close"
               >
                 <X :size="20" />

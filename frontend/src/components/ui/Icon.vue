@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AtSign, LockOpen, User, GraduationCap, Star, Settings, LogOut, Users, Archive, Trash2, X } from 'lucide-vue-next'
+import { AtSign, LockOpen, User, GraduationCap, Star, Settings, LogOut, Users, Archive, Trash2, X, UserPlus, Copy, ChevronDown, UserMinus } from 'lucide-vue-next'
 
 interface Props {
   name: string
@@ -29,6 +29,10 @@ const iconMap: Record<string, any> = {
   archive: Archive,
   trash: Trash2,
   x: X,
+  user_plus: UserPlus,
+  copy: Copy,
+  chevron_down: ChevronDown,
+  user_minus: UserMinus,
 }
 
 const IconComponent = computed(() => iconMap[props.name])

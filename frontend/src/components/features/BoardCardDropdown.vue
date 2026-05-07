@@ -29,7 +29,7 @@ function openMembers() {
   <div>
     <Dropdown position="bottom-right">
       <template #trigger>
-        <button class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface-container-low">
+        <button class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg bg-white hover:bg-gray-100 cursor-pointer">
           <MoreVertical :size="20" />
         </button>
       </template>

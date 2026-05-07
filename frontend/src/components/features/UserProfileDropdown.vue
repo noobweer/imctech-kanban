@@ -25,7 +25,7 @@ function openSettings() {
   <div>
     <Dropdown position="bottom-right">
       <template #trigger>
-        <button class="h-8 w-8 rounded-full overflow-hidden border border-border-gray transition-all cursor-pointer">
+        <button class="h-8 w-8o rounded-full overflow-hidden border border-border-gray transition-all cursor-pointer">
           <img
             v-if="authStore.user"
             :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user.name)}&background=7132f5&color=fff`"

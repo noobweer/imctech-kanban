@@ -13,4 +13,5 @@ export interface BoardMember {
   username: string
   name: string
   avatar?: string
+  role?: 'Mentor' | 'Student'
 }

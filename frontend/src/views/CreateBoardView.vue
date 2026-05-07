@@ -3,20 +3,17 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowLeft,
-  Search,
   Plus,
-  Settings,
   FileEdit,
   Columns,
   PlusCircle,
   GripVertical,
   Trash2,
-  ChevronRight,
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
+import Button from '@/components/ui/Button.vue'
+import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
 
 const boardName = ref('')
 const boardDescription = ref('')
@@ -86,20 +83,8 @@ function handleCreate() {
           </h1>
         </div>
 
-        <div class="flex items-center gap-6">
-          <nav class="flex items-center gap-6 text-sm font-semibold tracking-tight">
-            <button class="text-neutral-gray hover:text-primary-container transition-colors">
-              Settings
-            </button>
-          </nav>
-          <div class="h-8 w-8 rounded-full overflow-hidden border border-border-gray">
-            <img
-              v-if="authStore.user"
-              :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user.name)}&background=7132f5&color=fff`"
-              :alt="authStore.user.name"
-              class="w-full h-full object-cover"
-            />
-          </div>
+        <div class="flex items-center justify-end gap-6 flex-1">
+          <UserProfileDropdown />
         </div>
       </div>
     </header>
@@ -234,18 +219,22 @@ function handleCreate() {
           <!-- Footer CTA -->
           <div class="flex flex-col md:flex-row items-center justify-between pt-2 gap-3">
             <div class="flex items-center gap-3 w-full md:w-auto">
-              <button
-                class="flex-1 cursor-pointer md:flex-none px-6 py-2.5 border border-border-gray rounded-xl text-on-background font-semibold text-sm hover:bg-gray-50 transition-all"
+              <Button
+                variant="outlined"
+                size="sm"
+                class="flex-1 md:flex-none"
                 @click="handleCancel"
               >
                 Cancel
-              </button>
-              <button
-                class="flex-1 cursor-pointer md:flex-none px-8 py-2.5 bg-primary-container text-white rounded-xl font-semibold text-sm shadow-lg shadow-primary-container/20 hover:opacity-90 transition-all"
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                class="flex-1 md:flex-none"
                 @click="handleCreate"
               >
                 Create Board
-              </button>
+              </Button>
             </div>
           </div>
         </div>
