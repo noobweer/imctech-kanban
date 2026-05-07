@@ -9,6 +9,7 @@ import {
   PlusCircle,
   GripVertical,
   Trash2,
+  Info,
 } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
@@ -18,11 +19,13 @@ const router = useRouter()
 const boardName = ref('')
 const boardDescription = ref('')
 const columns = ref([
-  { id: '1', name: 'Backlog' },
   { id: '2', name: 'To Do' },
   { id: '3', name: 'In Progress' },
   { id: '4', name: 'Done' },
 ])
+
+const draggedColumnId = ref<string | null>(null)
+const dropTargetId = ref<string | null>(null)
 
 let nextColumnId = 5
 
@@ -35,6 +38,35 @@ function addColumn() {
 
 function removeColumn(id: string) {
   columns.value = columns.value.filter((col) => col.id !== id)
+}
+
+function handleDragStart(columnId: string) {
+  draggedColumnId.value = columnId
+}
+
+function handleDragOver(event: DragEvent, columnId: string) {
+  event.preventDefault()
+  dropTargetId.value = columnId
+}
+
+function handleDragLeave() {
+  dropTargetId.value = null
+}
+
+function handleDrop(event: DragEvent, targetColumnId: string) {
+  event.preventDefault()
+  if (!draggedColumnId.value || draggedColumnId.value === targetColumnId) return
+
+  const draggedIndex = columns.value.findIndex((c) => c.id === draggedColumnId.value)
+  const targetIndex = columns.value.findIndex((c) => c.id === targetColumnId)
+
+  const [removed] = columns.value.splice(draggedIndex, 1)
+  columns.value.splice(targetIndex, 0, removed)
+}
+
+function handleDragEnd() {
+  draggedColumnId.value = null
+  dropTargetId.value = null
 }
 
 function handleCancel() {
@@ -167,25 +199,33 @@ function handleCreate() {
               </button>
             </div>
 
-            <div class="flex flex-nowrap gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <!-- Info Banner -->
+            <div class="mb-3 p-3 bg-purple-subtle/30 border border-primary-container/20 rounded-lg">
+              <p class="text-xs text-primary-container font-medium flex items-center gap-1">
+                <Info :size="14" />
+                Backlog tasks will be managed in a separate view
+              </p>
+            </div>
+
+            <div class="flex flex-nowrap gap-3 overflow-x-auto pb-2 custom-scrollbar">
               <!-- Column Cards -->
               <div
                 v-for="column in columns"
                 :key="column.id"
+                draggable="true"
                 :class="[
-                  'flex-shrink-0 w-48 bg-surface-container-low border rounded-xl p-3 group cursor-grab',
-                  column.name === 'In Progress'
-                    ? 'border-primary-container/20 bg-purple-subtle/20'
-                    : 'border-border-gray',
+                  'flex-shrink-0 w-48 bg-surface-container-low border rounded-xl p-3 group transition-all duration-200',
+                  draggedColumnId === column.id ? 'opacity-50 cursor-grabbing scale-95 border-border-gray' : 'cursor-grab border-border-gray',
+                  dropTargetId === column.id && draggedColumnId !== column.id ? 'border-primary-container border-2 shadow-lg' : '',
                 ]"
+                @dragstart="handleDragStart(column.id)"
+                @dragover="handleDragOver($event, column.id)"
+                @dragleave="handleDragLeave"
+                @drop="handleDrop($event, column.id)"
+                @dragend="handleDragEnd"
               >
                 <div class="flex justify-between items-center mb-2">
-                  <GripVertical
-                    :size="16"
-                    :class="[
-                      column.name === 'In Progress' ? 'text-primary-container/40' : 'text-neutral-gray',
-                    ]"
-                  />
+                  <GripVertical :size="16" class="text-neutral-gray" />
                   <button
                     class="opacity-0 group-hover:opacity-100 text-neutral-gray hover:text-error transition-all"
                     @click="removeColumn(column.id)"
@@ -195,12 +235,7 @@ function handleCreate() {
                 </div>
                 <input
                   v-model="column.name"
-                  :class="[
-                    'w-full bg-white border rounded-lg px-2 py-1.5 text-xs font-bold text-on-background outline-none focus:ring-2 focus:ring-primary-container transition-all',
-                    column.name === 'In Progress'
-                      ? 'border-primary-container/30'
-                      : 'border-border-gray',
-                  ]"
+                  class="w-full bg-white border border-border-gray rounded-lg px-2 py-1.5 text-xs font-semibold text-on-background outline-none focus:ring-2 focus:ring-primary-container transition-all"
                   type="text"
                 />
               </div>
@@ -244,11 +279,28 @@ function handleCreate() {
 </template>
 
 <style scoped>
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-surface-container-low);
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-gray);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-gray);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-gray) var(--color-surface-container-low);
 }
 </style>
