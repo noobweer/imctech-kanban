@@ -29,3 +29,9 @@ def can_edit_board(user, board):
     if is_staff_or_superuser(user):
         return True
     return board.owner == user
+
+
+def can_edit_column(user, column):
+    if is_staff_or_superuser(user):
+        return True
+    return column.board.owner == user

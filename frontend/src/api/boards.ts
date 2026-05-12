@@ -1,11 +1,13 @@
 import { apiClient } from './client'
 import type { Board } from '@/types/board'
+import type { CreateColumnData } from '@/types/column'
 
 export interface CreateBoardData {
   name: string
   description?: string
   project_id?: string
   status?: 'active' | 'archived'
+  columns?: CreateColumnData[]
 }
 
 export interface UpdateBoardData {

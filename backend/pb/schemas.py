@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from ninja import Schema
-from .models import BoardStatus
+from .models import BoardStatus, ColumnStatus
 
 
 # Project Schemas
@@ -18,6 +18,12 @@ class ProjectOut(Schema):
     updated_at: datetime
 
 
+# Column Schemas
+class ColumnIn(Schema):
+    name: str
+    position: Optional[int] = None
+
+
 # Board Schemas
 class BoardIn(Schema):
     name: str
@@ -27,6 +33,7 @@ class BoardIn(Schema):
     tasks_total: Optional[int] = 0
     tasks_done: Optional[int] = 0
     progress_percent: Optional[int] = 0
+    columns: List[ColumnIn] = []
 
 
 class BoardOut(Schema):
@@ -65,3 +72,32 @@ class BoardUpdateIn(Schema):
     name: Optional[str] = None
     description: Optional[str] = None
     status: Optional[BoardStatus] = None
+
+
+class ColumnOut(Schema):
+    id: uuid.UUID
+    board_id: uuid.UUID
+    board_name: str
+    name: str
+    position: int
+    status: ColumnStatus
+    sum_tasks: int
+    created_at: datetime
+    updated_at: datetime
+
+    @staticmethod
+    def resolve_board_id(obj):
+        return obj.board.id
+
+    @staticmethod
+    def resolve_board_name(obj):
+        return obj.board.name
+
+
+class ColumnUpdateIn(Schema):
+    name: Optional[str] = None
+    status: Optional[ColumnStatus] = None
+
+
+class ColumnMoveIn(Schema):
+    position: int

@@ -173,3 +173,64 @@ Safe deletion (archives the board).
   "message": "Board archived successfully"
 }
 ```
+
+---
+
+## Column Endpoints
+
+### GET /boards/{board_id}/columns
+List all columns of a board.
+*   **Query Params:** `status` (optional: `active`, `archived`)
+*   **Access:** Staff/superuser or board owner/member.
+*   **Response:** `200 OK` (list of columns ordered by `position`)
+
+---
+
+### POST /boards/{board_id}/columns
+Create a new column.
+*   **Access:** Staff/superuser or board owner.
+*   **Logic:** If `position` is not provided, it's added at the end. If provided, existing columns are shifted.
+
+**Request:**
+```json
+{
+  "name": "New Column",
+  "position": 1 (optional)
+}
+```
+
+---
+
+### POST /boards/{board_id}/columns/defaults
+Create default columns (To Do, In Progress, Done).
+*   **Access:** Staff/superuser or board owner.
+*   **Constraint:** Board must have no columns.
+
+---
+
+### GET /columns/{column_id}
+Get column details.
+
+---
+
+### PATCH /columns/{column_id}
+Update column name or status.
+*   **Access:** Staff/superuser or board owner.
+
+---
+
+### POST /columns/{column_id}/move
+Change column position.
+*   **Access:** Staff/superuser or board owner.
+*   **Request:** `{"position": 2}`
+*   **Logic:** Recalculates all positions within the board.
+
+---
+
+### POST /columns/{column_id}/archive
+Archive column.
+
+---
+
+### DELETE /columns/{column_id}
+Soft delete (archives the column).

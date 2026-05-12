@@ -86,6 +86,12 @@ async function handleCreate() {
     await boardsStore.createBoard({
       name: boardName.value.trim(),
       description: boardDescription.value.trim(),
+      columns: columns.value
+        .filter((col) => col.name.trim() !== '')
+        .map((col, index) => ({
+          name: col.name.trim(),
+          position: index + 1,
+        })),
     })
     router.push('/boards')
   } catch (error) {
@@ -193,12 +199,6 @@ async function handleCreate() {
           <section
             class="bg-white rounded-xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-border-gray relative overflow-hidden"
           >
-            <!-- Overlay for Coming Soon -->
-            <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-              <div class="bg-primary-container text-white px-4 py-2 rounded-lg font-bold shadow-lg">
-                Coming Soon (Task 3)
-              </div>
-            </div>
             <div class="flex justify-between items-center mb-4">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-purple-subtle rounded-lg text-primary-container">

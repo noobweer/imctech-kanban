@@ -74,3 +74,41 @@ class Board(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ColumnStatus(models.TextChoices):
+    ACTIVE = "active", _("Active")
+    ARCHIVED = "archived", _("Archived")
+
+
+class Column(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    board = models.ForeignKey(
+        Board,
+        on_delete=models.CASCADE,
+        related_name="columns",
+    )
+    name = models.CharField(max_length=255)
+    position = models.PositiveIntegerField()
+    status = models.CharField(
+        max_length=10,
+        choices=ColumnStatus.choices,
+        default=ColumnStatus.ACTIVE,
+    )
+    sum_tasks = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position"]
+
+    def clean(self):
+        if self.sum_tasks < 0:
+            raise ValidationError(_("Sum of tasks cannot be negative."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.board.name})"

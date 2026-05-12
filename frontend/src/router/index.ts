@@ -25,6 +25,12 @@ const router = createRouter({
       component: () => import('@/views/CreateBoardView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/boards/:id',
+      name: 'board-detail',
+      component: () => import('@/views/BoardDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

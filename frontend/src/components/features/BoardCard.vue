@@ -21,54 +21,56 @@ const formattedDate = computed(() => {
 
 <template>
   <div
-    class="bg-white rounded-xl cursor-pointer p-[16px] shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-border-gray flex flex-col hover:shadow-indigo-500/15 transition-shadow relative"
+    class="bg-white rounded-xl cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-border-gray flex flex-col hover:shadow-indigo-500/15 transition-shadow relative"
   >
-    <div v-if="showMenu" class="absolute top-4 right-4">
+    <div v-if="showMenu" class="absolute top-4 right-4 z-10">
       <BoardCardDropdown :board="board" />
     </div>
 
-    <div class="mb-4 pr-8">
-      <h3 class="text-xl font-semibold text-text-primary truncate">{{ board.name }}</h3>
-      <p class="text-sm text-text-secondary truncate">{{ board.project_name }}</p>
-    </div>
+    <RouterLink :to="`/boards/${board.id}`" class="p-[16px] h-full flex flex-col">
+      <div class="mb-4 pr-8">
+        <h3 class="text-xl font-semibold text-text-primary truncate">{{ board.name }}</h3>
+        <p class="text-sm text-text-secondary truncate">{{ board.project_name }}</p>
+      </div>
 
-    <div class="flex items-center gap-2 text-sm text-neutral-gray mb-4">
-      <Calendar :size="16" />
-      <span>Updated {{ formattedDate }}</span>
-    </div>
+      <div class="flex items-center gap-2 text-sm text-neutral-gray mb-4">
+        <Calendar :size="16" />
+        <span>Updated {{ formattedDate }}</span>
+      </div>
 
-    <div class="mt-auto">
-      <div class="flex justify-between items-center mb-4">
-        <div class="flex -space-x-2">
-          <img
-            v-for="username in visibleMembers"
-            :key="username"
-            :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=7132f5&color=fff`"
-            :alt="username"
-            class="w-8 h-8 rounded-full border-2 border-white object-cover"
-            :title="username"
-          />
-          <div
-            v-if="remainingCount > 0"
-            class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] text-text-primary font-bold"
-          >
-            +{{ remainingCount }}
+      <div class="mt-auto">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex -space-x-2">
+            <img
+              v-for="username in visibleMembers"
+              :key="username"
+              :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=7132f5&color=fff`"
+              :alt="username"
+              class="w-8 h-8 rounded-full border-2 border-white object-cover"
+              :title="username"
+            />
+            <div
+              v-if="remainingCount > 0"
+              class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] text-text-primary font-bold"
+            >
+              +{{ remainingCount }}
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs font-semibold">
+            <span class="text-neutral-gray">Progress</span>
+            <span class="text-primary-container">{{ board.progress_percent }}%</span>
+          </div>
+          <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+            <div
+              class="bg-primary-container h-full rounded-full transition-all"
+              :style="{ width: `${board.progress_percent}%` }"
+            ></div>
           </div>
         </div>
       </div>
-
-      <div class="space-y-2">
-        <div class="flex justify-between text-xs font-semibold">
-          <span class="text-neutral-gray">Progress</span>
-          <span class="text-primary-container">{{ board.progress_percent }}%</span>
-        </div>
-        <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-          <div
-            class="bg-primary-container h-full rounded-full transition-all"
-            :style="{ width: `${board.progress_percent}%` }"
-          ></div>
-        </div>
-      </div>
-    </div>
+    </RouterLink>
   </div>
 </template>
