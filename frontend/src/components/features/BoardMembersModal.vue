@@ -37,7 +37,8 @@ function handleGenerateLink() {
 }
 
 function handleRemoveMember(username: string) {
-  boardsStore.removeBoardMember(props.board.id, username)
+  // boardsStore.removeBoardMember(props.board.id, username)
+  console.log('Remove member:', username)
 }
 
 function handleLeaveTeam() {
@@ -142,38 +143,34 @@ function handleLeaveTeam() {
 
         <div class="space-y-0">
           <div
-            v-for="member in board.members"
-            :key="member.username"
+            v-for="username in board.members"
+            :key="username"
             class="flex items-center justify-between p-3 bg-white border border-transparent hover:border-border-gray hover:shadow-[0_4px_24px_rgba(0,0,0,0.03)] rounded-xl transition-all group"
           >
             <div class="flex items-center gap-4">
               <div class="w-10 h-10 rounded-full border-2 border-primary-container/20 overflow-hidden flex-shrink-0">
                 <img
-                  :src="member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=7132f5&color=fff`"
-                  :alt="member.name"
+                  :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=7132f5&color=fff`"
+                  :alt="username"
                   class="w-full h-full object-cover"
                 />
               </div>
               <div>
                 <p class="text-sm font-medium text-text-primary leading-tight">
-                  {{ member.name }}
+                  {{ username }}
                 </p>
                 <span
-                  v-if="member.role"
-                  :class="[
-                    'inline-flex items-center gap-1 text-xs font-semibold px-2 py-[2px] rounded-full mt-1',
-                    member.role === 'Mentor'
-                      ? 'text-success-green-text bg-success-subtle'
-                      : 'text-neutral-gray bg-neutral-gray/12'
-                  ]"
+                  v-if="username === board.owner_username"
+                  class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-[2px] rounded-full mt-1 text-success-green-text bg-success-subtle"
                 >
-                  {{ member.role }}
+                  Owner
                 </span>
               </div>
             </div>
             <button
+              v-if="username !== board.owner_username"
               class="text-outline hover:text-error p-2 rounded-lg hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100"
-              @click="handleRemoveMember(member.username)"
+              @click="handleRemoveMember(username)"
             >
               <Icon name="user_minus" size="sm" />
             </button>

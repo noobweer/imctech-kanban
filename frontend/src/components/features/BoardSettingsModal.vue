@@ -18,6 +18,7 @@ const emit = defineEmits<{
 
 const boardsStore = useBoardsStore()
 const boardTitle = ref('')
+const boardDescription = ref('')
 const error = ref('')
 const showDeleteConfirm = ref(false)
 
@@ -25,7 +26,8 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
-      boardTitle.value = props.board.title
+      boardTitle.value = props.board.name
+      boardDescription.value = props.board.description || ''
       error.value = ''
       showDeleteConfirm.value = false
     }
@@ -49,12 +51,15 @@ function handleSave() {
     return
   }
 
-  boardsStore.updateBoard(props.board.id, { title: boardTitle.value.trim() })
+  boardsStore.updateBoard(props.board.id, {
+    name: boardTitle.value.trim(),
+    description: boardDescription.value.trim(),
+  })
   close()
 }
 
 function handleArchive() {
-  if (props.board.archived) {
+  if (props.board.status === 'archived') {
     boardsStore.restoreBoard(props.board.id)
   } else {
     boardsStore.archiveBoard(props.board.id)
@@ -92,6 +97,18 @@ function handleDelete() {
         </p>
       </div>
 
+      <!-- Board Description -->
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-2">
+          Description (Optional)
+        </label>
+        <Input
+          v-model="boardDescription"
+          placeholder="Enter board description"
+          @keyup.enter="handleSave"
+        />
+      </div>
+
       <!-- Actions -->
       <div class="space-y-3 pt-4 border-t border-border-gray">
         <div>
@@ -101,10 +118,10 @@ function handleDelete() {
             class="w-full flex items-center justify-center gap-2"
             @click="handleArchive"
           >
-            <span class="text-sm">{{ board.archived ? 'Restore Board' : 'Archive Board' }}</span>
+            <span class="text-sm">{{ board.status === 'archived' ? 'Restore Board' : 'Archive Board' }}</span>
           </Button>
           <p class="mt-1 text-xs text-neutral-gray">
-            {{ board.archived ? 'Move this board back to active boards.' : 'Move this board to archived. You can restore it later.' }}
+            {{ board.status === 'archived' ? 'Move this board back to active boards.' : 'Move this board to archived. You can restore it later.' }}
           </p>
         </div>
 

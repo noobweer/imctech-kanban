@@ -13,7 +13,8 @@ const visibleMembers = computed(() => props.board.members.slice(0, 2))
 const remainingCount = computed(() => Math.max(0, props.board.members.length - 2))
 
 const formattedDate = computed(() => {
-  const date = new Date(props.board.dueDate)
+  // Using updated_at since dueDate is missing from backend
+  const date = new Date(props.board.updated_at)
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 })
 </script>
@@ -26,25 +27,26 @@ const formattedDate = computed(() => {
       <BoardCardDropdown :board="board" />
     </div>
 
-    <div class="mb-4">
-      <h3 class="text-xl font-semibold text-text-primary">{{ board.title }}</h3>
-      <p class="text-sm text-text-secondary">{{ board.category }}</p>
+    <div class="mb-4 pr-8">
+      <h3 class="text-xl font-semibold text-text-primary truncate">{{ board.name }}</h3>
+      <p class="text-sm text-text-secondary truncate">{{ board.project_name }}</p>
     </div>
 
     <div class="flex items-center gap-2 text-sm text-neutral-gray mb-4">
       <Calendar :size="16" />
-      <span>Due {{ formattedDate }}</span>
+      <span>Updated {{ formattedDate }}</span>
     </div>
 
     <div class="mt-auto">
       <div class="flex justify-between items-center mb-4">
         <div class="flex -space-x-2">
           <img
-            v-for="member in visibleMembers"
-            :key="member.username"
-            :src="member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=7132f5&color=fff`"
-            :alt="member.name"
+            v-for="username in visibleMembers"
+            :key="username"
+            :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=7132f5&color=fff`"
+            :alt="username"
             class="w-8 h-8 rounded-full border-2 border-white object-cover"
+            :title="username"
           />
           <div
             v-if="remainingCount > 0"
@@ -58,12 +60,12 @@ const formattedDate = computed(() => {
       <div class="space-y-2">
         <div class="flex justify-between text-xs font-semibold">
           <span class="text-neutral-gray">Progress</span>
-          <span class="text-primary-container">{{ board.progress }}%</span>
+          <span class="text-primary-container">{{ board.progress_percent }}%</span>
         </div>
         <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
           <div
             class="bg-primary-container h-full rounded-full transition-all"
-            :style="{ width: `${board.progress}%` }"
+            :style="{ width: `${board.progress_percent}%` }"
           ></div>
         </div>
       </div>

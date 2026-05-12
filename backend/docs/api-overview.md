@@ -208,6 +208,56 @@ Delete user.
 
 ---
 
+### Project CRUD Endpoints
+
+#### GET /projects
+List all projects accessible to the user.
+*   **Auth:** Required
+*   **Access:** User sees projects where they own or are a member of at least one board. Staff sees all.
+
+#### POST /projects
+Create a new project.
+*   **Auth:** Required
+
+#### GET /projects/{project_id}
+Get project details.
+*   **Auth:** Required
+
+#### PATCH /projects/{project_id}
+Update project name.
+*   **Auth:** Required
+
+#### DELETE /projects/{project_id}
+Delete project (fails if boards exist).
+*   **Auth:** Required
+
+---
+
+### Board CRUD Endpoints
+
+#### GET /boards
+List all boards accessible to the user.
+*   **Auth:** Required
+*   **Query Params:** `status` (active/archived)
+
+#### POST /boards
+Create a new board.
+*   **Auth:** Required
+
+#### GET /boards/{board_id}
+Get board details.
+*   **Auth:** Required
+
+#### PATCH /boards/{board_id}
+Update board (name/status).
+*   **Auth:** Required
+
+#### DELETE /boards/{board_id}
+Archive board.
+*   **Auth:** Required
+
+---
+
 ## User Roles
 
 - `student` - Default role

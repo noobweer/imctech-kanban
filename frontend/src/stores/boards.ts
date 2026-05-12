@@ -1,140 +1,95 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Board, BoardMember } from '@/types/board'
+import type { Board } from '@/types/board'
+import { boardsApi, type CreateBoardData, type UpdateBoardData } from '@/api/boards'
 
 export const useBoardsStore = defineStore('boards', () => {
-  const boards = ref<Board[]>([
-    {
-      id: '1',
-      title: 'Strategy Roadmap',
-      category: 'Infrastructure Development',
-      dueDate: '2026-11-24',
-      progress: 65,
-      members: [
-        { username: 'alice', name: 'Alice Johnson', avatar: 'https://i.pravatar.cc/150?img=1' },
-        { username: 'bob', name: 'Bob Smith', avatar: 'https://i.pravatar.cc/150?img=2' },
-        { username: 'charlie', name: 'Charlie Brown' },
-        { username: 'diana', name: 'Diana Prince' },
-        { username: 'eve', name: 'Eve Wilson' },
-      ],
-      createdBy: 'mentor1',
-      archived: false,
-    },
-    {
-      id: '2',
-      title: 'API Integration',
-      category: 'Product Engineering',
-      dueDate: '2026-12-05',
-      progress: 42,
-      members: [
-        { username: 'frank', name: 'Frank Miller', avatar: 'https://i.pravatar.cc/150?img=3' },
-        { username: 'grace', name: 'Grace Lee' },
-        { username: 'henry', name: 'Henry Ford' },
-        { username: 'iris', name: 'Iris West' },
-        { username: 'jack', name: 'Jack Ryan' },
-        { username: 'kate', name: 'Kate Bishop' },
-        { username: 'leo', name: 'Leo Valdez' },
-        { username: 'mia', name: 'Mia Wallace' },
-        { username: 'noah', name: 'Noah Calhoun' },
-      ],
-      createdBy: 'mentor1',
-      archived: false,
-    },
-    {
-      id: '3',
-      title: 'Q4 Marketing',
-      category: 'Growth & Operations',
-      dueDate: '2026-12-20',
-      progress: 88,
-      members: [
-        { username: 'olivia', name: 'Olivia Pope', avatar: 'https://i.pravatar.cc/150?img=4' },
-        { username: 'peter', name: 'Peter Parker', avatar: 'https://i.pravatar.cc/150?img=5' },
-        { username: 'quinn', name: 'Quinn Fabray' },
-        { username: 'rachel', name: 'Rachel Green' },
-        { username: 'sam', name: 'Sam Winchester' },
-        { username: 'tina', name: 'Tina Cohen-Chang' },
-      ],
-      createdBy: 'mentor1',
-      archived: false,
-    },
-    {
-      id: '4',
-      title: 'Design System',
-      category: 'UI/UX Standards',
-      dueDate: '2026-10-30',
-      progress: 15,
-      members: [
-        { username: 'uma', name: 'Uma Thurman', avatar: 'https://i.pravatar.cc/150?img=6' },
-        { username: 'victor', name: 'Victor Stone' },
-        { username: 'wendy', name: 'Wendy Darling' },
-      ],
-      createdBy: 'mentor1',
-      archived: false,
-    },
-  ])
-
+  const boards = ref<Board[]>([])
   const loading = ref(false)
   const activeTab = ref<'active' | 'archived'>('active')
   const searchQuery = ref('')
 
   const filteredBoards = computed(() => {
-    let result = boards.value.filter((board) => {
-      const matchesTab = activeTab.value === 'active' ? !board.archived : board.archived
+    if (!Array.isArray(boards.value)) return []
+    return boards.value.filter((board) => {
+      const matchesTab = board.status === activeTab.value
       const matchesSearch =
         searchQuery.value === '' ||
-        board.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        board.category.toLowerCase().includes(searchQuery.value.toLowerCase())
+        board.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        board.project_name.toLowerCase().includes(searchQuery.value.toLowerCase())
       return matchesTab && matchesSearch
     })
-    return result
   })
 
   async function fetchBoards() {
     loading.value = true
     try {
-      // TODO: API call when backend ready
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const response = await boardsApi.getBoards()
+      // Backend @paginate returns { items: [], count: n }
+      if (response && typeof response === 'object' && 'items' in response) {
+        boards.value = (response as any).items
+      } else if (Array.isArray(response)) {
+        boards.value = response
+      } else {
+        boards.value = []
+      }
+    } catch (error) {
+      console.error('Failed to fetch boards:', error)
+      boards.value = []
     } finally {
       loading.value = false
     }
   }
 
-  function createBoard() {
-    // TODO: API call when backend ready
-    console.log('Create board clicked')
-  }
-
-  function updateBoard(id: string, updates: Partial<Board>) {
-    const board = boards.value.find((b) => b.id === id)
-    if (board) {
-      Object.assign(board, updates)
+  async function createBoard(data: CreateBoardData) {
+    loading.value = true
+    try {
+      const newBoard = await boardsApi.createBoard(data)
+      boards.value.unshift(newBoard)
+      return newBoard
+    } catch (error) {
+      console.error('Failed to create board:', error)
+      throw error
+    } finally {
+      loading.value = false
     }
   }
 
-  function archiveBoard(id: string) {
-    updateBoard(id, { archived: true })
-  }
-
-  function restoreBoard(id: string) {
-    updateBoard(id, { archived: false })
-  }
-
-  function deleteBoard(id: string) {
-    boards.value = boards.value.filter((b) => b.id !== id)
-  }
-
-  function addBoardMember(boardId: string, member: BoardMember) {
-    const board = boards.value.find((b) => b.id === boardId)
-    if (board && !board.members.find((m) => m.username === member.username)) {
-      board.members.push(member)
+  async function updateBoard(id: string, updates: UpdateBoardData) {
+    try {
+      const updatedBoard = await boardsApi.updateBoard(id, updates)
+      const index = boards.value.findIndex((b) => b.id === id)
+      if (index !== -1) {
+        boards.value[index] = updatedBoard
+      }
+    } catch (error) {
+      console.error('Failed to update board:', error)
+      throw error
     }
   }
 
-  function removeBoardMember(boardId: string, username: string) {
-    const board = boards.value.find((b) => b.id === boardId)
-    if (board) {
-      board.members = board.members.filter((m) => m.username !== username)
+  async function archiveBoard(id: string) {
+    // Backend DELETE archives the board
+    try {
+      await boardsApi.deleteBoard(id)
+      const board = boards.value.find((b) => b.id === id)
+      if (board) {
+        board.status = 'archived'
+      }
+    } catch (error) {
+      console.error('Failed to archive board:', error)
+      throw error
     }
+  }
+
+  async function restoreBoard(id: string) {
+    await updateBoard(id, { status: 'active' })
+  }
+
+  async function deleteBoard(id: string) {
+    // If backend only supports archiving via DELETE, we might need a separate endpoint for hard delete
+    // For now, let's treat it as archive per API docs
+    await archiveBoard(id)
   }
 
   return {
@@ -149,7 +104,5 @@ export const useBoardsStore = defineStore('boards', () => {
     archiveBoard,
     restoreBoard,
     deleteBoard,
-    addBoardMember,
-    removeBoardMember,
   }
 })

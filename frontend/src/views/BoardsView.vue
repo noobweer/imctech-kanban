@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Plus, LayoutDashboard, CheckSquare, Menu, Settings } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
@@ -13,6 +13,10 @@ const boardsStore = useBoardsStore()
 
 const isMentor = computed(() => authStore.user?.role === 'mentor')
 const hasBoards = computed(() => boardsStore.filteredBoards.length > 0)
+
+onMounted(() => {
+  boardsStore.fetchBoards()
+})
 
 function handleCreateBoard() {
   router.push('/boards/create')

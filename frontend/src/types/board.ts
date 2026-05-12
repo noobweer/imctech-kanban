@@ -1,12 +1,17 @@
 export interface Board {
   id: string
-  title: string
-  category: string
-  dueDate: string
-  progress: number
-  members: BoardMember[]
-  createdBy: string
-  archived?: boolean
+  name: string
+  description?: string
+  project_id: string
+  project_name: string
+  owner_username: string
+  members: string[]
+  status: 'active' | 'archived'
+  tasks_total: number
+  tasks_done: number
+  progress_percent: number
+  created_at: string
+  updated_at: string
 }
 
 export interface BoardMember {

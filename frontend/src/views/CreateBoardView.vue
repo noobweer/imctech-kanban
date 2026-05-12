@@ -13,8 +13,10 @@ import {
 } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
+import { useBoardsStore } from '@/stores/boards'
 
 const router = useRouter()
+const boardsStore = useBoardsStore()
 
 const boardName = ref('')
 const boardDescription = ref('')
@@ -26,6 +28,7 @@ const columns = ref([
 
 const draggedColumnId = ref<string | null>(null)
 const dropTargetId = ref<string | null>(null)
+const loading = ref(false)
 
 let nextColumnId = 5
 
@@ -61,7 +64,9 @@ function handleDrop(event: DragEvent, targetColumnId: string) {
   const targetIndex = columns.value.findIndex((c) => c.id === targetColumnId)
 
   const [removed] = columns.value.splice(draggedIndex, 1)
-  columns.value.splice(targetIndex, 0, removed)
+  if (removed) {
+    columns.value.splice(targetIndex, 0, removed)
+  }
 }
 
 function handleDragEnd() {
@@ -73,13 +78,21 @@ function handleCancel() {
   router.back()
 }
 
-function handleCreate() {
-  console.log('Create board:', {
-    name: boardName.value,
-    description: boardDescription.value,
-    columns: columns.value,
-  })
-  // TODO: API call when backend ready
+async function handleCreate() {
+  if (!boardName.value.trim()) return
+
+  loading.value = true
+  try {
+    await boardsStore.createBoard({
+      name: boardName.value.trim(),
+      description: boardDescription.value.trim(),
+    })
+    router.push('/boards')
+  } catch (error) {
+    console.error('Failed to create board:', error)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -152,7 +165,7 @@ function handleCreate() {
               <div class="md:w-3/4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-medium text-neutral-badge-text mb-2">
-                    Project Name
+                    Board Name
                   </label>
                   <input
                     v-model="boardName"
@@ -178,8 +191,14 @@ function handleCreate() {
 
           <!-- Section 2: Board Structure -->
           <section
-            class="bg-white rounded-xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-border-gray"
+            class="bg-white rounded-xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-border-gray relative overflow-hidden"
           >
+            <!-- Overlay for Coming Soon -->
+            <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+              <div class="bg-primary-container text-white px-4 py-2 rounded-lg font-bold shadow-lg">
+                Coming Soon (Task 3)
+              </div>
+            </div>
             <div class="flex justify-between items-center mb-4">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-purple-subtle rounded-lg text-primary-container">
@@ -266,6 +285,7 @@ function handleCreate() {
                 variant="primary"
                 size="sm"
                 class="flex-1 md:flex-none"
+                :loading="loading"
                 @click="handleCreate"
               >
                 Create Board

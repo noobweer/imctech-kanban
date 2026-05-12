@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
       localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
 
-      user.value = await authApi.getCurrentUser(tokens.access)
+      user.value = await authApi.getCurrentUser()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Login failed'
       throw e
@@ -67,14 +67,10 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken) return
 
     try {
-      user.value = await authApi.getCurrentUser(accessToken)
+      user.value = await authApi.getCurrentUser()
     } catch (e) {
-      try {
-        const newToken = await refreshAccessToken()
-        user.value = await authApi.getCurrentUser(newToken)
-      } catch {
-        logout()
-      }
+      // onResponseError already tried refresh, if we're here - it failed
+      logout()
     }
   }
 

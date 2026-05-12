@@ -6,12 +6,16 @@ from ninja_jwt.authentication import JWTAuth
 from .models import UserProfile
 from .schemas import RegisterSchema, UserOutSchema, UserUpdateSchema
 from typing import List
+from pb.api import router as pb_router
 
 
 api = NinjaExtraAPI()
 
 # JWT token endpoints
 api.register_controllers(NinjaJWTDefaultController)
+
+# Projects and Boards router
+api.add_router("/", pb_router)
 
 
 def user_to_schema(user: User) -> UserOutSchema:
