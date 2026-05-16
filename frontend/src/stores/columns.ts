@@ -6,6 +6,7 @@ import { columnsApi } from '@/api/columns'
 export const useColumnsStore = defineStore('columns', () => {
   const columns = ref<Column[]>([])
   const loading = ref(false)
+  const currentBoardId = ref<string | null>(null)
 
   const activeColumns = computed(() => {
     return [...columns.value]
@@ -13,22 +14,58 @@ export const useColumnsStore = defineStore('columns', () => {
       .sort((a, b) => a.position - b.position)
   })
 
-  async function fetchColumns(boardId: string) {
-    loading.value = true
+  let pollingIntervalId: ReturnType<typeof setInterval> | null = null
+
+  async function fetchColumns(boardId: string, silent = false) {
+    // Stale-While-Revalidate logic: 
+    // If we're on the same board and have data, don't show loading state
+    const isSameBoard = currentBoardId.value === boardId
+    const hasData = columns.value.length > 0
+    
+    if (!silent && (!isSameBoard || !hasData)) {
+      loading.value = true
+    }
+    
+    // Clear data only if navigating to a DIFFERENT board
+    if (!isSameBoard) {
+      columns.value = []
+      currentBoardId.value = boardId
+    }
+
     try {
       const response = await columnsApi.getBoardColumns(boardId)
+      let newColumns: Column[] = []
+      
       if (response && typeof response === 'object' && 'items' in response) {
-        columns.value = response.items
+        newColumns = response.items
       } else if (Array.isArray(response)) {
-        columns.value = response
-      } else {
-        columns.value = []
+        newColumns = response
+      }
+
+      // Only update if we haven't switched boards in the meantime
+      if (currentBoardId.value === boardId) {
+        columns.value = newColumns
       }
     } catch (error) {
       console.error('Failed to fetch columns:', error)
-      columns.value = []
+      // On error, only clear if we didn't have stale data
+      if (!isSameBoard) columns.value = []
     } finally {
       loading.value = false
+    }
+  }
+
+  function startPolling(boardId: string, intervalMs = 10000) {
+    stopPolling() // Clear existing to avoid duplicates
+    pollingIntervalId = setInterval(() => {
+      fetchColumns(boardId, true)
+    }, intervalMs)
+  }
+
+  function stopPolling() {
+    if (pollingIntervalId) {
+      clearInterval(pollingIntervalId)
+      pollingIntervalId = null
     }
   }
 
@@ -111,5 +148,7 @@ export const useColumnsStore = defineStore('columns', () => {
     updateColumn,
     moveColumn,
     archiveColumn,
+    startPolling,
+    stopPolling,
   }
 })

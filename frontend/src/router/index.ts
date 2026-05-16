@@ -27,9 +27,20 @@ const router = createRouter({
     },
     {
       path: '/boards/:id',
-      name: 'board-detail',
-      component: () => import('@/views/BoardDetailView.vue'),
+      component: () => import('@/views/BoardLayoutView.vue'),
       meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'board-detail',
+          component: () => import('@/views/BoardDetailView.vue'),
+        },
+        {
+          path: 'backlog',
+          name: 'board-backlog',
+          component: () => import('@/views/BacklogTasksView.vue'),
+        },
+      ],
     },
   ],
 })

@@ -38,7 +38,7 @@ const sizeClasses = {
   <button
     :type="type"
     :class="[
-      'rounded-xl font-semibold transition-all cursor-pointer',
+      'inline-flex items-center justify-center rounded-xl font-semibold transition-all cursor-pointer whitespace-nowrap',
       variantClasses[variant],
       sizeClasses[size],
       !disabled && variantHoverClasses[variant],

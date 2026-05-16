@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, Plus, Layout, PieChart, MessageSquare } from 'lucide-vue-next'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { Plus, Layout } from 'lucide-vue-next'
 import { useColumnsStore } from '@/stores/columns'
-import { boardsApi } from '@/api/boards'
 import type { Board } from '@/types/board'
 import type { Task } from '@/types/task'
 import Button from '@/components/ui/Button.vue'
 import ColumnCard from '@/components/features/ColumnCard.vue'
-import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
 
-const route = useRoute()
-const router = useRouter()
+const props = defineProps<{
+  board: Board | null
+  loadingBoard: boolean
+}>()
+
 const columnsStore = useColumnsStore()
-
-const boardId = route.params.id as string
-const board = ref<Board | null>(null)
-const loading = ref(true)
+const loadingColumns = ref(columnsStore.columns.length === 0)
 
 // Mock tasks for High Fidelity demonstration
 const mockTasks = ref<Task[]>([
@@ -78,16 +75,19 @@ const mockTasks = ref<Task[]>([
   }
 ])
 
-async function loadData() {
-  loading.value = true
+async function loadColumns() {
+  if (!props.board) return
+  
+  // If we already have columns, load silently in the background
+  const isSilent = columnsStore.columns.length > 0
+  
+  if (!isSilent) loadingColumns.value = true
   try {
-    board.value = await boardsApi.getBoard(boardId)
-    await columnsStore.fetchColumns(boardId)
-  } catch (error) {
-    console.error('Failed to load board details:', error)
-    router.push('/boards')
+    await columnsStore.fetchColumns(props.board.id, isSilent)
+    // Start polling after successful initial fetch
+    columnsStore.startPolling(props.board.id)
   } finally {
-    loading.value = false
+    loadingColumns.value = false
   }
 }
 
@@ -101,15 +101,15 @@ function getTasksForColumn(columnName: string) {
 }
 
 async function handleCreateDefaultColumns() {
-  if (!board.value) return
-  await columnsStore.createDefaultColumns(board.value.id)
+  if (!props.board) return
+  await columnsStore.createDefaultColumns(props.board.id)
 }
 
 async function handleCreateColumn() {
-  if (!board.value) return
+  if (!props.board) return
   const name = prompt('Enter column name')
   if (name?.trim()) {
-    await columnsStore.createColumn(board.value.id, { name: name.trim() })
+    await columnsStore.createColumn(props.board.id, { name: name.trim() })
   }
 }
 
@@ -136,114 +136,64 @@ async function handleMoveColumn(id: string, direction: 'left' | 'right') {
 
 function handleAddTask(columnId: string) {
   console.log('Add task to column:', columnId)
-  // To be implemented with task store
 }
 
-onMounted(loadData)
+watch(() => props.board, (newBoard) => {
+  if (newBoard) {
+    loadColumns()
+  }
+}, { immediate: true })
+
+onMounted(loadColumns)
+onUnmounted(columnsStore.stopPolling)
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-white overflow-hidden">
-    <!-- Main Header (Styled to match BoardsView) -->
-    <header class="bg-white border-b border-border-gray sticky top-0 z-50">
-      <div class="flex justify-between items-center w-full px-6 py-3 max-w-full">
-        <!-- Left Section: Back + Title -->
-        <div class="flex items-center gap-4 flex-1">
-          <button 
-            aria-label="Go back" 
-            class="p-2 hover:bg-surface-container-low rounded-full transition-colors cursor-pointer text-neutral-gray hover:text-primary-container"
-            @click="router.push('/boards')"
-          >
-            <ChevronLeft :size="20" />
-          </button>
-          <div v-if="board" class="min-w-0">
-            <h1 class="text-xl font-bold leading-tight text-text-primary truncate">{{ board.name }}</h1>
-            <p class="text-xs text-text-secondary truncate">{{ board.project_name }}</p>
-          </div>
-          <div v-else-if="loading" class="animate-pulse flex flex-col gap-2">
-            <div class="h-6 w-48 bg-surface-container-high rounded"></div>
-            <div class="h-3 w-32 bg-surface-container rounded"></div>
-          </div>
-        </div>
-
-        <!-- Right Section: Actions + Profile -->
-        <div class="flex items-center justify-end gap-3 flex-1">
-          <button class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
-            Settings
-          </button>
-          <button class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
-            Members
-          </button>
-          <div class="ml-2">
-            <UserProfileDropdown />
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Secondary Navigation -->
-    <nav class="px-6 border-b border-border-gray flex items-center justify-between shrink-0">
-      <div class="flex gap-8">
-        <a class="py-4 font-medium border-b-2 border-primary-container text-primary-container text-sm transition-colors" href="#">Board</a>
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">Backlog</a>
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">Archive</a>
-      </div>
-      <div class="flex gap-8">
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">
-          <span class="flex items-center gap-2"><PieChart :size="16" /> Overview</span>
-        </a>
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">
-          <span class="flex items-center gap-2"><MessageSquare :size="16" /> Comments</span>
-        </a>
-      </div>
-    </nav>
-
-    <!-- Column Canvas -->
-    <main class="flex-1 overflow-x-auto p-6 bg-[#fcfcfc] custom-scrollbar-x">
-      <div v-if="loading" class="flex gap-6 max-w-[1600px] mx-auto">
-        <div v-for="i in 4" :key="i" class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"></div>
-      </div>
+  <!-- Column Canvas -->
+  <main v-dragscroll class="h-full overflow-x-auto p-6 bg-[#fcfcfc] custom-scrollbar-x cursor-grab active:cursor-grabbing">
+    <div v-if="loadingBoard || loadingColumns" class="flex gap-6 max-w-[1600px] mx-auto">
+      <div v-for="i in 4" :key="i" class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"></div>
+    </div>
+    
+    <div v-else-if="columnsStore.activeColumns.length > 0" class="flex items-start gap-6 pb-4 min-h-full max-w-[1600px] mx-auto">
+      <ColumnCard 
+        v-for="(column, index) in columnsStore.activeColumns" 
+        :key="column.id"
+        :column="column"
+        :tasks="getTasksForColumn(column.name)"
+        :is-first="index === 0"
+        :is-last="index === columnsStore.activeColumns.length - 1"
+        @move-left="handleMoveColumn($event, 'left')"
+        @move-right="handleMoveColumn($event, 'right')"
+        @rename="handleRenameColumn"
+        @archive="handleArchiveColumn"
+        @add-task="handleAddTask"
+      />
       
-      <div v-else-if="columnsStore.activeColumns.length > 0" class="flex items-start gap-6 pb-4 min-h-full max-w-[1600px] mx-auto">
-        <ColumnCard 
-          v-for="(column, index) in columnsStore.activeColumns" 
-          :key="column.id"
-          :column="column"
-          :tasks="getTasksForColumn(column.name)"
-          :is-first="index === 0"
-          :is-last="index === columnsStore.activeColumns.length - 1"
-          @move-left="handleMoveColumn($event, 'left')"
-          @move-right="handleMoveColumn($event, 'right')"
-          @rename="handleRenameColumn"
-          @archive="handleArchiveColumn"
-          @add-task="handleAddTask"
-        />
-        
-        <!-- Add Column Placeholder -->
-        <button 
-          class="w-80 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
-          @click="handleCreateColumn"
-        >
-          <Plus :size="20" />
-          Add Another Column
-        </button>
-      </div>
+      <!-- Add Column Placeholder -->
+      <button 
+        class="w-80 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
+        @click="handleCreateColumn"
+      >
+        <Plus :size="20" />
+        Add Another Column
+      </button>
+    </div>
 
-      <div v-else class="h-full flex flex-col items-center justify-center text-center">
-        <div class="bg-surface-white p-12 rounded-2xl shadow-xl border border-border-gray max-w-lg">
-          <div class="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6">
-            <Layout :size="40" class="text-primary-container opacity-40" />
-          </div>
-          <h2 class="text-2xl font-bold text-text-primary mb-3">No columns yet</h2>
-          <p class="text-text-secondary mb-8 leading-relaxed">Your board is empty. Start by loading default columns or design your custom workflow from scratch.</p>
-          <div class="flex items-center justify-center gap-4">
-            <Button variant="primary" @click="handleCreateDefaultColumns">Load Defaults</Button>
-            <Button variant="outlined" @click="handleCreateColumn">Create Custom</Button>
-          </div>
+    <div v-else class="h-full flex flex-col items-center justify-center text-center">
+      <div class="bg-surface-white p-12 rounded-2xl shadow-xl border border-border-gray max-w-lg">
+        <div class="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6">
+          <Layout :size="40" class="text-primary-container opacity-40" />
+        </div>
+        <h2 class="text-2xl font-bold text-text-primary mb-3">No columns yet</h2>
+        <p class="text-text-secondary mb-8 leading-relaxed">Your board is empty. Start by loading default columns or design your custom workflow from scratch.</p>
+        <div class="flex items-center justify-center gap-4">
+          <Button variant="primary" @click="handleCreateDefaultColumns">Load Defaults</Button>
+          <Button variant="outlined" @click="handleCreateColumn">Create Custom</Button>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
 </template>
 
 <style scoped>
