@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Plus, MoreVertical, ChevronLeft, ChevronRight, Archive } from 'lucide-vue-next'
 import type { Column } from '@/types/column'
-import Button from '@/components/ui/Button.vue'
-import Icon from '@/components/ui/Icon.vue'
+import type { Task } from '@/types/task'
 import Input from '@/components/ui/Input.vue'
+import TaskCard from '@/components/features/TaskCard.vue'
+import Dropdown from '@/components/ui/Dropdown.vue'
+import DropdownItem from '@/components/ui/DropdownItem.vue'
 
 const props = defineProps<{
   column: Column
+  tasks?: Task[]
   isFirst: boolean
   isLast: boolean
 }>()
@@ -16,13 +20,14 @@ const emit = defineEmits<{
   (e: 'move-right', id: string): void
   (e: 'rename', id: string, name: string): void
   (e: 'archive', id: string): void
+  (e: 'add-task', columnId: string): void
 }>()
 
 const isEditing = ref(false)
 const editedName = ref(props.column.name)
 
 function startEditing() {
-  editedName.ref = props.column.name
+  editedName.value = props.column.name
   isEditing.value = true
 }
 
@@ -35,11 +40,16 @@ function handleRename() {
 </script>
 
 <template>
-  <div class="flex flex-col bg-gray-50 rounded-lg w-72 min-h-[400px] border border-gray-200">
-    <div class="p-3 flex items-center justify-between group">
+  <section class="flex flex-col w-80 min-h-[500px] shrink-0">
+    <!-- Column Header -->
+    <div class="mb-4 px-1 flex items-center justify-between group/header">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">
-        <h3 class="font-semibold text-gray-900 truncate" @click="startEditing">{{ column.name }}</h3>
-        <span class="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-full">{{ column.sum_tasks }}</span>
+        <h2 class="font-bold text-gray-700 truncate cursor-pointer" @click="startEditing">
+          {{ column.name }}
+        </h2>
+        <span class="bg-surface-container-high text-xs font-bold px-2 py-0.5 rounded-full text-text-secondary">
+          {{ tasks?.length || 0 }}
+        </span>
       </div>
       <div v-else class="flex-1 min-w-0">
         <Input 
@@ -52,45 +62,72 @@ function handleRename() {
         />
       </div>
 
-      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div class="flex items-center gap-1">
+        <!-- Quick Add Task -->
         <button 
-          v-if="!isFirst" 
-          class="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500"
-          title="Move left"
-          @click="emit('move-left', column.id)"
+          class="p-1 hover:bg-surface-container-high rounded transition-colors text-neutral-gray hover:text-primary-container"
+          title="Add task"
+          @click="emit('add-task', column.id)"
         >
-          <Icon name="chevron-left" size="14" />
+          <Plus :size="20" />
         </button>
-        <button 
-          v-if="!isLast" 
-          class="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500"
-          title="Move right"
-          @click="emit('move-right', column.id)"
-        >
-          <Icon name="chevron-right" size="14" />
-        </button>
-        <button 
-          class="p-1 hover:bg-red-100 hover:text-red-600 rounded transition-colors text-gray-500"
-          title="Archive column"
-          @click="emit('archive', column.id)"
-        >
-          <Icon name="archive" size="14" />
-        </button>
+
+        <!-- Column Actions Menu -->
+        <Dropdown position="bottom-right">
+          <template #trigger>
+            <button class="p-1 hover:bg-surface-container-high rounded transition-colors text-neutral-gray hover:text-primary-container">
+              <MoreVertical :size="20" />
+            </button>
+          </template>
+          
+          <div class="py-1">
+            <DropdownItem v-if="!isFirst" icon="chevron-left" @click="emit('move-left', column.id)">
+              Move Left
+            </DropdownItem>
+            <DropdownItem v-if="!isLast" icon="chevron-right" @click="emit('move-right', column.id)">
+              Move Right
+            </DropdownItem>
+            <div v-if="!isFirst || !isLast" class="my-1 border-t border-border-gray/50"></div>
+            <DropdownItem icon="archive" variant="danger" @click="emit('archive', column.id)">
+              Archive Column
+            </DropdownItem>
+          </div>
+        </Dropdown>
       </div>
     </div>
 
-    <div class="flex-1 p-3 flex flex-col gap-3">
-      <!-- Tasks will be rendered here in future tasks -->
-      <div class="border-2 border-dashed border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center text-gray-400 text-sm italic">
+    <!-- Task List -->
+    <div class="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-300px)] custom-scrollbar">
+      <template v-if="tasks && tasks.length > 0">
+        <TaskCard 
+          v-for="task in tasks" 
+          :key="task.id" 
+          :task="task" 
+        />
+      </template>
+      <div 
+        v-else 
+        class="border-2 border-dashed border-border-gray/50 rounded-xl p-8 flex flex-col items-center justify-center text-text-secondary text-sm italic text-center"
+      >
+        <Plus :size="24" class="mb-2 opacity-20" />
         No tasks yet
       </div>
     </div>
-
-    <div class="p-2 border-t border-gray-100">
-      <Button variant="ghost" size="sm" block class="justify-start gap-2 text-gray-500 font-normal">
-        <Icon name="plus" size="14" />
-        Add Task
-      </Button>
-    </div>
-  </div>
+  </section>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-gray);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+</style>

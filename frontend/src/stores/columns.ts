@@ -78,8 +78,9 @@ export const useColumnsStore = defineStore('columns', () => {
       await columnsApi.moveColumn(id, { position })
       // For simplicity, we re-fetch all columns of the board after move
       // to ensure positions are in sync with backend logic.
-      if (columns.value.length > 0) {
-        await fetchColumns(columns.value[0].board_id)
+      const boardId = columns.value[0]?.board_id
+      if (boardId) {
+        await fetchColumns(boardId)
       }
     } catch (error) {
       console.error('Failed to move column:', error)

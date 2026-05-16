@@ -4,7 +4,7 @@ Quick reference for migrating Stitch screens to Vue3.
 
 ## Critical Rules
 
-1. **Get actual HTML from Stitch** - never assume structure from screenshots
+1. **NEVER use `mcp_stitch_get_screen` to fetch HTML** - it returns "OK" without code. Always ask the user for raw HTML.
 2. **Copy exact HTML structure** - match classes, nesting, spacing exactly
 3. **Use lucide-vue-next for icons** - Material Symbols cause DOMException errors
 4. **CSS custom properties for Tailwind 4** - no @theme syntax, use :root vars

@@ -1,19 +1,19 @@
 <script setup lang="ts">
+import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
+import Button from '@/components/ui/Button.vue'
+import { useBoardsStore } from '@/stores/boards'
+import {
+  ChevronLeft,
+  Columns,
+  FileEdit,
+  GripVertical,
+  Info,
+  Plus,
+  PlusCircle,
+  Trash2,
+} from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  ArrowLeft,
-  Plus,
-  FileEdit,
-  Columns,
-  PlusCircle,
-  GripVertical,
-  Trash2,
-  Info,
-} from 'lucide-vue-next'
-import Button from '@/components/ui/Button.vue'
-import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
-import { useBoardsStore } from '@/stores/boards'
 
 const router = useRouter()
 const boardsStore = useBoardsStore()
@@ -75,7 +75,7 @@ function handleDragEnd() {
 }
 
 function handleCancel() {
-  router.back()
+  router.push('/boards')
 }
 
 async function handleCreate() {
@@ -103,56 +103,39 @@ async function handleCreate() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
-    <!-- Header -->
+  <div class="min-h-screen bg-white">
+    <!-- Main Header (Styled to match BoardDetailView) -->
     <header class="bg-white border-b border-border-gray sticky top-0 z-50">
-      <!-- Mobile Layout -->
-      <div class="md:hidden flex items-center justify-between px-4 py-3">
-        <button
-          class="p-2 -ml-2 text-neutral-gray hover:text-primary-container transition-colors"
-          @click="handleCancel"
-        >
-          <ArrowLeft :size="24" />
-        </button>
-        <h1 class="font-['Space_Grotesk'] text-xl font-bold tracking-tight text-primary-container">
-          New Board
-        </h1>
-        <div class="w-10"></div>
-      </div>
-
-      <!-- Desktop Layout -->
-      <div class="hidden md:flex justify-between items-center w-full px-6 py-3">
-        <div class="flex items-center gap-4">
+      <div class="flex justify-between items-center w-full px-6 py-3 max-w-full">
+        <!-- Left Section: Back + Title -->
+        <div class="flex items-center gap-4 flex-1">
           <button
-            class="p-2 -ml-2 text-neutral-gray hover:text-primary-container transition-colors cursor-pointer"
+            aria-label="Go back"
+            class="p-2 hover:bg-surface-container-low rounded-full transition-colors cursor-pointer text-neutral-gray hover:text-primary-container"
             @click="handleCancel"
           >
-            <ArrowLeft :size="24" />
+            <ChevronLeft :size="20" />
           </button>
-          <h1 class="font-['Space_Grotesk'] text-xl font-bold tracking-tight text-primary-container">
-            New Board
-          </h1>
+          <div class="min-w-0">
+            <h1 class="text-xl font-bold leading-tight text-text-primary truncate">
+              Initialize New Board
+            </h1>
+            <p class="text-xs text-text-secondary truncate">Create a new workspace</p>
+          </div>
         </div>
 
-        <div class="flex items-center justify-end gap-6 flex-1">
-          <UserProfileDropdown />
+        <!-- Right Section: Actions + Profile -->
+        <div class="flex items-center justify-end gap-3 flex-1">
+          <div class="ml-2">
+            <UserProfileDropdown />
+          </div>
         </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="pt-16 pb-24 md:pb-10 flex items-center justify-center p-4">
+    <main class="pt-10 pb-24 md:pb-10 flex items-center justify-center p-4">
       <div class="max-w-[1000px] w-full mx-auto">
-        <!-- Compact Header -->
-        <header class="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <h1 class="font-['Space_Grotesk'] text-2xl md:text-3xl text-on-background font-bold">
-            Initialize New Board
-          </h1>
-          <p class="text-neutral-gray text-sm md:text-right">
-            Define workspace structure, columns, and metadata to begin task tracking.
-          </p>
-        </header>
-
         <div class="space-y-4">
           <!-- Section 1: Identity -->
           <section
@@ -234,8 +217,12 @@ async function handleCreate() {
                 draggable="true"
                 :class="[
                   'flex-shrink-0 w-48 bg-surface-container-low border rounded-xl p-3 group transition-all duration-200',
-                  draggedColumnId === column.id ? 'opacity-50 cursor-grabbing scale-95 border-border-gray' : 'cursor-grab border-border-gray',
-                  dropTargetId === column.id && draggedColumnId !== column.id ? 'border-primary-container border-2 shadow-lg' : '',
+                  draggedColumnId === column.id
+                    ? 'opacity-50 cursor-grabbing scale-95 border-border-gray'
+                    : 'cursor-grab border-border-gray',
+                  dropTargetId === column.id && draggedColumnId !== column.id
+                    ? 'border-primary-container border-2 shadow-lg'
+                    : '',
                 ]"
                 @dragstart="handleDragStart(column.id)"
                 @dragover="handleDragOver($event, column.id)"

@@ -62,5 +62,6 @@ bun run dev
   - `bun run type-check` (uses `vue-tsc`)
 
 ### General
+- **Terminal (Windows):** Always activate and strictly follow the `powershell-windows` skill for any shell commands. This project runs on Windows; standard bash operators like `&&` will fail. Use PowerShell-native patterns (like `;` or sequential commands) and ensure cmdlet calls are wrapped in parentheses when using logical operators.
 - **Environment Variables:** Managed via `.env` file in the root. Use `.env.example` as a template.
 - **Language:** Code and comments are primarily in English, but Russian documentation/comments may exist (e.g., in `README.md`).
