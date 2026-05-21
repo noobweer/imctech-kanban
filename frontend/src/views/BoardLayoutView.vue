@@ -5,6 +5,7 @@ import { ChevronLeft, PieChart, MessageSquare } from 'lucide-vue-next'
 import { boardsApi } from '@/api/boards'
 import type { Board } from '@/types/board'
 import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
+import BoardMembersModal from '@/components/features/BoardMembersModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +13,7 @@ const router = useRouter()
 const boardId = ref(route.params.id as string)
 const board = ref<Board | null>(null)
 const loading = ref(true)
+const showMembersModal = ref(false)
 
 async function loadBoardData() {
   loading.value = true
@@ -65,7 +67,10 @@ onMounted(loadBoardData)
           <button class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
             Settings
           </button>
-          <button class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
+          <button
+            class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer"
+            @click="showMembersModal = true"
+          >
             Members
           </button>
           <div class="ml-2">
@@ -116,5 +121,12 @@ onMounted(loadBoardData)
     <div class="flex-1 overflow-hidden">
       <router-view v-if="board || loading" :board="board" :loading-board="loading" />
     </div>
+
+    <!-- Members Modal -->
+    <BoardMembersModal
+      v-if="board"
+      v-model="showMembersModal"
+      :board="board"
+    />
   </div>
 </template>

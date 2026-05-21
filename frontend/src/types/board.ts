@@ -17,6 +17,21 @@ export interface Board {
 export interface BoardMember {
   username: string
   name: string
-  avatar?: string
-  role?: 'Mentor' | 'Student'
+  role: string
+  is_owner: boolean
+}
+
+export interface Invite {
+  id: string
+  board_id: string
+  board_name: string
+  invite_code: string
+  invite_path: string
+  max_uses: number | null
+  used_count: number
+  expire_at: string
+  is_active: boolean
+  created_by_username: string | null
+  created_at: string
+  updated_at: string
 }

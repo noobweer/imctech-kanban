@@ -42,6 +42,12 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/join/:inviteId',
+      name: 'join-board',
+      component: () => import('@/views/JoinView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
@@ -57,7 +63,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return '/auth'
+    return { path: '/auth', query: { redirect: to.fullPath } }
   }
 
   if (to.path === '/auth' && authStore.isAuthenticated) {

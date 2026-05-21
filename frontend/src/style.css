@@ -26,6 +26,12 @@
   --color-success-green-text: #026b3f;
   --color-success-subtle: rgba(20, 158, 97, 0.16);
   --color-background: #fdf7ff;
+
+  /* Toast overrides */
+  --toastify-color-success: var(--color-success-green);
+  --toastify-font-family: 'Kraken-Product', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --toastify-color-info: var(--color-primary-container);
+  --toastify-color-error: var(--color-error);
 }
 
 /* Utility classes */

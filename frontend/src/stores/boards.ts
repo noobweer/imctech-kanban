@@ -1,13 +1,23 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Board } from '@/types/board'
+import type { Board, BoardMember, Invite } from '@/types/board'
 import { boardsApi, type CreateBoardData, type UpdateBoardData } from '@/api/boards'
+import { membersApi } from '@/api/members'
+import { invitesApi, type CreateInviteData } from '@/api/invites'
 
 export const useBoardsStore = defineStore('boards', () => {
   const boards = ref<Board[]>([])
   const loading = ref(false)
   const activeTab = ref<'active' | 'archived'>('active')
   const searchQuery = ref('')
+
+  // Members state
+  const members = ref<BoardMember[]>([])
+  const membersLoading = ref(false)
+
+  // Invite state
+  const currentInvite = ref<Invite | null>(null)
+  const inviteLoading = ref(false)
 
   const filteredBoards = computed(() => {
     if (!Array.isArray(boards.value)) return []
@@ -92,6 +102,58 @@ export const useBoardsStore = defineStore('boards', () => {
     await archiveBoard(id)
   }
 
+  // --- Members ---
+
+  async function fetchMembers(boardId: string) {
+    membersLoading.value = true
+    try {
+      members.value = await membersApi.getMembers(boardId)
+    } catch (error) {
+      console.error('Failed to fetch members:', error)
+      members.value = []
+    } finally {
+      membersLoading.value = false
+    }
+  }
+
+  async function removeMember(boardId: string, username: string) {
+    await membersApi.removeMember(boardId, username)
+    members.value = members.value.filter((m) => m.username !== username)
+  }
+
+  async function leaveBoard(boardId: string) {
+    await membersApi.leaveBoard(boardId)
+  }
+
+  // --- Invite ---
+
+  async function fetchCurrentInvite(boardId: string) {
+    inviteLoading.value = true
+    try {
+      currentInvite.value = await invitesApi.getCurrentInvite(boardId)
+    } catch (error: any) {
+      // 404 means no active invite yet — that's OK
+      if (error?.response?.status !== 404) {
+        console.error('Failed to fetch current invite:', error)
+      }
+      currentInvite.value = null
+    } finally {
+      inviteLoading.value = false
+    }
+  }
+
+  async function generateInvite(boardId: string, data: CreateInviteData) {
+    inviteLoading.value = true
+    try {
+      currentInvite.value = await invitesApi.createInvite(boardId, data)
+    } catch (error) {
+      console.error('Failed to generate invite:', error)
+      throw error
+    } finally {
+      inviteLoading.value = false
+    }
+  }
+
   return {
     boards,
     loading,
@@ -104,5 +166,16 @@ export const useBoardsStore = defineStore('boards', () => {
     archiveBoard,
     restoreBoard,
     deleteBoard,
+    // Members
+    members,
+    membersLoading,
+    fetchMembers,
+    removeMember,
+    leaveBoard,
+    // Invite
+    currentInvite,
+    inviteLoading,
+    fetchCurrentInvite,
+    generateInvite,
   }
 })

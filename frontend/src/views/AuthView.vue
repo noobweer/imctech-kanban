@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import type { LoginCredentials, SignUpData } from '@/types/auth'
 import LoginForm from '@/components/features/LoginForm.vue'
 import SignUpForm from '@/components/features/SignUpForm.vue'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const activeTab = ref<'login' | 'signup'>('signup')
@@ -13,7 +14,8 @@ const activeTab = ref<'login' | 'signup'>('signup')
 const handleLogin = async (credentials: LoginCredentials) => {
   try {
     await authStore.login(credentials)
-    router.push('/boards')
+    const redirectPath = route.query.redirect as string
+    router.push(redirectPath || '/boards')
   } catch (error) {
     console.error('Login error:', error)
   }
@@ -22,7 +24,8 @@ const handleLogin = async (credentials: LoginCredentials) => {
 const handleSignUp = async (data: SignUpData) => {
   try {
     await authStore.signUp(data)
-    router.push('/boards')
+    const redirectPath = route.query.redirect as string
+    router.push(redirectPath || '/boards')
   } catch (error) {
     console.error('Sign up error:', error)
   }
