@@ -82,6 +82,11 @@ class ColumnStatus(models.TextChoices):
     ARCHIVED = "archived", _("Archived")
 
 
+class ColumnKind(models.TextChoices):
+    BOARD = "board", _("Board")
+    BACKLOG = "backlog", _("Backlog")
+
+
 class Column(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     board = models.ForeignKey(
@@ -90,6 +95,11 @@ class Column(models.Model):
         related_name="columns",
     )
     name = models.CharField(max_length=255)
+    kind = models.CharField(
+        max_length=20,
+        choices=ColumnKind.choices,
+        default=ColumnKind.BOARD,
+    )
     position = models.PositiveIntegerField()
     status = models.CharField(
         max_length=10,
@@ -160,3 +170,56 @@ class Invite(models.Model):
 
     def __str__(self):
         return f"Invite {self.id} for {self.board.name}"
+
+
+class TaskStatus(models.TextChoices):
+    ACTIVE = "active", _("Active")
+    ARCHIVED = "archived", _("Archived")
+
+
+class Task(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    column = models.ForeignKey(
+        Column,
+        on_delete=models.CASCADE,
+        related_name="tasks",
+    )
+    title = models.CharField(max_length=255)
+    content = models.TextField(blank=True, default="")
+    priority = models.PositiveIntegerField(default=0)  # 0..3
+    deadline = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=TaskStatus.choices,
+        default=TaskStatus.ACTIVE,
+    )
+    assignees = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="assigned_tasks",
+        blank=True,
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_tasks",
+    )
+    position = models.PositiveIntegerField()
+    tags = models.JSONField(default=list, blank=True)
+    checklist = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "created_at"]
+
+    def clean(self):
+        if self.priority > 3:
+            raise ValidationError(_("Priority must be between 0 and 3."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} ({self.column.name})"
+

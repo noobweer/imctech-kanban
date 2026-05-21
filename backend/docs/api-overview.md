@@ -389,3 +389,51 @@ Leave a board as the current user.
 *   **Auth:** Required
 *   **Access:** Any member.
 *   **Condition:** Owner cannot leave.
+
+---
+
+### Task Endpoints
+
+#### GET /boards/{board_id}/tasks
+List all tasks for a board.
+*   **Auth:** Required
+*   **Access:** Owner, member, or staff.
+*   **Filters:** `status`, `column_id`, `column_kind`, `priority`, `assignee`, `tag`, `search`.
+
+#### GET /boards/{board_id}/backlog/tasks
+List tasks in the Backlog column.
+*   **Auth:** Required
+*   **Filters:** Same as above.
+
+#### GET /columns/{column_id}/tasks
+List tasks in a specific column.
+*   **Auth:** Required
+
+#### GET /tasks/{task_id}
+Get task details.
+*   **Auth:** Required
+
+#### POST /boards/{board_id}/tasks
+Create a new task. If `column_id` is omitted, creates the task in the Backlog (auto-creating the Backlog column if necessary).
+*   **Auth:** Required
+*   **Access:** Owner, member, or staff.
+
+#### POST /columns/{column_id}/tasks
+Create a new task in a specific column.
+*   **Auth:** Required
+
+#### PATCH /tasks/{task_id}
+Update task details (title, content, priority, deadline, status, column_id, tags, checklist, assignees).
+*   **Auth:** Required
+
+#### POST /tasks/{task_id}/archive
+Archive a task (soft delete).
+*   **Auth:** Required
+
+#### POST /tasks/{task_id}/restore
+Restore an archived task.
+*   **Auth:** Required
+
+#### DELETE /tasks/{task_id}
+Soft delete a task (archives it).
+*   **Auth:** Required

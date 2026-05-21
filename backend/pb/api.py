@@ -10,7 +10,7 @@ from ninja import Router, Query
 from ninja.pagination import paginate
 from ninja_jwt.authentication import JWTAuth
 
-from .models import Project, Board, BoardStatus, Column, ColumnStatus, Invite
+from .models import Project, Board, BoardStatus, Column, ColumnStatus, ColumnKind, Invite, Task, TaskStatus
 from .schemas import (
     ProjectIn,
     ProjectOut,
@@ -26,6 +26,9 @@ from .schemas import (
     InviteOut,
     InvitePublicOut,
     MemberOut,
+    TaskIn,
+    TaskUpdateIn,
+    TaskOut,
 )
 from .permissions import (
     has_project_access,
@@ -36,6 +39,22 @@ from .permissions import (
 )
 
 router = Router(tags=["Projects & Boards"])
+
+
+def recalculate_board_progress(board: Board):
+    """Recalculate board tasks_total, tasks_done, progress_percent based on active tasks in board columns."""
+    active_tasks = Task.objects.filter(
+        column__board=board,
+        column__kind=ColumnKind.BOARD,
+        status=TaskStatus.ACTIVE
+    )
+    total = active_tasks.count()
+    done = active_tasks.filter(column__name__iexact="done").count()
+    
+    board.tasks_total = total
+    board.tasks_done = done
+    board.progress_percent = int((done / total) * 100) if total > 0 else 0
+    board.save(update_fields=["tasks_total", "tasks_done", "progress_percent"])
 
 
 # --- Project Endpoints ---
@@ -192,7 +211,7 @@ def delete_board(request, board_id: uuid.UUID):
 
 @router.get("/boards/{board_id}/columns", response=List[ColumnOut], auth=JWTAuth())
 @paginate
-def list_columns(request, board_id: uuid.UUID, status: Optional[ColumnStatus] = Query(None)):
+def list_columns(request, board_id: uuid.UUID, status: Optional[ColumnStatus] = Query(None), kind: str = Query("board")):
     user = request.auth
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(user, board):
@@ -201,6 +220,8 @@ def list_columns(request, board_id: uuid.UUID, status: Optional[ColumnStatus] = 
     columns = board.columns.all()
     if status:
         columns = columns.filter(status=status)
+    if kind and kind != "all":
+        columns = columns.filter(kind=kind)
     return columns
 
 
@@ -594,3 +615,266 @@ def leave_board(request, board_id: uuid.UUID):
 
     board.members.remove(user)
     return {"success": True, "message": f"You have left the board '{board.name}'"}
+
+
+# ---------------------------------------------------------------------------
+# --- Task Endpoints ---
+# ---------------------------------------------------------------------------
+
+@router.get("/boards/{board_id}/tasks", response=List[TaskOut], auth=JWTAuth(), tags=["Tasks"])
+@paginate
+def list_tasks(
+    request, 
+    board_id: uuid.UUID,
+    status: Optional[TaskStatus] = Query(None),
+    column_id: Optional[uuid.UUID] = Query(None),
+    column_kind: Optional[str] = Query(None),
+    priority: Optional[int] = Query(None),
+    assignee: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+    search: Optional[str] = Query(None)
+):
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(user, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+
+    tasks = Task.objects.filter(column__board=board)
+    
+    if status:
+        tasks = tasks.filter(status=status)
+    if column_id:
+        tasks = tasks.filter(column_id=column_id)
+    if column_kind:
+        tasks = tasks.filter(column__kind=column_kind)
+    if priority is not None:
+        tasks = tasks.filter(priority=priority)
+    if assignee:
+        tasks = tasks.filter(assignees__username=assignee)
+    if tag:
+        tasks = tasks.filter(tags__contains=[tag])
+    if search:
+        tasks = tasks.filter(Q(title__icontains=search) | Q(content__icontains=search))
+        
+    return tasks.distinct()
+
+
+@router.get("/boards/{board_id}/backlog/tasks", response=List[TaskOut], auth=JWTAuth(), tags=["Tasks"])
+@paginate
+def list_backlog_tasks(
+    request,
+    board_id: uuid.UUID,
+    status: Optional[TaskStatus] = Query(None),
+    priority: Optional[int] = Query(None),
+    assignee: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+    search: Optional[str] = Query(None)
+):
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(user, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+
+    tasks = Task.objects.filter(column__board=board, column__kind=ColumnKind.BACKLOG)
+    
+    if status:
+        tasks = tasks.filter(status=status)
+    if priority is not None:
+        tasks = tasks.filter(priority=priority)
+    if assignee:
+        tasks = tasks.filter(assignees__username=assignee)
+    if tag:
+        tasks = tasks.filter(tags__contains=[tag])
+    if search:
+        tasks = tasks.filter(Q(title__icontains=search) | Q(content__icontains=search))
+        
+    return tasks.distinct()
+
+
+@router.get("/columns/{column_id}/tasks", response=List[TaskOut], auth=JWTAuth(), tags=["Tasks"])
+@paginate
+def list_column_tasks(request, column_id: uuid.UUID, status: Optional[TaskStatus] = Query(None)):
+    user = request.auth
+    column = get_object_or_404(Column, id=column_id)
+    if not has_board_access(user, column.board):
+        return router.api.create_response(request, {"detail": "No access to this column"}, status=403)
+
+    tasks = column.tasks.all()
+    if status:
+        tasks = tasks.filter(status=status)
+    return tasks
+
+
+@router.get("/tasks/{task_id}", response=TaskOut, auth=JWTAuth(), tags=["Tasks"])
+def get_task(request, task_id: uuid.UUID):
+    user = request.auth
+    task = get_object_or_404(Task, id=task_id)
+    if not has_board_access(user, task.column.board):
+        return router.api.create_response(request, {"detail": "No access to this task"}, status=403)
+    return task
+
+
+@router.post("/boards/{board_id}/tasks", response={201: TaskOut}, auth=JWTAuth(), tags=["Tasks"])
+def create_board_task(request, board_id: uuid.UUID, payload: TaskIn):
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(user, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+
+    with transaction.atomic():
+        if payload.column_id:
+            column = get_object_or_404(Column, id=payload.column_id, board=board)
+        else:
+            column = Column.objects.filter(board=board, kind=ColumnKind.BACKLOG, status=ColumnStatus.ACTIVE).first()
+            if not column:
+                column = Column.objects.create(
+                    board=board,
+                    name="Backlog",
+                    kind=ColumnKind.BACKLOG,
+                    status=ColumnStatus.ACTIVE,
+                    position=1
+                )
+        
+        max_pos = column.tasks.aggregate(models.Max("position"))["position__max"] or 0
+        
+        assignees = []
+        if payload.assignees:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            assignees = list(User.objects.filter(username__in=payload.assignees))
+            if len(assignees) != len(payload.assignees):
+                return router.api.create_response(request, {"detail": "One or more assignees not found"}, status=400)
+            for a in assignees:
+                if not has_board_access(a, board):
+                    return router.api.create_response(request, {"detail": f"Assignee {a.username} has no access to board"}, status=400)
+                    
+        clean_checklist = []
+        if payload.checklist:
+            for item in payload.checklist:
+                item_dict = item.dict() if hasattr(item, "dict") else item
+                if isinstance(item_dict, dict) and "title" in item_dict and isinstance(item_dict["title"], str) and item_dict["title"].strip():
+                    clean_checklist.append({"title": item_dict["title"], "is_done": item_dict.get("is_done", False)})
+                
+        task = Task.objects.create(
+            column=column,
+            title=payload.title,
+            content=payload.content or "",
+            priority=payload.priority or 0,
+            deadline=payload.deadline,
+            owner=user,
+            position=max_pos + 1,
+            tags=[t for t in payload.tags if t] if payload.tags else [],
+            checklist=clean_checklist
+        )
+        
+        if assignees:
+            task.assignees.set(assignees)
+            
+        recalculate_board_progress(board)
+        
+    return 201, task
+
+
+@router.post("/columns/{column_id}/tasks", response={201: TaskOut}, auth=JWTAuth(), tags=["Tasks"])
+def create_column_task(request, column_id: uuid.UUID, payload: TaskIn):
+    user = request.auth
+    column = get_object_or_404(Column, id=column_id)
+    if not has_board_access(user, column.board):
+        return router.api.create_response(request, {"detail": "No access to this column"}, status=403)
+
+    payload.column_id = column.id
+    return create_board_task(request, column.board.id, payload)
+
+
+@router.patch("/tasks/{task_id}", response=TaskOut, auth=JWTAuth(), tags=["Tasks"])
+def update_task(request, task_id: uuid.UUID, payload: TaskUpdateIn):
+    user = request.auth
+    task = get_object_or_404(Task, id=task_id)
+    board = task.column.board
+    
+    if not has_board_access(user, board):
+        return router.api.create_response(request, {"detail": "No permission to edit this task"}, status=403)
+
+    with transaction.atomic():
+        if payload.title is not None:
+            task.title = payload.title
+        if payload.content is not None:
+            task.content = payload.content
+        if payload.priority is not None:
+            task.priority = payload.priority
+        if payload.deadline is not None:
+            task.deadline = payload.deadline
+        if payload.status is not None:
+            task.status = payload.status
+            
+        if payload.column_id is not None and payload.column_id != task.column.id:
+            new_col = get_object_or_404(Column, id=payload.column_id, board=board)
+            task.column = new_col
+            max_pos = new_col.tasks.aggregate(models.Max("position"))["position__max"] or 0
+            task.position = max_pos + 1
+
+        if payload.tags is not None:
+            task.tags = [t for t in payload.tags if t]
+            
+        if payload.checklist is not None:
+            clean_checklist = []
+            for item in payload.checklist:
+                item_dict = item.dict() if hasattr(item, "dict") else item
+                if isinstance(item_dict, dict) and "title" in item_dict and isinstance(item_dict["title"], str) and item_dict["title"].strip():
+                    clean_checklist.append({"title": item_dict["title"], "is_done": item_dict.get("is_done", False)})
+            task.checklist = clean_checklist
+            
+        if payload.assignees is not None:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            assignees = list(User.objects.filter(username__in=payload.assignees))
+            if len(assignees) != len(payload.assignees):
+                return router.api.create_response(request, {"detail": "One or more assignees not found"}, status=400)
+            for a in assignees:
+                if not has_board_access(a, board):
+                    return router.api.create_response(request, {"detail": f"Assignee {a.username} has no access to board"}, status=400)
+            task.assignees.set(assignees)
+            
+        task.save()
+        recalculate_board_progress(board)
+
+    return task
+
+
+@router.post("/tasks/{task_id}/archive", response=TaskOut, auth=JWTAuth(), tags=["Tasks"])
+def archive_task(request, task_id: uuid.UUID):
+    user = request.auth
+    task = get_object_or_404(Task, id=task_id)
+    if not has_board_access(user, task.column.board):
+        return router.api.create_response(request, {"detail": "No access to this task"}, status=403)
+
+    task.status = TaskStatus.ARCHIVED
+    task.save()
+    recalculate_board_progress(task.column.board)
+    return task
+
+
+@router.post("/tasks/{task_id}/restore", response=TaskOut, auth=JWTAuth(), tags=["Tasks"])
+def restore_task(request, task_id: uuid.UUID):
+    user = request.auth
+    task = get_object_or_404(Task, id=task_id)
+    if not has_board_access(user, task.column.board):
+        return router.api.create_response(request, {"detail": "No access to this task"}, status=403)
+
+    task.status = TaskStatus.ACTIVE
+    task.save()
+    recalculate_board_progress(task.column.board)
+    return task
+
+
+@router.delete("/tasks/{task_id}", auth=JWTAuth(), tags=["Tasks"])
+def delete_task(request, task_id: uuid.UUID):
+    user = request.auth
+    task = get_object_or_404(Task, id=task_id)
+    if not has_board_access(user, task.column.board):
+        return router.api.create_response(request, {"detail": "No access to this task"}, status=403)
+
+    task.status = TaskStatus.ARCHIVED
+    task.save()
+    recalculate_board_progress(task.column.board)
+    return {"success": True, "message": "Task archived"}

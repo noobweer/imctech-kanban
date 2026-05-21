@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Board, Column, Invite
+from .models import Project, Board, Column, Invite, Task
 
 
 @admin.register(Project)
@@ -39,6 +39,7 @@ class ColumnAdmin(admin.ModelAdmin):
         "id",
         "name",
         "board",
+        "kind",
         "position",
         "status",
         "sum_tasks",
@@ -46,7 +47,7 @@ class ColumnAdmin(admin.ModelAdmin):
         "updated_at",
     )
     search_fields = ("name", "board__name")
-    list_filter = ("status", "created_at", "board")
+    list_filter = ("status", "kind", "created_at", "board")
     readonly_fields = ("id", "created_at", "updated_at")
     raw_id_fields = ("board",)
 
@@ -68,3 +69,32 @@ class InviteAdmin(admin.ModelAdmin):
     search_fields = ("id", "board__name", "created_by__username")
     readonly_fields = ("id", "used_count", "created_at", "updated_at")
     raw_id_fields = ("board", "created_by")
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "column",
+        "owner",
+        "status",
+        "priority",
+        "deadline",
+        "position",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = (
+        "status",
+        "priority",
+        "deadline",
+        "created_at",
+        "column",
+        "owner",
+    )
+    search_fields = ("title", "content", "owner__username", "column__name")
+    readonly_fields = ("id", "created_at", "updated_at")
+    raw_id_fields = ("column", "owner")
+    filter_horizontal = ("assignees",)
+
