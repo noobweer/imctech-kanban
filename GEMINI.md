@@ -1,6 +1,7 @@
 # Gemini CLI Context: imctech-kanban
 
 ## Project Overview
+
 A full-stack Kanban board application featuring a Django-based backend and a Vue 3 frontend. The project is containerized using Docker and uses modern package managers (`uv` for Python, `bun` for Node.js).
 
 - **Architecture:** Monorepo with `backend/` and `frontend/` directories.
@@ -11,6 +12,7 @@ A full-stack Kanban board application featuring a Django-based backend and a Vue
 ## Building and Running
 
 ### Docker (Recommended)
+
 ```bash
 # Start all services
 docker-compose up
@@ -22,6 +24,7 @@ docker-compose up --build
 ### Manual Setup
 
 #### Backend
+
 ```bash
 cd backend
 # Install dependencies
@@ -31,9 +34,11 @@ uv run python manage.py migrate
 # Start dev server
 uv run python manage.py runserver
 ```
+
 - API Docs: `http://localhost:8000/api/docs` (Swagger)
 
 #### Frontend
+
 ```bash
 cd frontend
 # Install dependencies
@@ -41,17 +46,20 @@ bun install
 # Start dev server
 bun run dev
 ```
+
 - Dev Server: `http://localhost:5173`
 
 ## Development Conventions
 
 ### Backend
+
 - **Framework:** Django with [Django Ninja](https://django-ninja.rest-framework.com/) for type-safe APIs.
 - **Authentication:** JWT-based. Logic resides in the `users` app (`users/api.py`, `users/models.py`).
 - **Migrations:** Always run `uv run python manage.py makemigrations` and `migrate` after model changes.
 - **Timezone:** `Asia/Vladivostok`.
 
 ### Frontend
+
 - **Framework:** Vue 3 with Composition API and `<script setup>`.
 - **State:** [Pinia](https://pinia.vuejs.org/) stores in `frontend/src/stores/`.
 - **API:** Centralized in `frontend/src/api/`. Uses `ofetch` with automated token refresh.
@@ -62,6 +70,6 @@ bun run dev
   - `bun run type-check` (uses `vue-tsc`)
 
 ### General
-- **Terminal (Windows):** Always activate and strictly follow the `powershell-windows` skill for any shell commands. This project runs on Windows; standard bash operators like `&&` will fail. Use PowerShell-native patterns (like `;` or sequential commands) and ensure cmdlet calls are wrapped in parentheses when using logical operators.
+
 - **Environment Variables:** Managed via `.env` file in the root. Use `.env.example` as a template.
 - **Language:** Code and comments are primarily in English, but Russian documentation/comments may exist (e.g., in `README.md`).

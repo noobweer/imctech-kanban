@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Board, Column
+from .models import Project, Board, Column, Invite
 
 
 @admin.register(Project)
@@ -49,3 +49,22 @@ class ColumnAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at", "board")
     readonly_fields = ("id", "created_at", "updated_at")
     raw_id_fields = ("board",)
+
+
+@admin.register(Invite)
+class InviteAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "board",
+        "max_uses",
+        "used_count",
+        "expire_at",
+        "is_active",
+        "created_by",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("is_active", "expire_at", "created_at", "board")
+    search_fields = ("id", "board__name", "created_by__username")
+    readonly_fields = ("id", "used_count", "created_at", "updated_at")
+    raw_id_fields = ("board", "created_by")

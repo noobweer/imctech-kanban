@@ -1,14 +1,16 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import uuid
 
 from django.shortcuts import get_object_or_404
 from django.db import models, transaction
 from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
 from ninja import Router, Query
 from ninja.pagination import paginate
 from ninja_jwt.authentication import JWTAuth
 
-from .models import Project, Board, BoardStatus, Column, ColumnStatus
+from .models import Project, Board, BoardStatus, Column, ColumnStatus, Invite
 from .schemas import (
     ProjectIn,
     ProjectOut,
@@ -19,6 +21,11 @@ from .schemas import (
     ColumnOut,
     ColumnUpdateIn,
     ColumnMoveIn,
+    InviteIn,
+    InvitePatchIn,
+    InviteOut,
+    InvitePublicOut,
+    MemberOut,
 )
 from .permissions import (
     has_project_access,
@@ -325,3 +332,265 @@ def delete_column(request, column_id: uuid.UUID):
     column.status = ColumnStatus.ARCHIVED
     column.save()
     return {"success": True, "message": "Column archived successfully"}
+
+
+# ---------------------------------------------------------------------------
+# --- Invite Endpoints ---
+# ---------------------------------------------------------------------------
+
+
+@router.get("/boards/{board_id}/invites", response=List[InviteOut], auth=JWTAuth(), tags=["Invites"])
+def list_board_invites(request, board_id: uuid.UUID):
+    """List all invite history for a board. Owner/staff only."""
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not can_edit_board(user, board):
+        return router.api.create_response(request, {"detail": "No permission to view invites"}, status=403)
+    return list(board.invites.select_related("board", "created_by").all())
+
+
+@router.get("/boards/{board_id}/invites/current", response=InviteOut, auth=JWTAuth(), tags=["Invites"])
+def get_current_invite(request, board_id: uuid.UUID):
+    """Get current active invite for a board. Owner/staff only."""
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not can_edit_board(user, board):
+        return router.api.create_response(request, {"detail": "No permission to view invites"}, status=403)
+    invite = board.invites.filter(is_active=True).select_related("board", "created_by").first()
+    if not invite:
+        return router.api.create_response(request, {"detail": "No active invite found for this board"}, status=404)
+    return invite
+
+
+@router.post("/boards/{board_id}/invites", response={201: InviteOut}, auth=JWTAuth(), tags=["Invites"])
+def create_invite(request, board_id: uuid.UUID, payload: InviteIn):
+    """Create a new invite, deactivating existing active ones. Owner/staff only."""
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not can_edit_board(user, board):
+        return router.api.create_response(request, {"detail": "No permission to create invites"}, status=403)
+
+    # Validate expires_in_days
+    if payload.expires_in_days <= 0:
+        return router.api.create_response(request, {"detail": "expires_in_days must be positive"}, status=400)
+
+    # Validate max_uses
+    if payload.max_uses is not None and payload.max_uses <= 0:
+        return router.api.create_response(request, {"detail": "max_uses must be a positive number or null (Unlimited)"}, status=400)
+
+    with transaction.atomic():
+        # Deactivate all existing active invites for this board
+        board.invites.filter(is_active=True).update(is_active=False)
+
+        invite = Invite.objects.create(
+            board=board,
+            max_uses=payload.max_uses,
+            used_count=0,
+            expire_at=timezone.now() + timedelta(days=payload.expires_in_days),
+            is_active=True,
+            created_by=user,
+        )
+
+    return 201, invite
+
+
+@router.get("/invites/{invite_id}", auth=JWTAuth(), tags=["Invites"])
+def get_invite(request, invite_id: uuid.UUID):
+    """Get invite details. Owner/staff get full info; others get safe public info."""
+    user = request.auth
+    invite = get_object_or_404(Invite.objects.select_related("board", "created_by"), id=invite_id)
+
+    if can_edit_board(user, invite.board):
+        return InviteOut.from_orm(invite)
+    # Any authenticated user can see public info to decide whether to join
+    return InvitePublicOut.from_orm(invite)
+
+
+@router.patch("/invites/{invite_id}", response=InviteOut, auth=JWTAuth(), tags=["Invites"])
+def patch_invite(request, invite_id: uuid.UUID, payload: InvitePatchIn):
+    """Update invite settings. Owner/staff only."""
+    user = request.auth
+    invite = get_object_or_404(Invite.objects.select_related("board", "created_by"), id=invite_id)
+    if not can_edit_board(user, invite.board):
+        return router.api.create_response(request, {"detail": "No permission to update this invite"}, status=403)
+
+    # max_uses validation
+    if payload.max_uses is not None:
+        if payload.max_uses == 0:
+            return router.api.create_response(request, {"detail": "max_uses cannot be 0. Use null for unlimited."}, status=400)
+        if payload.max_uses < invite.used_count:
+            return router.api.create_response(
+                request,
+                {"detail": f"max_uses ({payload.max_uses}) cannot be less than used_count ({invite.used_count})"},
+                status=400,
+            )
+        invite.max_uses = payload.max_uses
+    elif "max_uses" in payload.model_fields_set:
+        # explicitly set to null → Unlimited
+        invite.max_uses = None
+
+    # expire_at handling — supports expires_in_days OR explicit expire_at
+    if payload.expires_in_days is not None:
+        if payload.expires_in_days <= 0:
+            return router.api.create_response(request, {"detail": "expires_in_days must be positive"}, status=400)
+        invite.expire_at = timezone.now() + timedelta(days=payload.expires_in_days)
+    elif payload.expire_at is not None:
+        if payload.is_active is not False and payload.expire_at <= timezone.now():
+            return router.api.create_response(request, {"detail": "expire_at must be in the future for an active invite"}, status=400)
+        invite.expire_at = payload.expire_at
+
+    if payload.is_active is not None:
+        invite.is_active = payload.is_active
+
+    invite.save()
+    return invite
+
+
+@router.delete("/invites/{invite_id}", auth=JWTAuth(), tags=["Invites"])
+def deactivate_invite(request, invite_id: uuid.UUID):
+    """Soft-deactivate an invite (is_active = False). Owner/staff only."""
+    user = request.auth
+    invite = get_object_or_404(Invite.objects.select_related("board"), id=invite_id)
+    if not can_edit_board(user, invite.board):
+        return router.api.create_response(request, {"detail": "No permission to deactivate this invite"}, status=403)
+
+    invite.is_active = False
+    invite.save()
+    return {"success": True, "message": "Invite deactivated"}
+
+
+@router.post("/invites/{invite_id}/join", auth=JWTAuth(), tags=["Invites"])
+def join_board_via_invite(request, invite_id: uuid.UUID):
+    """Join a board using an invite link. Any authenticated user."""
+    user = request.auth
+    invite = get_object_or_404(Invite.objects.select_related("board"), id=invite_id)
+    board = invite.board
+
+    # Validate invite usability
+    if not invite.is_active:
+        return router.api.create_response(request, {"detail": "This invite is no longer active"}, status=400)
+    if invite.is_expired():
+        return router.api.create_response(request, {"detail": "This invite has expired"}, status=400)
+    if invite.is_exhausted():
+        return router.api.create_response(request, {"detail": "This invite has reached its maximum number of uses"}, status=400)
+
+    # Check if user is already owner or member
+    if board.owner == user:
+        return router.api.create_response(
+            request,
+            {"detail": "You are already the owner of this board"},
+            status=200,
+        )
+    if board.members.filter(id=user.id).exists():
+        return router.api.create_response(
+            request,
+            {"detail": "You are already a member of this board"},
+            status=200,
+        )
+
+    with transaction.atomic():
+        board.members.add(user)
+        # Increment used_count only for new joins
+        Invite.objects.filter(id=invite.id).update(used_count=models.F("used_count") + 1)
+
+    return {"success": True, "message": f"You have joined the board '{board.name}'"}
+
+
+# ---------------------------------------------------------------------------
+# --- Members Endpoints ---
+# ---------------------------------------------------------------------------
+
+
+@router.get("/boards/{board_id}/members", response=List[MemberOut], auth=JWTAuth(), tags=["Members"])
+def list_board_members(request, board_id: uuid.UUID):
+    """List all members (including owner) of a board."""
+    from django.contrib.auth.models import User
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(user, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+
+    result = []
+
+    # Include owner first
+    owner = board.owner
+    try:
+        owner_profile = owner.profile
+        owner_name = owner_profile.name
+        owner_role = owner_profile.role
+    except Exception:
+        owner_name = owner.username
+        owner_role = ""
+    result.append(MemberOut(
+        username=owner.username,
+        name=owner_name,
+        role=owner_role,
+        is_owner=True,
+    ))
+
+    # Include all members (excluding owner to avoid duplicate)
+    for member in board.members.select_related("profile").exclude(id=owner.id):
+        try:
+            profile = member.profile
+            m_name = profile.name
+            m_role = profile.role
+        except Exception:
+            m_name = member.username
+            m_role = ""
+        result.append(MemberOut(
+            username=member.username,
+            name=m_name,
+            role=m_role,
+            is_owner=False,
+        ))
+
+    return result
+
+
+@router.delete("/boards/{board_id}/members/{username}", auth=JWTAuth(), tags=["Members"])
+def remove_member(request, board_id: uuid.UUID, username: str):
+    """Remove a member from a board. Owner/staff only. Cannot remove the board owner."""
+    from django.contrib.auth.models import User
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+    if not can_edit_board(user, board):
+        return router.api.create_response(request, {"detail": "No permission to remove members"}, status=403)
+
+    target_user = get_object_or_404(User, username=username)
+
+    if board.owner == target_user:
+        return router.api.create_response(request, {"detail": "Cannot remove the board owner"}, status=400)
+
+    if not board.members.filter(id=target_user.id).exists():
+        return router.api.create_response(
+            request,
+            {"detail": f"User '{username}' is not a member of this board"},
+            status=404,
+        )
+
+    board.members.remove(target_user)
+    return {"success": True, "message": f"User '{username}' has been removed from the board"}
+
+
+@router.post("/boards/{board_id}/leave", auth=JWTAuth(), tags=["Members"])
+def leave_board(request, board_id: uuid.UUID):
+    """Leave a board. Current user must be a member. Owner cannot leave."""
+    user = request.auth
+    board = get_object_or_404(Board, id=board_id)
+
+    if board.owner == user:
+        return router.api.create_response(
+            request,
+            {"detail": "Owner cannot leave the board. Transfer ownership first."},
+            status=400,
+        )
+
+    if not board.members.filter(id=user.id).exists():
+        return router.api.create_response(
+            request,
+            {"detail": "You are not a member of this board"},
+            status=400,
+        )
+
+    board.members.remove(user)
+    return {"success": True, "message": f"You have left the board '{board.name}'"}
