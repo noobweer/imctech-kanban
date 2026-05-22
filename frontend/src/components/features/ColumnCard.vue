@@ -21,6 +21,7 @@ const emit = defineEmits<{
   (e: 'rename', id: string, name: string): void
   (e: 'archive', id: string): void
   (e: 'add-task', columnId: string): void
+  (e: 'edit-task', task: Task): void
 }>()
 
 const isEditing = ref(false)
@@ -103,6 +104,8 @@ function handleRename() {
           v-for="task in tasks" 
           :key="task.id" 
           :task="task" 
+          @click="emit('edit-task', task)"
+          @edit="emit('edit-task', task)"
         />
       </template>
       <div 

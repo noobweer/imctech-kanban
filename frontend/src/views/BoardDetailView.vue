@@ -2,10 +2,12 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { Plus, Layout } from 'lucide-vue-next'
 import { useColumnsStore } from '@/stores/columns'
+import { useTasksStore } from '@/stores/tasks'
 import type { Board } from '@/types/board'
-import type { Task } from '@/types/task'
+import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 import Button from '@/components/ui/Button.vue'
 import ColumnCard from '@/components/features/ColumnCard.vue'
+import TaskModal from '@/components/features/TaskModal.vue'
 
 const props = defineProps<{
   board: Board | null
@@ -13,67 +15,12 @@ const props = defineProps<{
 }>()
 
 const columnsStore = useColumnsStore()
+const tasksStore = useTasksStore()
 const loadingColumns = ref(columnsStore.columns.length === 0)
 
-// Mock tasks for High Fidelity demonstration
-const mockTasks = ref<Task[]>([
-  {
-    id: '1',
-    title: 'Task1',
-    description: 'DescriptionDescription...',
-    dueDate: 'May 10, 12:00',
-    subtasksTotal: 8,
-    subtasksCompleted: 0,
-    type: 'Bug',
-    assignee: {
-      name: 'Jhon Doe',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDutyfEHuBhv7E3xrJAEn_00ctnVY6C2pEzxvGcjnY261gMVa7W9X5IAeym7AmcKVtXmkhW7aJRIG-jTFZkFs_3peVMeCmCKEoZLsmwpRj7gaiJnUnqSKXjsGXf-dFeI9eJSYoZ0QaAC_8fBfwxZg-IcaWrIJ_sShjvzGKdIMvOVvrbdh-UWo5t172bd3bFBM74QgiGiolbgICZHGOCJ-AWvrk82x0tu4QbirykzzFLDZRpicL0Dn1qIluiUUqClIpYYBOUUky2i1A'
-    },
-    status: 'todo'
-  },
-  {
-    id: '2',
-    title: 'Task1',
-    description: 'DescriptionDescription...',
-    dueDate: 'May 10, 12:00',
-    subtasksTotal: 8,
-    subtasksCompleted: 2,
-    type: 'Bug',
-    assignee: {
-      name: 'Jhon Doe',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6Nn9iBOsDPGdLl35ZpwRYaeGkQ75-B_PDzzG30sIfquWaVrDU7B9kt4GZnotbbk9t7TVhKyiGHbK_SuImNTMaxnC94c9OEYXiYbvw0sG4uBaow5lfN69YT_NBVVAsuA4IUp5nQUV1kl-9vTFTei8xRe7AzGxZ2wNqFpNW1a2nyJmgKJ8s80MCDvxbCQBlnbmJawKichk3S5Mq_qj-Od2LtjfFDrvfNxmlwL_6zecCakFYlwXyApcUkvviMCGQvp0rxotRbB_o0gs'
-    },
-    status: 'inprogress'
-  },
-  {
-    id: '3',
-    title: 'Task1',
-    description: 'DescriptionDescription...',
-    dueDate: 'May 10, 12:00',
-    subtasksTotal: 8,
-    subtasksCompleted: 8,
-    type: 'Bug',
-    assignee: {
-      name: 'Jhon Doe',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDbxiERC4mKzWjX1kAaIVwbGEROFWT255knyI7chsrQ-rPQ-ouzaM9yCvrcCWq3ODndKR3aQHypyqCUkOigBMSxmz0Y8BCSpvHbDGJaGbPVx3wUGfb7qiUPyh36zXeRF1SV-_G17QMRHU38z_PRv09BG1k5T_AwMPaYg8tuHwHnJFYv3a76G94sZWSakJRplipU_WGAlyyRgKDbo1esD8TgxKQhK-czVMBeMDfLD7YpaiRUnxz1yeyNqMdr12hd74PUG1hlZo73Xhc'
-    },
-    status: 'review'
-  },
-  {
-    id: '4',
-    title: 'Task1',
-    description: 'DescriptionDescription...',
-    completedDate: 'May 09',
-    subtasksTotal: 8,
-    subtasksCompleted: 8,
-    type: 'Bug',
-    assignee: {
-      name: 'Jhon Doe',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJUp8B0m_1c-pDWWTsdKCbh9-p-FEmUGpYDvlVT1760i85eeoU4MQB5_3wvszhFzrzC6zLHGxiiXgr0ApTbRS_WUxhqGT3pSRUgNMLmUDIu2ak3qvlnyWYsRyMXmoEg8-yzQfD8ymQn2VVvg6FyjabLQVKcfRbjdbkKvikJ3h4-jtoKuo_gWtZFhjbxMQ1fwe5SU2gvs7V44kNRCU1nox0ox_vEcQ81Sdi9gz33KEGSkIQN0kOgfNqp3msWHKxkWyvpw7okp70m4E'
-    },
-    status: 'done'
-  }
-])
+const isModalOpen = ref(false)
+const editingTask = ref<Task | null>(null)
+const defaultColumnForNewTask = ref<string | undefined>(undefined)
 
 async function loadColumns() {
   if (!props.board) return
@@ -91,13 +38,14 @@ async function loadColumns() {
   }
 }
 
-function getTasksForColumn(columnName: string) {
-  const name = columnName.toLowerCase()
-  if (name.includes('to do')) return mockTasks.value.filter(t => t.status === 'todo')
-  if (name.includes('in progress')) return mockTasks.value.filter(t => t.status === 'inprogress')
-  if (name.includes('review')) return mockTasks.value.filter(t => t.status === 'review')
-  if (name.includes('done')) return mockTasks.value.filter(t => t.status === 'done')
-  return []
+async function loadTasks() {
+  if (!props.board) return
+  await tasksStore.fetchTasks(props.board.id, true)
+  tasksStore.startPolling(props.board.id)
+}
+
+function getTasksForColumn(columnId: string) {
+  return tasksStore.getTasksByColumnId(columnId)
 }
 
 async function handleCreateDefaultColumns() {
@@ -135,17 +83,47 @@ async function handleMoveColumn(id: string, direction: 'left' | 'right') {
 }
 
 function handleAddTask(columnId: string) {
-  console.log('Add task to column:', columnId)
+  editingTask.value = null
+  defaultColumnForNewTask.value = columnId
+  isModalOpen.value = true
+}
+
+function handleEditTask(task: Task) {
+  editingTask.value = task
+  defaultColumnForNewTask.value = undefined
+  isModalOpen.value = true
+}
+
+async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
+  if (!props.board) return
+  try {
+    if (editingTask.value) {
+      await tasksStore.updateTask(editingTask.value.id, data as TaskUpdateIn)
+    } else {
+      await tasksStore.createTask(props.board.id, data as TaskIn)
+    }
+    isModalOpen.value = false
+  } catch (error) {
+    // Error handled in store
+  }
 }
 
 watch(() => props.board, (newBoard) => {
   if (newBoard) {
     loadColumns()
+    loadTasks()
   }
 }, { immediate: true })
 
-onMounted(loadColumns)
-onUnmounted(columnsStore.stopPolling)
+onMounted(() => {
+  loadColumns()
+  if (props.board) loadTasks()
+})
+
+onUnmounted(() => {
+  columnsStore.stopPolling()
+  tasksStore.stopPolling()
+})
 </script>
 
 <template>
@@ -160,7 +138,7 @@ onUnmounted(columnsStore.stopPolling)
         v-for="(column, index) in columnsStore.activeColumns" 
         :key="column.id"
         :column="column"
-        :tasks="getTasksForColumn(column.name)"
+        :tasks="getTasksForColumn(column.id)"
         :is-first="index === 0"
         :is-last="index === columnsStore.activeColumns.length - 1"
         @move-left="handleMoveColumn($event, 'left')"
@@ -168,6 +146,7 @@ onUnmounted(columnsStore.stopPolling)
         @rename="handleRenameColumn"
         @archive="handleArchiveColumn"
         @add-task="handleAddTask"
+        @edit-task="handleEditTask"
       />
       
       <!-- Add Column Placeholder -->
@@ -193,6 +172,15 @@ onUnmounted(columnsStore.stopPolling)
         </div>
       </div>
     </div>
+    
+    <TaskModal 
+      :isOpen="isModalOpen" 
+      :task="editingTask" 
+      :boardId="board?.id"
+      :defaultColumnId="defaultColumnForNewTask"
+      @close="isModalOpen = false" 
+      @save="handleSaveTask" 
+    />
   </main>
 </template>
 
