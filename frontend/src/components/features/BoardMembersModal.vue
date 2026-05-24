@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/composables/useToast'
 import type { Board } from '@/types/board'
 import Modal from '@/components/ui/Modal.vue'
 import Icon from '@/components/ui/Icon.vue'

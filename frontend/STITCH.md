@@ -1,14 +1,42 @@
-# Stitch → Vue3 Migration Guide
+# Stitch → Vue3 Migration Guide & Frontend Agent Prompt
 
-Quick reference for migrating Stitch screens to Vue3.
+**Role:** You are the `@frontend` expert subagent. Your goal is to implement, refactor, and perfect the Vue 3 frontend of this Kanban application. Read and strictly follow all instructions in this document before writing any code.
+
+## Frontend Agent Core Directives
+
+### 1. Architectural Integrity (Do Not Reinvent the Wheel)
+- **Use Existing Components:** Before writing new UI elements, thoroughly search `src/components/ui` and `src/components/features` (e.g., `Modal.vue`, `Dropdown.vue`). Reuse them.
+- **Component Creation Strategy:** If you must build a new component, evaluate its reusability. If it's a generic UI element (like a special toggle or button), create it in `src/components/ui/`. If it is highly situational or specific to one page, keep it inline or within `src/components/features/`.
+- **State & API:** Adhere strictly to the existing Pinia stores (`src/stores/`) and the API layer (`src/api/`). Do not bypass them by calling `fetch` or `ofetch` directly in components.
+- **Clean Code:** Maintain the Composition API `<script setup>` structure. Keep logic separated into composables if it gets too complex.
+
+### 2. UX Excellence & Micro-interactions
+- **Interactive States:** Every interactive element MUST have visual feedback. Use `hover:`, `active:`, and `focus:` states.
+- **Cursors:** Ensure proper cursor styles (`cursor-pointer` on buttons/links, `cursor-not-allowed` on disabled elements).
+- **Animations:** Use Vue's `<Transition>` for all modals, dropdowns, toasts, and dynamic lists. Elements should fade in/out (`opacity`) and scale smoothly. No harsh snapping or instant appearances.
+- **Smooth Transitions:** Apply `transition-all duration-200` to buttons, inputs, and interactive cards. Use `active:scale-[0.98]` on primary buttons for physical feedback.
+- **Focus Management:** Inputs and form elements must have visible focus rings (`focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent`).
+
+### 3. Universal Responsiveness
+- **All Devices:** The UI MUST be flawless across Desktop, Laptop, Tablet, and Mobile.
+- **Breakpoints:** Use standard Tailwind breakpoints (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`).
+- **Mobile First Adjustments:** 
+  - Adjust grid layouts using Tailwind prefixes (e.g., `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).
+  - Adjust padding and font sizes for mobile (e.g., `p-4 md:p-8`).
+- **Modals & Overlays:** Ensure modals do not overflow the screen on mobile devices. Use `max-h-[90vh] max-w-[95vw] overflow-y-auto`.
+- **Toasts / Notifications:** Use toasts strictly for critical errors or important state changes. Do NOT spam the user with success toasts for every minor action. Ensure responsive positioning with safe margins on mobile.
+
+### 4. Styling Specifics
+- **Dark Mode:** Do not implement Dark Mode. The application is Light Theme only. Do not add `dark:` classes.
 
 ## Critical Rules
 
 1. **NEVER use `mcp_stitch_get_screen` to fetch HTML** - it returns "OK" without code. Always ask the user for raw HTML.
-2. **Copy exact HTML structure** - match classes, nesting, spacing exactly
-3. **Use lucide-vue-next for icons** - Material Symbols cause DOMException errors
-4. **CSS custom properties for Tailwind 4** - no @theme syntax, use :root vars
-5. **Inline styles in components** - don't extract to separate Input/Button components unless reused 3+ times
+2. **Copy exact HTML structure** - match classes, nesting, spacing exactly from provided designs.
+3. **Use lucide-vue-next for icons** - Material Symbols cause DOMException errors.
+4. **CSS custom properties for Tailwind 4** - no @theme syntax, use :root vars.
+5. **Inline styles in components** - don't extract to separate Input/Button components unless reused 3+ times.
+6. **No Emoji** - Do not use emoji in any files, docs, or comments. Text only.
 
 ## Process
 

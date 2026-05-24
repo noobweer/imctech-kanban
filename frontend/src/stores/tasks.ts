@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/composables/useToast'
 import { tasksApi } from '@/api/tasks'
 import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 
@@ -33,7 +33,7 @@ export const useTasksStore = defineStore('tasks', () => {
     } catch (e: any) {
       if (!isSilent) {
         error.value = e.message || 'Failed to load tasks'
-        toast.error(error.value)
+        toast.error(error.value as string)
       }
     } finally {
       if (!isSilent) loading.value = false
@@ -59,7 +59,6 @@ export const useTasksStore = defineStore('tasks', () => {
     try {
       const newTask = await tasksApi.createTask(boardId, data)
       tasks.value.push(newTask)
-      toast.success('Task created successfully')
       return newTask
     } catch (e: any) {
       toast.error(e.message || 'Failed to create task')
@@ -90,7 +89,6 @@ export const useTasksStore = defineStore('tasks', () => {
       if (index !== -1) {
         tasks.value[index] = updated
       }
-      toast.info('Task archived')
     } catch (e: any) {
       toast.error(e.message || 'Failed to archive task')
       throw e
@@ -101,7 +99,6 @@ export const useTasksStore = defineStore('tasks', () => {
     try {
       await tasksApi.deleteTask(taskId)
       tasks.value = tasks.value.filter(t => t.id !== taskId)
-      toast.info('Task deleted')
     } catch (e: any) {
       toast.error(e.message || 'Failed to delete task')
       throw e
