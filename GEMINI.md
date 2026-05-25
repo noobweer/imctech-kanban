@@ -57,6 +57,73 @@ bun run dev
 - **Authentication:** JWT-based. Logic resides in the `users` app (`users/api.py`, `users/models.py`).
 - **Migrations:** Always run `uv run python manage.py makemigrations` and `migrate` after model changes.
 - **Timezone:** `Asia/Vladivostok`.
+- **Verify:** Run `uv run manage.py check` inside the Docker container (`docker compose exec backend bash`).
+
+#### Backend Architecture: Layered Structure
+
+The `pb` app follows a strict three-layer architecture. Never mix layers.
+
+```
+backend/pb/
+    models.py          # Data layer — Django ORM models only. No business logic.
+    schemas.py         # Serialization layer — Django Ninja Schema (in/out DTOs).
+    permissions.py     # Permission helpers — pure functions, no HTTP.
+    admin.py           # Django admin registrations.
+    migrations/        # Auto-generated migrations.
+
+    services/          # Business logic layer
+        project_service.py
+        board_service.py
+        column_service.py
+        invite_service.py
+        member_service.py
+        task_service.py
+
+    routers/           # HTTP layer (thin)
+        __init__.py    # Combines all routers into one exported `router`
+        projects.py
+        boards.py
+        columns.py
+        invites.py
+        members.py
+        tasks.py
+
+    api.py             # Stub: `from .routers import router` — do not add logic here.
+```
+
+#### Layer Rules
+
+**Services (`pb/services/`)**
+- Pure Python functions. No `request` object. No HTTP responses.
+- Receive typed primitive arguments (user, model instances, validated payload).
+- Raise standard Python exceptions for error cases:
+  - `ValueError` — invalid input (translated to HTTP 400)
+  - `PermissionError` — authorization failure (translated to HTTP 403)
+  - `LookupError` / `Model.DoesNotExist` — not found (translated to HTTP 404)
+- Return model instances or raise — never return HTTP status codes.
+
+**Routers (`pb/routers/`)**
+- Thin HTTP handlers only. Each endpoint should follow this exact pattern:
+  1. Fetch object (`get_object_or_404`)
+  2. Check permission (`permissions.py`)
+  3. Call service function
+  4. Return schema or HTTP error
+- No business logic, no DB queries beyond `get_object_or_404`.
+- Max ~15 lines per endpoint.
+
+**Models (`pb/models.py`)**
+- Django ORM models and enums only.
+- `clean()` for field-level validation, `save()` calls `full_clean()`.
+- No service logic, no API code.
+
+#### Adding a New Endpoint
+
+1. Add business logic to the relevant `services/*.py` file.
+2. Add a thin handler in the relevant `routers/*.py` file.
+3. If a new schema is needed, add it to `schemas.py`.
+4. If a new permission check is needed, add it to `permissions.py`.
+5. Run `uv run manage.py check` to verify.
+
 
 ### Frontend
 
