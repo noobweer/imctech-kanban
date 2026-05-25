@@ -1,5 +1,14 @@
 # Gemini CLI Context: imctech-kanban
 
+## Agent Behavior
+
+Always follow the **karpathy-guidelines** skill when writing, reviewing, or refactoring any code in this project:
+
+- Think before coding. Surface assumptions and tradeoffs. Ask when uncertain.
+- Simplicity first. Minimum code that solves the problem. Nothing speculative.
+- Surgical changes. Touch only what the request requires. Match existing style.
+- Goal-driven execution. Define verifiable success criteria before starting.
+
 ## Project Overview
 
 A full-stack Kanban board application featuring a Django-based backend and a Vue 3 frontend. The project is containerized using Docker and uses modern package managers (`uv` for Python, `bun` for Node.js).

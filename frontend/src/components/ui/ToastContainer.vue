@@ -5,9 +5,9 @@ import { useToast, type ToastType } from '@/composables/useToast'
 const { toasts, remove } = useToast()
 
 function colorClasses(type: ToastType) {
-  if (type === 'success') return 'border-l-[3px] border-l-[#149e61] bg-[#f0faf6] text-[#026b3f]'
-  if (type === 'error')   return 'border-l-[3px] border-l-[#ba1a1a] bg-[#fff0f0] text-[#ba1a1a]'
-  return                         'border-l-[3px] border-l-[#7132f5] bg-[#f8f1ff] text-[#5741d8]'
+  if (type === 'success') return 'border-l-[3px] border-l-success-green bg-success-subtle text-success-green-text'
+  if (type === 'error')   return 'border-l-[3px] border-l-error bg-error/10 text-error'
+  return                         'border-l-[3px] border-l-primary bg-primary-container/10 text-primary-container'
 }
 
 function label(type: ToastType) {
@@ -37,7 +37,7 @@ function label(type: ToastType) {
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="flex items-start gap-3 rounded-xl px-4 py-3 shadow-[0px_4px_24px_rgba(0,0,0,0.06)] cursor-default select-none"
+          class="flex items-start gap-3 rounded-xl px-4 py-3 shadow-dropdown cursor-default select-none"
           :class="colorClasses(toast.type)"
         >
           <div class="flex-1 min-w-0">

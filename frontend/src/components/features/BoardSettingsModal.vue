@@ -129,7 +129,7 @@ function handleDelete() {
           <Button
             variant="ghost"
             size="md"
-            class="w-full flex items-center justify-center gap-2 !bg-red-100 !text-[#fc3d03] !border-error hover:!bg-red-50"
+            class="w-full flex items-center justify-center gap-2 !bg-error/10 !text-error !border-error hover:!bg-error/20"
             @click="handleDelete"
           >
             <span class="text-sm">

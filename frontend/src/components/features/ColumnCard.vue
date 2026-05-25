@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Plus, MoreVertical, ChevronLeft, ChevronRight, Archive } from 'lucide-vue-next'
+import { Plus, MoreHorizontal, Pencil, Trash2, MoreVertical } from 'lucide-vue-next'
 import type { Column } from '@/types/column'
 import type { Task } from '@/types/task'
 import Input from '@/components/ui/Input.vue'
@@ -41,7 +41,7 @@ function handleRename() {
 </script>
 
 <template>
-  <section class="flex flex-col w-80 min-h-[500px] shrink-0">
+  <section class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0">
     <!-- Column Header -->
     <div class="mb-4 px-1 flex items-center justify-between group/header">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">

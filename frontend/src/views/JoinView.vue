@@ -71,7 +71,7 @@ function getStatusMessage(): string | null {
         <div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mx-auto">
           <span class="text-2xl">✕</span>
         </div>
-        <h1 class="text-2xl font-bold text-text-primary font-['Space_Grotesk']">
+        <h1 class="text-xl md:text-2xl font-bold text-text-primary font-['Space_Grotesk']">
           Invalid Invite
         </h1>
         <p class="text-text-secondary text-sm">{{ error }}</p>
@@ -84,7 +84,7 @@ function getStatusMessage(): string | null {
       </div>
 
       <!-- Invite card -->
-      <div v-else-if="invite" class="bg-white rounded-2xl border border-border-gray shadow-[0_8px_40px_rgba(0,0,0,0.06)] p-8 space-y-6">
+      <div v-else-if="invite" class="bg-white rounded-2xl border border-border-gray shadow-modal p-4 md:p-8 space-y-4 md:space-y-6">
 
         <!-- Board info -->
         <div class="text-center space-y-2">
@@ -92,7 +92,7 @@ function getStatusMessage(): string | null {
             <span class="text-3xl">📋</span>
           </div>
           <p class="text-sm text-text-secondary">You've been invited to join</p>
-          <h1 class="text-2xl font-bold text-text-primary font-['Space_Grotesk']">
+          <h1 class="text-xl md:text-2xl font-bold text-text-primary font-['Space_Grotesk']">
             {{ invite.board_name }}
           </h1>
         </div>
@@ -117,7 +117,7 @@ function getStatusMessage(): string | null {
         <button
           v-if="!getStatusMessage() && !success"
           :disabled="joining"
-          class="w-full py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-[0_4px_24px_rgba(88,0,216,0.12)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-dropdown active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
           @click="handleJoin"
         >
           {{ joining ? 'Joining…' : 'Join Board' }}

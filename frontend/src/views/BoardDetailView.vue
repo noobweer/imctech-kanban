@@ -128,8 +128,8 @@ onUnmounted(() => {
 
 <template>
   <!-- Column Canvas -->
-  <main v-dragscroll class="h-full overflow-x-auto p-6 bg-[#fcfcfc] custom-scrollbar-x cursor-grab active:cursor-grabbing">
-    <div v-if="loadingBoard || loadingColumns" class="flex gap-6 max-w-[1600px] mx-auto">
+  <main v-dragscroll class="h-full overflow-x-auto p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing">
+    <div v-if="loadingBoard || loadingColumns" class="flex gap-4 md:gap-6 min-h-full max-w-max mx-auto md:mx-0">
       <div v-for="i in 4" :key="i" class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"></div>
     </div>
     

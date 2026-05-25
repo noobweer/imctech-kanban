@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { MoreVertical, CalendarDays, Check } from 'lucide-vue-next'
+import { MoreVertical, CalendarDays } from 'lucide-vue-next'
 import type { Task } from '@/types/task'
 
 const props = defineProps<{
@@ -56,7 +56,7 @@ const assigneeInitial = computed(() => assigneeName.value.charAt(0).toUpperCase(
 
 <template>
   <div 
-    class="bg-white p-5 rounded-xl border border-border-gray shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-primary-container/50 transition-all flex flex-col gap-3 cursor-pointer group"
+    class="bg-white p-4 md:p-5 rounded-xl border border-border-gray shadow-card hover:shadow-dropdown hover:border-primary-container/50 transition-all flex flex-col gap-3 cursor-pointer group"
     :class="{ 'opacity-75 grayscale-[0.2]': isDone }"
     @click="emit('click', task)"
   >

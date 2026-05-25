@@ -144,11 +144,11 @@ function handleCreateBoard() {
     </header>
 
     <!-- Main Content -->
-    <main class="px-6 py-10 pb-24 md:pb-10 max-w-7xl mx-auto">
+    <main class="px-4 md:px-6 py-6 md:py-10 pb-24 md:pb-10 max-w-7xl mx-auto">
       <!-- Board Grid -->
       <div v-if="hasBoards">
         <div class="mb-10">
-          <h1 class="font-['Space_Grotesk'] text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary mb-2">
+          <h1 class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary mb-2">
             Your Boards
           </h1>
           <p class="font-['Inter'] text-[16px] leading-[1.38] text-neutral-gray max-w-2xl">
@@ -156,7 +156,7 @@ function handleCreateBoard() {
           </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <BoardCard
             v-for="board in boardsStore.filteredBoards"
             :key="board.id"
@@ -200,7 +200,7 @@ function handleCreateBoard() {
 
           <!-- Content -->
           <div class="space-y-3">
-            <h1 class="font-['Space_Grotesk'] text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary">
+            <h1 class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary">
               No boards found
             </h1>
             <p class="font-['Inter'] text-[16px] leading-[1.38] text-neutral-gray max-w-sm mx-auto">

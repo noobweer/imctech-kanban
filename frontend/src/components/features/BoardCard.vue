@@ -21,7 +21,7 @@ const formattedDate = computed(() => {
 
 <template>
   <div
-    class="bg-white rounded-xl cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-border-gray flex flex-col hover:shadow-indigo-500/15 transition-shadow relative"
+    class="bg-white rounded-xl cursor-pointer shadow-card border border-border-gray flex flex-col hover:shadow-dropdown transition-shadow relative"
   >
     <div v-if="showMenu" class="absolute top-4 right-4 z-10">
       <BoardCardDropdown :board="board" />

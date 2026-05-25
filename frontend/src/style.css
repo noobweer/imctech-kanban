@@ -32,6 +32,18 @@
   --panel-translate-y: 16px;
   --panel-blur: 0px;
   --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Modal open / close */
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Dropdown open / close */
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Utility classes */
@@ -128,7 +140,59 @@
   filter: blur(0);
 }
 
+/* Modal open / close (transitions-dev 06-modal adapted for Vue) */
+.t-modal-enter-active {
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity   var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+  transform-origin: center;
+}
+.t-modal-leave-active {
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity   var(--modal-close-dur) var(--modal-ease);
+  will-change: transform, opacity;
+  transform-origin: center;
+}
+.t-modal-enter-from {
+  transform: scale(var(--modal-scale));
+  opacity: 0;
+}
+.t-modal-leave-to {
+  transform: scale(var(--modal-scale-close));
+  opacity: 0;
+}
+
+/* Dropdown open / close (transitions-dev 05-menu-dropdown adapted for Vue) */
+.t-dropdown-enter-active {
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+  transform-origin: top right; /* default, override via inline style or class if needed */
+}
+.t-dropdown-leave-active {
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-close-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+  transform-origin: top right;
+}
+.t-dropdown-enter-from {
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+}
+.t-dropdown-leave-to {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .t-panel-slide-enter,
-  .t-panel-slide-leave { transition: none !important; }
+  .t-panel-slide-leave,
+  .t-modal-enter-active,
+  .t-modal-leave-active,
+  .t-dropdown-enter-active,
+  .t-dropdown-leave-active { transition: none !important; }
 }

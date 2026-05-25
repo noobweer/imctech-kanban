@@ -3,13 +3,9 @@ import { ref } from 'vue'
 import type { LoginCredentials } from '@/types/auth'
 import Icon from '@/components/ui/Icon.vue'
 
-interface Props {
+defineProps<{
   loading?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  loading: false,
-})
+}>()
 
 const emit = defineEmits<{
   submit: [credentials: LoginCredentials]
@@ -88,7 +84,7 @@ const handleSubmit = () => {
     <button
       type="submit"
       :disabled="loading"
-      class="w-full bg-primary-container cursor-pointer text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+      class="w-full bg-primary-container cursor-pointer text-white py-3 px-6 rounded-xl text-[16px] font-semibold shadow-card hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {{ loading ? 'Logging in...' : 'Log In' }}
     </button>

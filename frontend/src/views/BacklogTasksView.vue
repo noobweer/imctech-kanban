@@ -67,7 +67,7 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
 
 <template>
   <!-- Main Content -->
-  <main v-dragscroll class="h-full overflow-y-auto p-6 bg-[#fcfcfc] custom-scrollbar cursor-grab active:cursor-grabbing">
+  <main v-dragscroll class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar cursor-grab active:cursor-grabbing">
     <div class="max-w-7xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4 flex-1">
@@ -107,7 +107,7 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
         <div v-for="i in 8" :key="i" class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6">
         <TaskCard 
           v-for="task in filteredTasks" 
           :key="task.id" 

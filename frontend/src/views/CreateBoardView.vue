@@ -116,12 +116,6 @@ async function handleCreate() {
           >
             <ChevronLeft :size="20" />
           </button>
-          <div class="min-w-0">
-            <h1 class="text-xl font-bold leading-tight text-text-primary truncate">
-              Initialize New Board
-            </h1>
-            <p class="text-xs text-text-secondary truncate">Create a new workspace</p>
-          </div>
         </div>
 
         <!-- Right Section: Actions + Profile -->
@@ -139,7 +133,7 @@ async function handleCreate() {
         <div class="space-y-4">
           <!-- Section 1: Identity -->
           <section
-            class="bg-white rounded-xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-border-gray"
+            class="bg-white rounded-xl p-6 shadow-dropdown border border-border-gray"
           >
             <div class="flex flex-col md:flex-row gap-6">
               <div class="md:w-1/4">
@@ -180,7 +174,7 @@ async function handleCreate() {
 
           <!-- Section 2: Board Structure -->
           <section
-            class="bg-white rounded-xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-border-gray relative overflow-hidden"
+            class="bg-white rounded-xl p-6 shadow-dropdown border border-border-gray relative overflow-hidden"
           >
             <div class="flex justify-between items-center mb-4">
               <div class="flex items-center gap-3">

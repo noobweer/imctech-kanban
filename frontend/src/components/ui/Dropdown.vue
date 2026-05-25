@@ -45,23 +45,16 @@ defineExpose({ close })
       <slot name="trigger" />
     </div>
 
-    <Transition
-      enter-active-class="transition-all duration-150 ease-out"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition-all duration-100 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-95 -translate-y-1"
-    >
+    <Transition name="t-dropdown">
       <div
         v-if="isOpen"
         :class="[
-          'absolute z-50 min-w-[200px] bg-white border border-border-gray rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] py-2',
+          'absolute z-50 min-w-[200px] bg-white border border-border-gray rounded-xl shadow-dropdown py-2',
           {
-            'right-0 top-full': position === 'bottom-right',
-            'left-0 top-full': position === 'bottom-left',
-            'right-0 bottom-full': position === 'top-right',
-            'left-0 bottom-full': position === 'top-left',
+            'right-0 top-full origin-top-right': position === 'bottom-right',
+            'left-0 top-full origin-top-left': position === 'bottom-left',
+            'right-0 bottom-full origin-bottom-right': position === 'top-right',
+            'left-0 bottom-full origin-bottom-left': position === 'top-left',
           },
         ]"
         :style="{ marginTop: position.startsWith('bottom') ? `${offset}px` : undefined, marginBottom: position.startsWith('top') ? `${offset}px` : undefined }"

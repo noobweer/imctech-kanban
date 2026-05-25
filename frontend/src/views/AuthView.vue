@@ -36,7 +36,7 @@ const handleSignUp = async (data: SignUpData) => {
   <main class="min-h-screen flex flex-col md:flex-row overflow-hidden bg-surface-white">
     <!-- Left: Dark background with gradient -->
     <section class="hidden md:flex w-1/2 bg-slate-950 relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-[#7132f5]/20 to-transparent" />
+      <div class="absolute inset-0 bg-gradient-to-br from-primary-container/20 to-transparent" />
     </section>
 
     <!-- Right: Auth form -->
@@ -59,7 +59,7 @@ const handleSignUp = async (data: SignUpData) => {
             :class="[
               'flex-1 py-md text-center text-[16px] font-semibold rounded-lg transition-all duration-200',
               activeTab === 'signup'
-                ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
+                ? 'bg-surface-white shadow-card text-text-primary'
                 : 'text-neutral-gray hover:text-text-primary cursor-pointer'
             ]"
             @click="activeTab = 'signup'"
@@ -70,7 +70,7 @@ const handleSignUp = async (data: SignUpData) => {
             :class="[
               'flex-1 py-md text-center text-[16px] font-semibold rounded-lg transition-all duration-200',
               activeTab === 'login'
-                ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
+                ? 'bg-surface-white shadow-card text-text-primary'
                 : 'text-neutral-gray hover:text-text-primary cursor-pointer'
             ]"
             @click="activeTab = 'login'"

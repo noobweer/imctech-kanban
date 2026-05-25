@@ -8,7 +8,7 @@ let refreshPromise: Promise<string> | null = null
 
 export const apiClient = ofetch.create({
   baseURL: '/api',
-  async onRequest({ request, options }) {
+  async onRequest({ options }) {
     const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
     if (accessToken) {
       options.headers = {

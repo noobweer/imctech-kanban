@@ -107,9 +107,9 @@ async function handleLeaveTeam() {
     @update:model-value="emit('update:modelValue', $event)"
   >
     <!-- Scrollable Content -->
-    <div class="overflow-y-auto max-h-[600px] -mx-6 -my-6">
+    <div class="-mx-4 -my-4 md:-mx-6 md:-my-6">
       <!-- Section 1: Invite New Members (owner only) -->
-      <section v-if="isOwner" class="px-6 py-6">
+      <section v-if="isOwner" class="px-4 py-4 md:px-6 md:py-6">
         <div class="flex items-center gap-2 mb-4">
           <Icon name="user_plus" size="sm" class="text-primary-container" />
           <h3 class="font-semibold text-[22px] text-text-primary">Invite New Members</h3>
@@ -127,7 +127,7 @@ async function handleLeaveTeam() {
           />
           <button
             :disabled="!inviteUrl"
-            class="px-4 py-3 bg-white font-semibold border border-secondary-container text-secondary-container rounded-xl hover:bg-surface-container transition-all flex items-center gap-2 shadow-[0_4px_24px_rgba(0,0,0,0.03)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            class="px-4 py-3 bg-white font-semibold border border-secondary-container text-secondary-container rounded-xl hover:bg-surface-container transition-all flex items-center gap-2 shadow-card active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             @click="handleCopyLink"
           >
             <Icon name="copy" size="sm" />
@@ -152,7 +152,8 @@ async function handleLeaveTeam() {
               <Icon name="chevron_down" size="sm" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline" />
             </div>
           </div>
-          <div class="flex flex-col gap-2">
+
+      <div class="border-t border-border-gray pt-6 mt-6 shrink-0">
             <label class="text-xs">Max Uses</label>
             <div class="relative">
               <select
@@ -172,7 +173,7 @@ async function handleLeaveTeam() {
         <!-- Generate button -->
         <button
           :disabled="boardsStore.inviteLoading"
-          class="w-full mt-6 py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-[0_4px_24px_rgba(88,0,216,0.12)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full mt-6 py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-dropdown active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
           @click="handleGenerateLink"
         >
           {{ boardsStore.inviteLoading ? 'Generating…' : 'Generate New Link' }}
@@ -180,10 +181,10 @@ async function handleLeaveTeam() {
       </section>
 
       <!-- Divider -->
-      <div v-if="isOwner" class="h-px bg-border-gray mx-6"></div>
+      <div v-if="isOwner" class="h-px bg-border-gray mx-4 md:mx-6"></div>
 
       <!-- Section 2: Current Team Members -->
-      <section class="px-6 py-6">
+      <section class="px-4 py-4 md:px-6 md:py-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <Icon name="users" size="sm" class="text-primary-container" />
@@ -213,7 +214,7 @@ async function handleLeaveTeam() {
           <div
             v-for="member in boardsStore.members"
             :key="member.username"
-            class="flex items-center justify-between p-3 bg-white border border-transparent hover:border-border-gray hover:shadow-[0_4px_24px_rgba(0,0,0,0.03)] rounded-xl transition-all group"
+            class="flex items-center justify-between p-3 bg-white border border-transparent hover:border-border-gray hover:shadow-card rounded-xl transition-all group"
           >
             <div class="flex items-center gap-4">
               <div class="w-10 h-10 rounded-full border-2 border-primary-container/20 overflow-hidden flex-shrink-0">

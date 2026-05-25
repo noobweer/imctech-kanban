@@ -42,7 +42,7 @@ onMounted(loadBoardData)
   <div class="h-full flex flex-col bg-white overflow-hidden">
     <!-- Main Header -->
     <header class="bg-white border-b border-border-gray sticky top-0 z-50">
-      <div class="flex justify-between items-center w-full px-6 py-3 max-w-full">
+      <div class="flex justify-between items-center w-full px-4 md:px-6 py-3 max-w-full">
         <!-- Left Section: Back + Title -->
         <div class="flex items-center gap-4 flex-1">
           <button 
@@ -63,12 +63,12 @@ onMounted(loadBoardData)
         </div>
 
         <!-- Right Section: Actions + Profile -->
-        <div class="flex items-center justify-end gap-3 flex-1">
-          <button class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
+        <div class="flex items-center justify-end gap-2 md:gap-3 flex-1">
+          <button class="hidden md:block px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer">
             Settings
           </button>
           <button
-            class="px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer"
+            class="px-3 md:px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer"
             @click="showMembersModal = true"
           >
             Members
@@ -81,8 +81,8 @@ onMounted(loadBoardData)
     </header>
 
     <!-- Secondary Navigation -->
-    <nav class="px-6 border-b border-border-gray flex items-center justify-between shrink-0">
-      <div class="flex gap-8">
+    <nav class="px-4 md:px-6 border-b border-border-gray flex items-center justify-between shrink-0 overflow-x-auto custom-scrollbar-x gap-4">
+      <div class="flex gap-4 md:gap-8 min-w-max">
         <router-link 
           :to="`/boards/${boardId}`"
           class="py-4 font-medium text-sm transition-colors border-b-2"
@@ -107,7 +107,7 @@ onMounted(loadBoardData)
         </router-link>
         <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors border-b-2 border-transparent" href="#">Archive</a>
       </div>
-      <div class="flex gap-8">
+      <div class="flex gap-4 md:gap-8 min-w-max">
         <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">
           <span class="flex items-center gap-2"><PieChart :size="16" /> Overview</span>
         </a>

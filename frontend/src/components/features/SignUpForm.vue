@@ -3,13 +3,9 @@ import { ref } from 'vue'
 import type { SignUpData } from '@/types/auth'
 import Icon from '@/components/ui/Icon.vue'
 
-interface Props {
+defineProps<{
   loading?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  loading: false,
-})
+}>()
 
 const emit = defineEmits<{
   submit: [data: SignUpData]
@@ -125,7 +121,7 @@ const handleSubmit = () => {
           :class="[
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             role === 'student'
-              ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
+              ? 'bg-surface-white shadow-card text-text-primary'
               : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
           @click="role = 'student'"
@@ -138,7 +134,7 @@ const handleSubmit = () => {
           :class="[
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             role === 'mentor'
-              ? 'bg-surface-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] text-text-primary'
+              ? 'bg-surface-white shadow-card text-text-primary'
               : 'text-neutral-gray hover:text-text-primary cursor-pointer'
           ]"
           @click="role = 'mentor'"
@@ -152,7 +148,7 @@ const handleSubmit = () => {
     <button
       type="submit"
       :disabled="loading"
-      class="w-full bg-primary-container cursor-pointer text-white py-md px-lg rounded-xl text-[16px] font-semibold shadow-[0_4px_24px_rgba(113,50,245,0.2)] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+      class="w-full bg-primary-container cursor-pointer text-white py-3 px-6 rounded-xl text-[16px] font-semibold shadow-card hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {{ loading ? 'Signing up...' : 'Sign Up' }}
     </button>
