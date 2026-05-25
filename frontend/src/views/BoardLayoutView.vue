@@ -39,7 +39,7 @@ onMounted(loadBoardData)
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-white overflow-hidden">
+  <div class="h-screen flex flex-col bg-white overflow-hidden">
     <!-- Main Header -->
     <header class="bg-white border-b border-border-gray sticky top-0 z-50">
       <div class="flex justify-between items-center w-full px-4 md:px-6 py-3 max-w-full">

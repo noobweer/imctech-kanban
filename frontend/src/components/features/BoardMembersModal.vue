@@ -153,7 +153,7 @@ async function handleLeaveTeam() {
             </div>
           </div>
 
-      <div class="border-t border-border-gray pt-6 mt-6 shrink-0">
+          <div class="flex flex-col gap-2">
             <label class="text-xs">Max Uses</label>
             <div class="relative">
               <select

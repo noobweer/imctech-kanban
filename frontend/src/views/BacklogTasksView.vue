@@ -95,7 +95,7 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
           <button class="p-2 border border-border-gray rounded-xl hover:bg-white transition-colors md:hidden text-neutral-gray">
             <Search :size="20" />
           </button>
-          <Button variant="primary" class="gap-2 whitespace-nowrap" @click="handleAddTask">
+          <Button variant="primary" size="sm" class="gap-2 whitespace-nowrap" @click="handleAddTask">
             <Plus :size="20" /> 
             Add Task
           </Button>
