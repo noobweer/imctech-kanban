@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { Plus, ListChecks, Flag, CalendarDays, Users, Check } from 'lucide-vue-next'
+import { Plus, ListChecks, Flag, CalendarDays, Users, Check, AlignLeft } from 'lucide-vue-next'
 import type { TaskIn, TaskUpdateIn, Task, ChecklistItem } from '@/types/task'
 import { useBoardsStore } from '@/stores/boards'
 import Modal from '@/components/ui/Modal.vue'
 import MarkdownEditor from '@/components/features/MarkdownEditor.vue'
 import ChecklistEditor from '@/components/features/ChecklistEditor.vue'
+import Button from '@/components/ui/Button.vue'
 
 const props = defineProps<{
   isOpen: boolean
@@ -30,6 +31,7 @@ const checklist = ref<ChecklistItem[]>([])
 const assignees = ref<string[]>([])
 const isAssigneesDropdownOpen = ref(false)
 const assigneesDropdownRef = ref<HTMLElement | null>(null)
+const activeTab = ref<'details' | 'checklist'>('details')
 
 function closeAssigneesDropdown(e: MouseEvent) {
   if (assigneesDropdownRef.value && !assigneesDropdownRef.value.contains(e.target as Node)) {
@@ -66,6 +68,7 @@ watch(() => props.isOpen, (newVal) => {
       checklist.value = []
       assignees.value = []
     }
+    activeTab.value = 'details'
   } else {
     isAssigneesDropdownOpen.value = false
   }
@@ -109,175 +112,180 @@ function handleSave() {
     max-width="1000px"
     @update:model-value="emit('close')"
   >
-    <div>
-      <header class="mb-10 text-center">
-        <h1 class="font-section-heading text-sub-heading text-on-surface mb-2 font-bold">
-          {{ task ? 'Edit Task' : 'Create Task' }}
-        </h1>
-        <p class="font-caption text-text-secondary">
-          Define the parameters and objectives for this action item.
-        </p>
-      </header>
-
-      <form class="space-y-6 md:space-y-10" @submit.prevent="handleSave" id="task-form">
-        <!-- Task Title Input -->
-        <div class="space-y-3">
-          <label class="font-button text-sm text-on-surface-variant block font-bold" for="task-title">
-            Task Title
-          </label>
+    <form @submit.prevent="handleSave" id="task-form" class="flex flex-col md:flex-row gap-6 md:gap-8 min-h-[450px]">
+      
+      <!-- Left Main Content -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Seamless Title -->
+        <div class="mb-6">
           <input
             id="task-title"
             v-model="title"
-            class="w-full bg-white border border-border-gray rounded-xl px-4 py-4 text-on-surface placeholder:text-text-secondary focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all outline-none"
-            placeholder="e.g. Work on Kanban board"
+            class="w-full bg-transparent border-none outline-none font-section-heading text-2xl md:text-3xl font-bold text-on-surface placeholder:text-neutral-gray/50 transition-colors"
+            placeholder="Task Title..."
             type="text"
             required
+            autofocus
           />
         </div>
 
-        <!-- Two-Column Middle Section: Description and Checklist -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          <!-- Rich Text Description (Left) -->
-          <div class="space-y-3 flex flex-col">
-            <label class="font-button text-sm text-on-surface-variant block font-bold">
-              Description
-            </label>
-            <MarkdownEditor v-model="content" placeholder="Describe the task details..." />
-          </div>
-
-          <!-- Checklist (Right) -->
-          <div class="space-y-3 flex flex-col">
-            <label class="font-button text-sm text-on-surface-variant flex items-center gap-2 font-bold">
-              <ListChecks :size="18" />
-              Checklist
-            </label>
-            <ChecklistEditor v-model="checklist" />
-          </div>
+        <!-- Tabs -->
+        <div class="flex border-b border-border-gray mb-6 gap-6 shrink-0">
+          <button 
+            type="button" 
+            @click="activeTab = 'details'" 
+            :class="[
+              'pb-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2 cursor-pointer', 
+              activeTab === 'details' ? 'border-primary-container text-primary-container' : 'border-transparent text-text-secondary hover:text-primary-container'
+            ]"
+          >
+            <AlignLeft :size="16" />
+            Details
+          </button>
+          <button 
+            type="button" 
+            @click="activeTab = 'checklist'" 
+            :class="[
+              'pb-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2 cursor-pointer', 
+              activeTab === 'checklist' ? 'border-primary-container text-primary-container' : 'border-transparent text-text-secondary hover:text-primary-container'
+            ]"
+          >
+            <ListChecks :size="16" />
+            Checklist
+            <span v-if="checklist.length" class="ml-1 px-2 py-0.5 rounded-full bg-surface-container-high text-[10px] text-text-primary">
+              {{ checklist.length }}
+            </span>
+          </button>
         </div>
 
-        <!-- Priority and Deadline Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <!-- Priority Level -->
-          <div class="space-y-3">
-            <label class="font-button text-sm text-on-surface-variant flex items-center gap-2 font-bold">
-              <Flag :size="18" />
-              Priority Level
-            </label>
-            <div class="flex items-center gap-3">
-              <button
-                class="flex-1 py-3 px-4 rounded-xl border font-button text-sm transition-colors"
-                :class="priority === 0 ? 'bg-primary-container/10 border-primary-container text-primary-container' : 'bg-white border-border-gray text-on-surface-variant hover:border-primary-container hover:text-primary'"
-                type="button"
-                @click="priority = 0"
-              >
-                Low
-              </button>
-              <button
-                class="flex-1 py-3 px-4 rounded-xl border font-button text-sm transition-colors"
-                :class="priority === 1 ? 'bg-primary-container/10 border-primary-container text-primary-container' : 'bg-white border-border-gray text-on-surface-variant hover:border-primary-container hover:text-primary'"
-                type="button"
-                @click="priority = 1"
-              >
-                Medium
-              </button>
-              <button
-                class="flex-1 py-3 px-4 rounded-xl border font-button text-sm transition-colors"
-                :class="priority === 2 ? 'bg-error/10 border-error text-error' : 'bg-white border-border-gray text-on-surface-variant hover:border-error hover:text-error'"
-                type="button"
-                @click="priority = 2"
-              >
-                High
-              </button>
-            </div>
+        <!-- Tab Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <div v-show="activeTab === 'details'" class="flex-1 flex flex-col h-full animate-in fade-in duration-300">
+            <MarkdownEditor v-model="content" placeholder="Add a description to explain the task requirements..." class="flex-1 h-full min-h-[300px]" />
           </div>
-
-          <!-- Deadline Picker -->
-          <div class="space-y-3">
-            <label class="font-button text-sm text-on-surface-variant flex items-center gap-2 font-bold" for="due-date">
-              <CalendarDays :size="18" />
-              Deadline
-            </label>
-            <div class="relative">
-              <input
-                id="due-date"
-                v-model="deadline"
-                class="w-full bg-white border border-border-gray rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all outline-none"
-                type="date"
-              />
-            </div>
+          
+          <div v-show="activeTab === 'checklist'" class="flex-1 flex flex-col h-full animate-in fade-in duration-300">
+            <ChecklistEditor v-model="checklist" class="flex-1 h-full min-h-[300px]" />
           </div>
         </div>
+      </div>
 
-        <!-- Assignees Section -->
-        <div class="space-y-3 pb-8">
-          <label class="font-button text-sm text-on-surface-variant flex items-center gap-2 font-bold">
-            <Users :size="18" />
-            Assignees
+      <!-- Right Sidebar -->
+      <div class="w-full md:w-[280px] shrink-0 bg-surface-container-lowest rounded-2xl p-5 flex flex-col gap-6 border border-border-gray">
+        
+        <!-- Priority Segments -->
+        <div>
+          <label class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-3 flex items-center gap-2">
+            <Flag :size="14" /> Priority
           </label>
-          <div class="flex items-center gap-2 flex-wrap">
-            <div
-              v-for="username in assignees"
-              :key="username"
-              class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-sm shadow-sm"
-              :title="boardsStore.members.find(m => m.username === username)?.name || username"
+          <div class="flex bg-surface-container-low rounded-xl p-1 gap-1">
+            <button 
+              type="button"
+              @click="priority = 0" 
+              :class="[
+                'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                priority === 0 ? 'bg-white shadow-sm text-primary-container' : 'text-text-secondary hover:bg-black/5'
+              ]"
             >
-              {{ (boardsStore.members.find(m => m.username === username)?.name || username).charAt(0).toUpperCase() }}
-            </div>
+              Low
+            </button>
+            <button 
+              type="button"
+              @click="priority = 1" 
+              :class="[
+                'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                priority === 1 ? 'bg-white shadow-sm text-primary-container' : 'text-text-secondary hover:bg-black/5'
+              ]"
+            >
+              Medium
+            </button>
+            <button 
+              type="button"
+              @click="priority = 2" 
+              :class="[
+                'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                priority === 2 ? 'bg-white shadow-sm text-error' : 'text-text-secondary hover:bg-black/5'
+              ]"
+            >
+              High
+            </button>
+          </div>
+        </div>
+
+        <!-- Deadline Picker -->
+        <div>
+          <label class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-3 flex items-center gap-2" for="due-date">
+            <CalendarDays :size="14" /> Deadline
+          </label>
+          <input
+            id="due-date"
+            v-model="deadline"
+            class="w-full bg-white border border-border-gray rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all outline-none"
+            type="date"
+          />
+        </div>
+
+        <!-- Assignees -->
+        <div>
+          <label class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-3 flex items-center gap-2">
+            <Users :size="14" /> Assignees
+          </label>
+          <div class="flex flex-wrap gap-2 items-center">
+            <img 
+              v-for="username in assignees" 
+              :key="username"
+              :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(boardsStore.members.find(m => m.username === username)?.name || username)}&background=7132f5&color=fff`"
+              class="w-8 h-8 rounded-full border-2 border-white shadow-sm hover:-translate-y-0.5 transition-transform"
+              :title="boardsStore.members.find(m => m.username === username)?.name || username"
+            />
             
             <div class="relative" ref="assigneesDropdownRef">
               <button
                 type="button"
-                class="w-10 h-10 rounded-full border-2 border-dashed border-border-gray flex items-center justify-center text-text-secondary hover:border-primary-container hover:text-primary-container transition-colors"
+                class="w-8 h-8 rounded-full border-2 border-dashed border-border-gray flex items-center justify-center text-text-secondary hover:border-primary-container hover:text-primary-container transition-all cursor-pointer"
                 @click.stop="isAssigneesDropdownOpen = !isAssigneesDropdownOpen"
               >
-                <Plus :size="20" />
+                <Plus :size="16" />
               </button>
               
               <Transition name="t-dropdown">
-                <div v-if="isAssigneesDropdownOpen" class="absolute bottom-full mb-2 left-0 origin-bottom-left w-64 bg-white border border-border-gray rounded-xl shadow-dropdown z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
+                <div v-if="isAssigneesDropdownOpen" class="absolute top-full mt-2 left-0 md:right-0 md:left-auto origin-top-left md:origin-top-right w-64 bg-white border border-border-gray rounded-xl shadow-dropdown z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
                   <div v-if="boardsStore.membersLoading" class="px-4 py-3 text-sm text-text-secondary">Loading members...</div>
-                  <div v-else-if="boardsStore.members.length === 0" class="px-4 py-3 text-sm text-text-secondary">No members found on this board</div>
+                  <div v-else-if="boardsStore.members.length === 0" class="px-4 py-3 text-sm text-text-secondary">No members found</div>
                   <button
                     v-else
                     v-for="member in boardsStore.members"
                     :key="member.username"
                     type="button"
-                    class="w-full text-left px-4 py-2 hover:bg-surface-container-lowest flex items-center justify-between transition-colors"
+                    class="w-full text-left px-4 py-2 hover:bg-surface-container-lowest flex items-center justify-between transition-colors cursor-pointer"
                     @click="toggleAssignee(member.username)"
                   >
                     <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center text-xs font-bold">
-                        {{ member.name.charAt(0).toUpperCase() }}
-                      </div>
+                      <img 
+                        :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f1f3f4&color=333`"
+                        class="w-7 h-7 rounded-full border border-border-gray"
+                      />
                       <span class="text-sm font-medium text-on-surface">{{ member.name }}</span>
                     </div>
-                    <Check v-if="assignees.includes(member.username)" :size="18" class="text-primary-container" />
+                    <Check v-if="assignees.includes(member.username)" :size="16" class="text-primary-container" />
                   </button>
                 </div>
               </Transition>
             </div>
           </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
 
     <!-- Action Footer via slot -->
     <template #footer>
-      <div class="flex items-center justify-end gap-4">
-        <button
-          class="min-w-[140px] py-[13px] px-8 rounded-xl border border-secondary text-secondary font-button hover:bg-purple-subtle transition-all"
-          type="button"
-          @click="emit('close')"
-        >
+      <div class="flex items-center justify-end gap-3 px-2">
+        <Button variant="ghost" size="md" @click="emit('close')">
           Cancel
-        </button>
-        <button
-          class="min-w-[140px] py-[13px] px-8 rounded-xl bg-primary-container text-white font-button shadow-card active:scale-[0.98] transition-all hover:bg-purple-deep"
-          type="submit"
-          form="task-form"
-        >
+        </Button>
+        <Button variant="primary" size="md" type="submit" form="task-form">
           {{ task ? 'Save Changes' : 'Create Task' }}
-        </button>
+        </Button>
       </div>
     </template>
   </Modal>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { Type, List } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -13,6 +13,7 @@ const emit = defineEmits<{
 
 const content = ref(props.modelValue)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const activeFormats = ref<string[]>(['normal'])
 
 watch(() => props.modelValue, (newVal) => {
   if (content.value !== newVal) {
@@ -22,6 +23,7 @@ watch(() => props.modelValue, (newVal) => {
 
 watch(content, (newVal) => {
   emit('update:modelValue', newVal)
+  updateActiveFormat()
 })
 
 type MarkdownAction = 'h1' | 'h2' | 'h3' | 'bold' | 'list' | 'normal'
@@ -31,6 +33,28 @@ const textActions: { action: MarkdownAction, label: string }[] = [
   { action: 'h2', label: 'H2' },
   { action: 'h3', label: 'H3' },
 ]
+
+function updateActiveFormat() {
+  if (!textareaRef.value) return
+  const text = content.value
+  const start = textareaRef.value.selectionStart
+  
+  let lineStart = start
+  while (lineStart > 0 && text[lineStart - 1] !== '\n') lineStart--
+  let lineEnd = start
+  while (lineEnd < text.length && text[lineEnd] !== '\n') lineEnd++
+  
+  const currentLine = text.slice(lineStart, lineEnd)
+  const formats: string[] = []
+  
+  if (currentLine.startsWith('# ')) formats.push('h1')
+  else if (currentLine.startsWith('## ')) formats.push('h2')
+  else if (currentLine.startsWith('### ')) formats.push('h3')
+  else if (currentLine.startsWith('- ')) formats.push('list')
+  else formats.push('normal')
+  
+  activeFormats.value = formats
+}
 
 function applyMarkdown(action: MarkdownAction) {
   if (!textareaRef.value) return
@@ -51,6 +75,7 @@ function applyMarkdown(action: MarkdownAction) {
     nextTick(() => {
       textarea.focus()
       textarea.setSelectionRange(start + 2, start + 2 + selected.length)
+      updateActiveFormat()
     })
     return
   }
@@ -80,16 +105,27 @@ function applyMarkdown(action: MarkdownAction) {
   nextTick(() => {
     textarea.focus()
     textarea.setSelectionRange(start + cursorOffset, end + cursorOffset)
+    updateActiveFormat()
   })
 }
+
+onMounted(() => {
+  // Initialize formatting state if there's pre-filled content
+  if (content.value) {
+    nextTick(updateActiveFormat)
+  }
+})
 </script>
 
 <template>
-  <div class="border border-border-gray rounded-xl overflow-hidden flex flex-col flex-grow bg-white">
+  <div class="border border-border-gray rounded-xl overflow-hidden flex flex-col flex-grow bg-white transition-all">
     <div class="flex items-center gap-2 px-3 py-2 border-b border-border-gray bg-surface-container-lowest overflow-x-auto">
       <div class="flex items-center gap-1 border-r border-border-gray pr-2 mr-1">
         <button 
-          class="font-semibold text-on-surface-variant hover:bg-purple-subtle hover:text-primary rounded-lg transition-colors flex items-center justify-center shrink-0 px-2.5 py-1 text-[13px]" 
+          :class="[
+            'font-semibold rounded-lg transition-colors flex items-center justify-center shrink-0 px-2.5 py-1 text-[13px] cursor-pointer active:scale-95',
+            activeFormats.includes('normal') ? 'bg-purple-subtle text-primary-container' : 'text-on-surface-variant hover:bg-surface-container hover:text-text-primary'
+          ]"
           type="button" 
           @click.prevent="applyMarkdown('normal')" 
           title="Normal text"
@@ -99,7 +135,10 @@ function applyMarkdown(action: MarkdownAction) {
         <button 
           v-for="btn in textActions" 
           :key="btn.action"
-          class="font-semibold text-on-surface-variant hover:bg-purple-subtle hover:text-primary rounded-lg transition-colors flex items-center justify-center shrink-0 px-2.5 py-1 text-[13px]" 
+          :class="[
+            'font-semibold rounded-lg transition-colors flex items-center justify-center shrink-0 px-2.5 py-1 text-[13px] cursor-pointer active:scale-95',
+            activeFormats.includes(btn.action) ? 'bg-purple-subtle text-primary-container' : 'text-on-surface-variant hover:bg-surface-container hover:text-text-primary'
+          ]"
           type="button" 
           @click.prevent="applyMarkdown(btn.action)"
         >
@@ -108,12 +147,15 @@ function applyMarkdown(action: MarkdownAction) {
       </div>
       <div class="flex items-center gap-1">
         <button 
-          class="font-semibold text-on-surface-variant hover:bg-purple-subtle hover:text-primary rounded-lg transition-colors flex items-center justify-center shrink-0 w-8 h-8 font-bold" 
+          class="font-semibold text-on-surface-variant hover:bg-surface-container hover:text-text-primary rounded-lg transition-colors flex items-center justify-center shrink-0 w-8 h-8 font-bold cursor-pointer active:scale-95" 
           type="button" 
           @click.prevent="applyMarkdown('bold')"
         >B</button>
         <button 
-          class="font-semibold text-on-surface-variant hover:bg-purple-subtle hover:text-primary rounded-lg transition-colors flex items-center justify-center shrink-0 w-8 h-8" 
+          :class="[
+            'font-semibold rounded-lg transition-colors flex items-center justify-center shrink-0 w-8 h-8 cursor-pointer active:scale-95',
+            activeFormats.includes('list') ? 'bg-purple-subtle text-primary-container' : 'text-on-surface-variant hover:bg-surface-container hover:text-text-primary'
+          ]"
           type="button" 
           @click.prevent="applyMarkdown('list')"
         >
@@ -126,6 +168,9 @@ function applyMarkdown(action: MarkdownAction) {
       v-model="content"
       class="w-full p-4 text-on-surface placeholder:text-text-secondary focus:outline-none flex-grow min-h-[220px] text-base resize-none custom-scrollbar"
       :placeholder="placeholder || 'Describe the details...'"
+      @keyup="updateActiveFormat"
+      @click="updateActiveFormat"
+      @focus="updateActiveFormat"
     ></textarea>
   </div>
 </template>
