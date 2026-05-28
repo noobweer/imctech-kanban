@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-vue-next'
-import type { ChecklistItem } from '@/types/task'
+import { ref, watch, nextTick } from 'vue'
+import { Plus, GripVertical, Check } from 'lucide-vue-next'
+import draggable from 'vuedraggable'
+import type { ChecklistItem, Task } from '@/types/task'
+import { useTasksStore } from '@/stores/tasks'
 
 const props = defineProps<{
   modelValue: ChecklistItem[]
+  task?: Task | null
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: ChecklistItem[]]
 }>()
 
+const tasksStore = useTasksStore()
 const items = ref<ChecklistItem[]>(JSON.parse(JSON.stringify(props.modelValue)))
-const draggedIndex = ref<number | null>(null)
-const dropTargetIndex = ref<number | null>(null)
-
 let isLocalUpdate = false
 
 watch(() => props.modelValue, (newVal) => {
@@ -25,59 +26,68 @@ watch(() => props.modelValue, (newVal) => {
 watch(items, (newVal) => {
   isLocalUpdate = true
   emit('update:modelValue', newVal)
-  // use setTimeout or promise to reset after emit is processed
   Promise.resolve().then(() => {
     isLocalUpdate = false
   })
 }, { deep: true })
 
-function addItem() {
-  items.value.push({ title: '', is_done: false })
+// Success Check Animation State
+const animatingItems = ref<Set<string | number>>(new Set())
+
+function animateSuccess(idOrIndex: string | number) {
+  animatingItems.value.add(idOrIndex)
+  setTimeout(() => {
+    animatingItems.value.delete(idOrIndex)
+  }, 550)
 }
 
-function removeItem(index: number) {
-  items.value.splice(index, 1)
-}
-
-function moveItemUp(index: number) {
-  if (index > 0) {
-    const temp = items.value[index]
-    items.value[index] = items.value[index - 1]
-    items.value[index - 1] = temp
+function handlePathMount(el: Element | null, idOrIndex: string | number) {
+  if (el instanceof SVGPathElement && animatingItems.value.has(idOrIndex)) {
+    const length = Math.ceil(el.getTotalLength())
+    el.style.strokeDasharray = `${length}`
+    el.style.strokeDashoffset = `${length}`
+    // Force reflow
+    void el.getBoundingClientRect()
   }
 }
 
-function moveItemDown(index: number) {
-  if (index < items.value.length - 1) {
-    const temp = items.value[index]
-    items.value[index] = items.value[index + 1]
-    items.value[index + 1] = temp
+async function addItem() {
+  if (props.task) {
+    await tasksStore.addChecklistItem(props.task.id, 'New Item')
+    // Store updates task, parent will pass down new items via modelValue watcher
+  } else {
+    items.value.push({ title: 'New Item', is_done: false })
   }
 }
 
-function handleDragStart(index: number) {
-  draggedIndex.value = index
+async function removeItem(index: number, item: ChecklistItem) {
+  if (props.task && item.id) {
+    await tasksStore.deleteChecklistItem(props.task.id, item.id)
+  } else {
+    items.value.splice(index, 1)
+  }
 }
 
-function handleDragOver(event: DragEvent, index: number) {
-  event.preventDefault()
-  dropTargetIndex.value = index
+async function handleToggle(index: number, item: ChecklistItem) {
+  if (item.is_done) {
+    animateSuccess(item.id || index)
+  }
+  if (props.task && item.id) {
+    await tasksStore.toggleChecklistItem(props.task.id, item.id)
+  }
 }
 
-function handleDrop(event: DragEvent, targetIndex: number) {
-  event.preventDefault()
-  if (draggedIndex.value === null || draggedIndex.value === targetIndex) return
-
-  const [removed] = items.value.splice(draggedIndex.value, 1)
-  items.value.splice(targetIndex, 0, removed)
-  
-  draggedIndex.value = null
-  dropTargetIndex.value = null
+async function handleTitleChange(item: ChecklistItem) {
+  if (props.task && item.id) {
+    await tasksStore.updateChecklistItem(props.task.id, item.id, { title: item.title })
+  }
 }
 
-function handleDragEnd() {
-  draggedIndex.value = null
-  dropTargetIndex.value = null
+async function handleDragEnd() {
+  if (props.task) {
+    const orderedIds = items.value.map(i => i.id).filter(Boolean) as string[]
+    await tasksStore.reorderChecklist(props.task.id, orderedIds)
+  }
 }
 </script>
 
@@ -86,64 +96,59 @@ function handleDragEnd() {
     <div class="flex-grow space-y-3 mb-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
       <div v-if="items.length === 0" class="text-sm text-text-secondary italic">No items added. Click below to add one.</div>
       
-      <div 
-        v-for="(item, index) in items" 
-        :key="index" 
-        draggable="true"
-        :class="[
-          'flex items-center gap-2 md:gap-3 group bg-white border rounded-lg p-2 transition-all',
-          draggedIndex === index ? 'opacity-40 border-border-gray' : 'border-transparent hover:border-border-gray hover:shadow-card',
-          dropTargetIndex === index && draggedIndex !== index ? 'border-primary-container border-t-2 shadow-lg' : ''
-        ]"
-        @dragstart="handleDragStart(index)"
-        @dragover="handleDragOver($event, index)"
-        @drop="handleDrop($event, index)"
-        @dragend="handleDragEnd"
+      <draggable 
+        v-model="items" 
+        group="checklist" 
+        handle=".drag-handle"
+        item-key="id"
+        ghost-class="opacity-40"
+        @end="handleDragEnd"
+        class="space-y-3"
       >
-        <div class="hidden md:block cursor-grab active:cursor-grabbing text-neutral-gray opacity-40 hover:opacity-100 transition-opacity">
-          <GripVertical :size="16" />
-        </div>
-        
-        <input
-          v-model="item.is_done"
-          class="w-5 h-5 rounded border-border-gray text-primary focus:ring-primary-container transition-all cursor-pointer shrink-0"
-          type="checkbox"
-        />
-        <input 
-          v-model="item.title"
-          class="text-sm font-medium text-on-surface focus:outline-none bg-transparent flex-1 min-w-0 placeholder:text-neutral-gray/50"
-          placeholder="What needs to be done?"
-        />
-        
-        <div class="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
-          <button 
-            type="button" 
-            class="md:hidden text-text-secondary hover:text-primary-container p-1 bg-surface-container-low hover:bg-purple-subtle rounded-md cursor-pointer disabled:opacity-30"
-            @click="moveItemUp(index)"
-            :disabled="index === 0"
-            title="Move up"
-          >
-            <ChevronUp :size="16" />
-          </button>
-          <button 
-            type="button" 
-            class="md:hidden text-text-secondary hover:text-primary-container p-1 bg-surface-container-low hover:bg-purple-subtle rounded-md cursor-pointer disabled:opacity-30"
-            @click="moveItemDown(index)"
-            :disabled="index === items.length - 1"
-            title="Move down"
-          >
-            <ChevronDown :size="16" />
-          </button>
-          <button 
-            type="button" 
-            class="text-text-secondary hover:text-error p-1 bg-surface-container-low hover:bg-error/10 rounded-md cursor-pointer"
-            @click="removeItem(index)"
-            title="Remove item"
-          >
-            ×
-          </button>
-        </div>
-      </div>
+        <template #item="{ element: item, index }">
+          <div class="flex items-center gap-2 md:gap-3 group bg-white border border-transparent hover:border-border-gray hover:shadow-card rounded-lg p-2 transition-all">
+            <div class="drag-handle cursor-grab active:cursor-grabbing text-neutral-gray opacity-40 hover:opacity-100 transition-opacity">
+              <GripVertical :size="16" />
+            </div>
+            
+            <div class="relative w-5 h-5 flex items-center justify-center shrink-0">
+              <input
+                v-model="item.is_done"
+                class="w-5 h-5 rounded border-border-gray text-primary focus:ring-primary-container transition-all cursor-pointer peer"
+                type="checkbox"
+                @change="handleToggle(index, item)"
+              />
+              <div 
+                v-if="item.is_done" 
+                class="t-success-check absolute inset-0 pointer-events-none text-success-green pointer-events-none"
+                :class="animatingItems.has(item.id || index) ? 'is-animating' : 'is-done'"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <path :ref="(el) => handlePathMount(el as Element, item.id || index)" d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+            </div>
+
+            <input 
+              v-model="item.title"
+              class="text-sm font-medium focus:outline-none bg-transparent flex-1 min-w-0 placeholder:text-neutral-gray/50 transition-colors"
+              :class="item.is_done ? 'text-text-secondary line-through' : 'text-on-surface'"
+              placeholder="What needs to be done?"
+              @blur="handleTitleChange(item)"
+              @keyup.enter="handleTitleChange(item)"
+            />
+            
+            <button 
+              type="button" 
+              class="text-text-secondary hover:text-error p-1 bg-surface-container-low hover:bg-error/10 rounded-md cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+              @click="removeItem(index, item)"
+              title="Remove item"
+            >
+              ×
+            </button>
+          </div>
+        </template>
+      </draggable>
     </div>
     
     <div class="pt-4 mt-auto border-t border-border-gray border-dashed shrink-0">

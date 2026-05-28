@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Plus, ListChecks, Flag, CalendarDays, Users, Check, AlignLeft } from 'lucide-vue-next'
 import type { TaskIn, TaskUpdateIn, Task, ChecklistItem } from '@/types/task'
+import { useTasksStore } from '@/stores/tasks'
 import { useBoardsStore } from '@/stores/boards'
 import Modal from '@/components/ui/Modal.vue'
 import MarkdownEditor from '@/components/features/MarkdownEditor.vue'
@@ -16,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const boardsStore = useBoardsStore()
+const tasksStore = useTasksStore()
 
 const emit = defineEmits<{
   close: []
@@ -39,12 +41,18 @@ function closeAssigneesDropdown(e: MouseEvent) {
   }
 }
 
-function toggleAssignee(username: string) {
+async function toggleAssignee(username: string) {
   const index = assignees.value.indexOf(username)
   if (index === -1) {
     assignees.value.push(username)
+    if (props.task) {
+      await tasksStore.assignTask(props.task.id, username)
+    }
   } else {
     assignees.value.splice(index, 1)
+    if (props.task) {
+      await tasksStore.unassignTask(props.task.id, username)
+    }
   }
 }
 
@@ -82,9 +90,12 @@ onUnmounted(() => {
   document.removeEventListener('click', closeAssigneesDropdown)
 })
 
+const isShaking = ref(false)
+
 function handleSave() {
   if (!title.value.trim()) {
-    alert('Title is required')
+    isShaking.value = true
+    setTimeout(() => { isShaking.value = false }, 500)
     return
   }
 
@@ -121,7 +132,8 @@ function handleSave() {
           <input
             id="task-title"
             v-model="title"
-            class="w-full bg-transparent border-none outline-none font-section-heading text-2xl md:text-3xl font-bold text-on-surface placeholder:text-neutral-gray/50 transition-colors"
+            class="t-input w-full bg-transparent border-none outline-none font-section-heading text-2xl md:text-3xl font-bold text-on-surface placeholder:text-neutral-gray/50 transition-colors"
+            :class="{ 'is-shaking text-error placeholder:text-error/50': isShaking }"
             placeholder="Task Title..."
             type="text"
             required
@@ -165,7 +177,7 @@ function handleSave() {
           </div>
           
           <div v-show="activeTab === 'checklist'" class="flex-1 flex flex-col h-full animate-in fade-in duration-300">
-            <ChecklistEditor v-model="checklist" class="flex-1 h-full min-h-[300px]" />
+            <ChecklistEditor v-model="checklist" :task="task" class="flex-1 h-full min-h-[300px]" />
           </div>
         </div>
       </div>

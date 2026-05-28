@@ -10,16 +10,26 @@ export const useTasksStore = defineStore('tasks', () => {
   const error = ref<string | null>(null)
   const toast = useToast()
 
-  const backlogTasks = computed(() => tasks.value.filter(t => t.column_kind === 'backlog' && t.status === 'active'))
+  const backlogTasks = computed(() => {
+    const filtered = tasks.value.filter(t => t.column_kind === 'backlog' && t.status === 'active')
+    return filtered.sort((a, b) => a.position - b.position)
+  })
   
   const getTasksByColumnId = computed(() => {
-    return (columnId: string) => tasks.value.filter(t => t.column_id === columnId && t.status === 'active')
+    return (columnId: string) => {
+      const filtered = tasks.value.filter(t => t.column_id === columnId && t.status === 'active')
+      return filtered.sort((a, b) => a.position - b.position)
+    }
   })
+
+  const isDragging = ref(false)
 
   // Poll interval
   let intervalId: number | null = null
 
   async function fetchTasks(boardId: string, isSilent = false) {
+    if (isDragging.value) return // Prevent overwriting state mid-drag
+    
     if (!isSilent) loading.value = true
     error.value = null
     try {
@@ -105,6 +115,147 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  function updateTaskInStore(updatedTask: Partial<Task> & { id: string }) {
+    const index = tasks.value.findIndex(t => t.id === updatedTask.id)
+    if (index !== -1) {
+      tasks.value[index] = { ...tasks.value[index], ...updatedTask }
+    }
+  }
+
+  async function moveTask(taskId: string, targetColumnId: string, position: number) {
+    // Optimistic Update
+    const taskIndex = tasks.value.findIndex(t => t.id === taskId)
+    let previousTaskState: Task | null = null
+    
+    if (taskIndex !== -1) {
+      previousTaskState = { ...tasks.value[taskIndex] }
+      
+      // Calculate a fake position float for optimistic sorting
+      const targetTasks = tasks.value
+        .filter(t => t.column_id === targetColumnId && t.status === 'active' && t.id !== taskId)
+        .sort((a, b) => a.position - b.position)
+        
+      let optimisticPosition = 65536.0
+      if (targetTasks.length > 0) {
+        if (position === 0) {
+          optimisticPosition = targetTasks[0].position / 2.0
+        } else if (position >= targetTasks.length) {
+          optimisticPosition = targetTasks[targetTasks.length - 1].position + 65536.0
+        } else {
+          optimisticPosition = (targetTasks[position - 1].position + targetTasks[position].position) / 2.0
+        }
+      }
+
+      tasks.value[taskIndex] = { 
+        ...tasks.value[taskIndex], 
+        column_id: targetColumnId, 
+        position: optimisticPosition 
+      }
+    }
+
+    try {
+      // Backend expects 1-indexed positions, but vuedraggable and store use 0-indexed.
+      const parsedPosition = parseInt(position as any, 10)
+      const result = await tasksApi.moveTask(taskId, targetColumnId, parsedPosition + 1)
+      updateTaskInStore(result.task)
+      
+      // Update all reordered sibling tasks' positions
+      if (result.reordered_tasks) {
+        for (const [id, newPos] of Object.entries(result.reordered_tasks)) {
+          const storeTask = tasks.value.find(t => t.id === id)
+          if (storeTask) {
+            storeTask.position = newPos
+          }
+        }
+      }
+      
+      // Silent sync to guarantee absolute truth from backend
+      const taskBoardId = tasks.value.find(t => t.id === taskId)?.board_id
+      if (taskBoardId) {
+        fetchTasks(taskBoardId, true)
+      }
+      
+      return result
+    } catch (e: any) {
+      // Revert optimistic update on failure
+      if (previousTaskState && taskIndex !== -1) {
+        tasks.value[taskIndex] = previousTaskState
+      }
+      toast.error(e.message || 'Failed to move task')
+      throw e
+    }
+  }
+
+  async function addChecklistItem(taskId: string, title: string) {
+    try {
+      const updated = await tasksApi.addChecklistItem(taskId, title)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to add item')
+      throw e
+    }
+  }
+
+  async function updateChecklistItem(taskId: string, itemId: string, data: { title?: string; is_done?: boolean }) {
+    try {
+      const updated = await tasksApi.updateChecklistItem(taskId, itemId, data)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update item')
+      throw e
+    }
+  }
+
+  async function toggleChecklistItem(taskId: string, itemId: string) {
+    try {
+      const updated = await tasksApi.toggleChecklistItem(taskId, itemId)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to toggle item')
+      throw e
+    }
+  }
+
+  async function deleteChecklistItem(taskId: string, itemId: string) {
+    try {
+      const updated = await tasksApi.deleteChecklistItem(taskId, itemId)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete item')
+      throw e
+    }
+  }
+
+  async function reorderChecklist(taskId: string, orderedItemIds: string[]) {
+    try {
+      const updated = await tasksApi.reorderChecklist(taskId, orderedItemIds)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to reorder items')
+      throw e
+    }
+  }
+
+  async function assignTask(taskId: string, username: string) {
+    try {
+      const updated = await tasksApi.assignTask(taskId, username)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to assign user')
+      throw e
+    }
+  }
+
+  async function unassignTask(taskId: string, username: string) {
+    try {
+      const updated = await tasksApi.unassignTask(taskId, username)
+      updateTaskInStore(updated)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to unassign user')
+      throw e
+    }
+  }
+
   return {
     tasks,
     loading,
@@ -117,6 +268,15 @@ export const useTasksStore = defineStore('tasks', () => {
     createTask,
     updateTask,
     archiveTask,
-    deleteTask
+    deleteTask,
+    moveTask,
+    addChecklistItem,
+    updateChecklistItem,
+    toggleChecklistItem,
+    deleteChecklistItem,
+    reorderChecklist,
+    assignTask,
+    unassignTask,
+    isDragging
   }
 })

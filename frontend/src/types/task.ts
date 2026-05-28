@@ -1,6 +1,8 @@
 export interface ChecklistItem {
+  id?: string
   title: string
   is_done: boolean
+  position?: number
 }
 
 export interface Task {

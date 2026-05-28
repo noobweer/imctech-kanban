@@ -55,5 +55,62 @@ export const tasksApi = {
     return apiClient<{ success: boolean; message: string }>(`/tasks/${taskId}`, {
       method: 'DELETE'
     })
+  },
+
+  // Task move
+  moveTask(taskId: string, targetColumnId: string, position: number) {
+    return apiClient<{ task: Task; affected_column_ids: string[]; reordered_tasks: Record<string, number> }>(`/tasks/${taskId}/move`, {
+      method: 'POST',
+      body: { target_column_id: targetColumnId, position }
+    })
+  },
+
+  // Checklist
+  addChecklistItem(taskId: string, title: string) {
+    return apiClient<Task>(`/tasks/${taskId}/checklist/items`, {
+      method: 'POST',
+      body: { title }
+    })
+  },
+
+  updateChecklistItem(taskId: string, itemId: string, data: { title?: string; is_done?: boolean }) {
+    return apiClient<Task>(`/tasks/${taskId}/checklist/items/${itemId}`, {
+      method: 'PATCH',
+      body: data
+    })
+  },
+
+  toggleChecklistItem(taskId: string, itemId: string) {
+    return apiClient<Task>(`/tasks/${taskId}/checklist/items/${itemId}/toggle`, {
+      method: 'POST'
+    })
+  },
+
+  deleteChecklistItem(taskId: string, itemId: string) {
+    return apiClient<Task>(`/tasks/${taskId}/checklist/items/${itemId}/delete`, {
+      method: 'POST'
+    })
+  },
+
+  reorderChecklist(taskId: string, orderedItemIds: string[]) {
+    return apiClient<Task>(`/tasks/${taskId}/checklist/reorder`, {
+      method: 'POST',
+      body: { ordered_item_ids: orderedItemIds }
+    })
+  },
+
+  // Assignment
+  assignTask(taskId: string, username: string) {
+    return apiClient<Task>(`/tasks/${taskId}/assign`, {
+      method: 'POST',
+      body: { username }
+    })
+  },
+
+  unassignTask(taskId: string, username: string) {
+    return apiClient<Task>(`/tasks/${taskId}/unassign`, {
+      method: 'POST',
+      body: { username }
+    })
   }
 }

@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
 import { useTasksStore } from '@/stores/tasks'
+import { useColumnsStore } from '@/stores/columns'
 
 const props = defineProps<{
   board: Board | null
@@ -14,6 +15,7 @@ const props = defineProps<{
 }>()
 
 const tasksStore = useTasksStore()
+const columnsStore = useColumnsStore()
 const searchQuery = ref('')
 
 const isModalOpen = ref(false)
@@ -31,8 +33,16 @@ onUnmounted(() => {
   tasksStore.stopPolling()
 })
 
+const localBacklogTasks = ref<Task[]>([...tasksStore.backlogTasks])
+
+watch(() => tasksStore.backlogTasks, (newTasks) => {
+  if (newTasks) {
+    localBacklogTasks.value = [...newTasks]
+  }
+}, { deep: true, immediate: true })
+
 const filteredTasks = computed(() => {
-  let list = tasksStore.backlogTasks
+  let list = localBacklogTasks.value
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(t => t.title.toLowerCase().includes(q) || t.content?.toLowerCase().includes(q))
@@ -63,11 +73,30 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
     // Error handled in store via toast
   }
 }
+
+async function handlePushToBoard(task: Task) {
+  if (!props.board) return
+  // Fetch columns if not loaded to find the first active board column
+  if (columnsStore.columns.length === 0) {
+    await columnsStore.fetchColumns(props.board.id, true)
+  }
+  const firstActiveColumn = columnsStore.activeColumns[0]
+  if (!firstActiveColumn) {
+    alert('Please create a column on the board first.')
+    return
+  }
+  
+  // Find where it should go in that column (bottom of the column)
+  const targetTasks = tasksStore.getTasksByColumnId(firstActiveColumn.id)
+  const position = targetTasks.length
+  
+  await tasksStore.moveTask(task.id, firstActiveColumn.id, position)
+}
 </script>
 
 <template>
   <!-- Main Content -->
-  <main v-dragscroll class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar cursor-grab active:cursor-grabbing">
+  <main v-dragscroll="true" class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar cursor-grab active:cursor-grabbing">
     <div class="max-w-7xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4 flex-1">
@@ -107,15 +136,22 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
         <div v-for="i in 8" :key="i" class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
       </div>
 
-      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6">
+      <TransitionGroup 
+        v-else 
+        name="t-task"
+        tag="div" 
+        class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 relative"
+      >
         <TaskCard 
           v-for="task in filteredTasks" 
           :key="task.id" 
           :task="task"
+          :allow-push-to-board="true"
           @click="handleEditTask"
           @edit="handleEditTask"
+          @push-to-board="handlePushToBoard"
         />
-      </div>
+      </TransitionGroup>
       
       <div v-if="!tasksStore.loading && filteredTasks.length === 0" class="mt-12 text-center text-text-secondary">
         <p>No tasks found in backlog. {{ searchQuery ? 'Try adjusting your search.' : 'Create one to get started!' }}</p>
@@ -149,5 +185,22 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
+}
+
+/* TransitionGroup classes for tasks */
+.t-task-move,
+.t-task-enter-active,
+.t-task-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.t-task-enter-from,
+.t-task-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.t-task-leave-active {
+  position: absolute;
 }
 </style>

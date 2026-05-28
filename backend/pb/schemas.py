@@ -195,8 +195,23 @@ class MemberOut(Schema):
 # --- Task Schemas ---
 
 class ChecklistItem(Schema):
+    id: str
     title: str
     is_done: bool
+    position: int
+
+
+class ChecklistItemCreateIn(Schema):
+    title: str
+
+
+class ChecklistItemPatchIn(Schema):
+    title: Optional[str] = None
+    is_done: Optional[bool] = None
+
+
+class ChecklistReorderIn(Schema):
+    ordered_item_ids: List[str]
 
 
 class TaskIn(Schema):
@@ -206,7 +221,7 @@ class TaskIn(Schema):
     priority: Optional[int] = 0
     deadline: Optional[datetime] = None
     tags: Optional[List[str]] = []
-    checklist: Optional[List[ChecklistItem]] = []
+    checklist: Optional[List[ChecklistItemCreateIn]] = []
     assignees: Optional[List[str]] = []
 
 
@@ -218,8 +233,29 @@ class TaskUpdateIn(Schema):
     deadline: Optional[datetime] = None
     status: Optional[TaskStatus] = None
     tags: Optional[List[str]] = None
-    checklist: Optional[List[ChecklistItem]] = None
+    checklist: Optional[List[ChecklistItemCreateIn]] = None
     assignees: Optional[List[str]] = None
+
+
+class TaskPatchIn(Schema):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    priority: Optional[int] = None
+    deadline: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+
+
+class TaskMoveIn(Schema):
+    target_column_id: uuid.UUID
+    position: int
+
+
+class TaskAssignIn(Schema):
+    username: str
+
+
+class TaskUnassignIn(Schema):
+    username: str
 
 
 class TaskOut(Schema):
@@ -267,6 +303,11 @@ class TaskOut(Schema):
     @staticmethod
     def resolve_assignees(obj):
         return [user.username for user in obj.assignees.all()]
+
+    @staticmethod
+    def resolve_checklist(obj):
+        from .services.task_lifecycle import normalize_checklist_data
+        return normalize_checklist_data(obj.checklist)
 
     @staticmethod
     def resolve_owner_username(obj):

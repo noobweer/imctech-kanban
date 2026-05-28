@@ -3,25 +3,14 @@ from django.db import models, transaction
 from django.db.models import Q
 
 from ..models import Board, Column, ColumnKind, ColumnStatus, Task, TaskStatus
-from ..schemas import TaskIn, TaskUpdateIn
+from ..schemas import TaskIn, TaskPatchIn
 from ..permissions import has_board_access
 from .board_service import recalculate_board_progress
+from .task_lifecycle import normalize_checklist_data, update_column_sum_tasks
 
 User = get_user_model()
 
 
-def _clean_checklist(raw_checklist) -> list:
-    clean = []
-    for item in raw_checklist:
-        item_dict = item.dict() if hasattr(item, "dict") else item
-        if (
-            isinstance(item_dict, dict)
-            and "title" in item_dict
-            and isinstance(item_dict["title"], str)
-            and item_dict["title"].strip()
-        ):
-            clean.append({"title": item_dict["title"], "is_done": item_dict.get("is_done", False)})
-    return clean
 
 
 def _resolve_assignees(usernames: list, board: Board) -> list:
@@ -102,7 +91,15 @@ def create_task(board: Board, user, payload: TaskIn) -> Task:
 
         max_pos = column.tasks.aggregate(models.Max("position"))["position__max"] or 0
         assignees = _resolve_assignees(payload.assignees or [], board)
-        clean_checklist = _clean_checklist(payload.checklist or [])
+        
+        # Clean out empty titles before normalization
+        raw_checklist = []
+        for item in (payload.checklist or []):
+            item_dict = item.dict() if hasattr(item, "dict") else item
+            if isinstance(item_dict, dict) and "title" in item_dict and isinstance(item_dict["title"], str) and item_dict["title"].strip():
+                raw_checklist.append({"title": item_dict["title"].strip(), "is_done": item_dict.get("is_done", False)})
+
+        clean_checklist = normalize_checklist_data(raw_checklist)
 
         task = Task.objects.create(
             column=column,
@@ -118,12 +115,12 @@ def create_task(board: Board, user, payload: TaskIn) -> Task:
         if assignees:
             task.assignees.set(assignees)
 
+        update_column_sum_tasks(column)
         recalculate_board_progress(board)
     return task
 
 
-def update_task(task: Task, payload: TaskUpdateIn) -> Task:
-    board = task.column.board
+def update_task(task: Task, payload: TaskPatchIn) -> Task:
     with transaction.atomic():
         if payload.title is not None:
             task.title = payload.title
@@ -133,27 +130,10 @@ def update_task(task: Task, payload: TaskUpdateIn) -> Task:
             task.priority = payload.priority
         if payload.deadline is not None:
             task.deadline = payload.deadline
-        if payload.status is not None:
-            task.status = payload.status
-
-        if payload.column_id is not None and payload.column_id != task.column.id:
-            new_col = Column.objects.get(id=payload.column_id, board=board)
-            task.column = new_col
-            max_pos = new_col.tasks.aggregate(models.Max("position"))["position__max"] or 0
-            task.position = max_pos + 1
-
         if payload.tags is not None:
             task.tags = [t for t in payload.tags if t]
 
-        if payload.checklist is not None:
-            task.checklist = _clean_checklist(payload.checklist)
-
-        if payload.assignees is not None:
-            assignees = _resolve_assignees(payload.assignees, board)
-            task.assignees.set(assignees)
-
         task.save()
-        recalculate_board_progress(board)
     return task
 
 

@@ -8,6 +8,7 @@ import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 import Button from '@/components/ui/Button.vue'
 import ColumnCard from '@/components/features/ColumnCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
+import ColumnModal from '@/components/features/ColumnModal.vue'
 
 const props = defineProps<{
   board: Board | null
@@ -19,6 +20,7 @@ const tasksStore = useTasksStore()
 const loadingColumns = ref(columnsStore.columns.length === 0)
 
 const isModalOpen = ref(false)
+const isColumnModalOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const defaultColumnForNewTask = ref<string | undefined>(undefined)
 
@@ -53,12 +55,14 @@ async function handleCreateDefaultColumns() {
   await columnsStore.createDefaultColumns(props.board.id)
 }
 
-async function handleCreateColumn() {
+function handleCreateColumn() {
+  isColumnModalOpen.value = true
+}
+
+async function handleSaveColumn(name: string) {
   if (!props.board) return
-  const name = prompt('Enter column name')
-  if (name?.trim()) {
-    await columnsStore.createColumn(props.board.id, { name: name.trim() })
-  }
+  await columnsStore.createColumn(props.board.id, { name })
+  isColumnModalOpen.value = false
 }
 
 async function handleRenameColumn(id: string, name: string) {
@@ -108,6 +112,13 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
   }
 }
 
+async function handleMoveTask(taskId: string, targetColumnId: string, position: number) {
+  if (!props.board) return
+  await tasksStore.moveTask(taskId, targetColumnId, position)
+}
+
+const isDraggingTask = ref(false)
+
 watch(() => props.board, (newBoard) => {
   if (newBoard) {
     loadColumns()
@@ -128,35 +139,41 @@ onUnmounted(() => {
 
 <template>
   <!-- Column Canvas -->
-  <main v-dragscroll class="h-full overflow-x-auto p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing">
-    <div v-if="loadingBoard || loadingColumns" class="flex gap-4 md:gap-6 min-h-full max-w-max mx-auto md:mx-0">
+  <main v-dragscroll="!isDraggingTask" class="h-full overflow-x-scroll p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing">
+    <div v-if="loadingBoard || loadingColumns" class="flex gap-4 md:gap-6 min-h-full max-w-max">
       <div v-for="i in 4" :key="i" class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"></div>
     </div>
     
-    <div v-else-if="columnsStore.activeColumns.length > 0" class="flex items-start gap-6 pb-4 min-h-full max-w-[1600px] mx-auto">
-      <ColumnCard 
-        v-for="(column, index) in columnsStore.activeColumns" 
-        :key="column.id"
-        :column="column"
-        :tasks="getTasksForColumn(column.id)"
-        :is-first="index === 0"
-        :is-last="index === columnsStore.activeColumns.length - 1"
-        @move-left="handleMoveColumn($event, 'left')"
-        @move-right="handleMoveColumn($event, 'right')"
-        @rename="handleRenameColumn"
-        @archive="handleArchiveColumn"
-        @add-task="handleAddTask"
-        @edit-task="handleEditTask"
-      />
-      
-      <!-- Add Column Placeholder -->
-      <button 
-        class="w-80 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
-        @click="handleCreateColumn"
-      >
-        <Plus :size="20" />
-        Add Another Column
-      </button>
+    <div v-else-if="columnsStore.activeColumns.length > 0" class="flex items-start gap-6 pb-4 min-h-full w-max">
+      <TransitionGroup name="t-column">
+        <ColumnCard 
+          v-for="(column, index) in columnsStore.activeColumns" 
+          :key="column.id"
+          :column="column"
+          :tasks="getTasksForColumn(column.id)"
+          :is-first="index === 0"
+          :is-last="index === columnsStore.activeColumns.length - 1"
+          @move-left="handleMoveColumn($event, 'left')"
+          @move-right="handleMoveColumn($event, 'right')"
+          @rename="handleRenameColumn"
+          @archive="handleArchiveColumn"
+          @add-task="handleAddTask"
+          @edit-task="handleEditTask"
+          @move-task="handleMoveTask"
+          @drag-start="isDraggingTask = true"
+          @drag-end="isDraggingTask = false"
+        />
+        
+        <!-- Add Column Placeholder -->
+        <button 
+          key="add-column-button"
+          class="w-80 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
+          @click="handleCreateColumn"
+        >
+          <Plus :size="20" />
+          Add Another Column
+        </button>
+      </TransitionGroup>
     </div>
 
     <div v-else class="h-full flex flex-col items-center justify-center text-center">
@@ -181,6 +198,12 @@ onUnmounted(() => {
       @close="isModalOpen = false" 
       @save="handleSaveTask" 
     />
+
+    <ColumnModal
+      :isOpen="isColumnModalOpen"
+      @close="isColumnModalOpen = false"
+      @save="handleSaveColumn"
+    />
   </main>
 </template>
 
@@ -197,5 +220,21 @@ onUnmounted(() => {
 }
 .custom-scrollbar-x::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
+}
+
+/* TransitionGroup classes for columns */
+.t-column-move,
+.t-column-enter-active,
+.t-column-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.t-column-enter-from,
+.t-column-leave-to {
+  opacity: 0;
+}
+
+.t-column-leave-active {
+  position: absolute;
 }
 </style>

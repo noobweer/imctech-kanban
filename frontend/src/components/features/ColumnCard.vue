@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Plus, MoreHorizontal, Pencil, Trash2, MoreVertical } from 'lucide-vue-next'
+import draggable from 'vuedraggable'
 import type { Column } from '@/types/column'
 import type { Task } from '@/types/task'
 import Input from '@/components/ui/Input.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
 import Dropdown from '@/components/ui/Dropdown.vue'
 import DropdownItem from '@/components/ui/DropdownItem.vue'
+import { useTasksStore } from '@/stores/tasks'
+
+const tasksStore = useTasksStore()
 
 const props = defineProps<{
   column: Column
@@ -22,6 +26,9 @@ const emit = defineEmits<{
   (e: 'archive', id: string): void
   (e: 'add-task', columnId: string): void
   (e: 'edit-task', task: Task): void
+  (e: 'move-task', taskId: string, targetColumnId: string, position: number): void
+  (e: 'drag-start'): void
+  (e: 'drag-end'): void
 }>()
 
 const isEditing = ref(false)
@@ -38,17 +45,49 @@ function handleRename() {
   }
   isEditing.value = false
 }
+
+const localTasks = ref<Task[]>([...(props.tasks || [])])
+
+watch(() => props.tasks, (newTasks) => {
+  // Only sync if they are different to prevent layout thrashing
+  // vuedraggable handles local array sorting instantly
+  if (newTasks) {
+    localTasks.value = [...newTasks]
+  }
+}, { deep: true, immediate: true })
+
+function onTasksChange(evt: any) {
+  if (evt.added) {
+    const task = evt.added.element
+    const position = evt.added.newIndex
+    emit('move-task', task.id, props.column.id, position)
+  } else if (evt.moved) {
+    const task = evt.moved.element
+    const position = evt.moved.newIndex
+    emit('move-task', task.id, props.column.id, position)
+  }
+}
+
+function onDragStart() {
+  emit('drag-start')
+  tasksStore.isDragging = true
+}
+
+function onDragEnd() {
+  emit('drag-end')
+  tasksStore.isDragging = false
+}
 </script>
 
 <template>
-  <section class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0">
+  <section data-no-dragscroll class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors">
     <!-- Column Header -->
-    <div class="mb-4 px-1 flex items-center justify-between group/header">
+    <div class="mb-3 px-2 flex items-center justify-between group/header h-10">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">
-        <h2 class="font-bold text-gray-700 truncate cursor-pointer" @click="startEditing">
+        <h2 class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors" @click="startEditing">
           {{ column.name }}
         </h2>
-        <span class="bg-surface-container-high text-xs font-bold px-2 py-0.5 rounded-full text-text-secondary">
+        <span class="bg-surface-container text-xs font-bold px-2 py-0.5 rounded-full text-neutral-gray">
           {{ tasks?.length || 0 }}
         </span>
       </div>
@@ -63,21 +102,21 @@ function handleRename() {
         />
       </div>
 
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity">
         <!-- Quick Add Task -->
         <button 
-          class="p-1 hover:bg-surface-container-high rounded transition-colors text-neutral-gray hover:text-primary-container"
+          class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary"
           title="Add task"
           @click="emit('add-task', column.id)"
         >
-          <Plus :size="20" />
+          <Plus :size="18" />
         </button>
 
         <!-- Column Actions Menu -->
         <Dropdown position="bottom-right">
           <template #trigger>
-            <button class="p-1 hover:bg-surface-container-high rounded transition-colors text-neutral-gray hover:text-primary-container">
-              <MoreVertical :size="20" />
+            <button class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary">
+              <MoreVertical :size="18" />
             </button>
           </template>
           
@@ -97,25 +136,33 @@ function handleRename() {
       </div>
     </div>
 
-    <!-- Task List -->
-    <div class="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-300px)] custom-scrollbar">
-      <template v-if="tasks && tasks.length > 0">
+    <!-- Task List (Draggable) -->
+    <draggable
+      v-model="localTasks"
+      group="tasks"
+      item-key="id"
+      :animation="200"
+      ghost-class="opacity-40"
+      drag-class="cursor-grabbing"
+      @start="emit('drag-start')"
+      @end="emit('drag-end')"
+      @change="onTasksChange"
+      class="flex-1 flex flex-col gap-3 overflow-y-scroll max-h-[calc(100vh-300px)] custom-scrollbar pb-10 min-h-[100px]"
+    >
+      <template #item="{ element: task }">
         <TaskCard 
-          v-for="task in tasks" 
-          :key="task.id" 
-          :task="task" 
+          :task="task"
           @click="emit('edit-task', task)"
           @edit="emit('edit-task', task)"
         />
       </template>
-      <div 
-        v-else 
-        class="border-2 border-dashed border-border-gray/50 rounded-xl p-8 flex flex-col items-center justify-center text-text-secondary text-sm italic text-center"
-      >
-        <Plus :size="24" class="mb-2 opacity-20" />
-        No tasks yet
-      </div>
-    </div>
+      
+      <template #footer v-if="!tasks?.length">
+        <div class="border-2 border-dashed border-border-gray/50 rounded-xl p-8 flex flex-col items-center justify-center text-text-secondary text-sm italic text-center h-full m-2">
+          Drop tasks here
+        </div>
+      </template>
+    </draggable>
   </section>
 </template>
 
