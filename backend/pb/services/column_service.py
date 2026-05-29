@@ -8,6 +8,8 @@ def list_columns(board: Board, status=None, kind: str = "board"):
     columns = board.columns.all()
     if status:
         columns = columns.filter(status=status)
+    else:
+        columns = columns.filter(status=ColumnStatus.ACTIVE)
     if kind and kind != "all":
         columns = columns.filter(kind=kind)
     return columns
@@ -77,7 +79,3 @@ def move_column(column: Column, new_position: int) -> Column:
     return column
 
 
-def archive_column(column: Column) -> Column:
-    column.status = ColumnStatus.ARCHIVED
-    column.save()
-    return column

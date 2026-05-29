@@ -85,6 +85,7 @@ class ColumnStatus(models.TextChoices):
 class ColumnKind(models.TextChoices):
     BOARD = "board", _("Board")
     BACKLOG = "backlog", _("Backlog")
+    ARCHIVE = "archive", _("Archive")
 
 
 class Column(models.Model):
@@ -172,10 +173,6 @@ class Invite(models.Model):
         return f"Invite {self.id} for {self.board.name}"
 
 
-class TaskStatus(models.TextChoices):
-    ACTIVE = "active", _("Active")
-    ARCHIVED = "archived", _("Archived")
-
 
 class Task(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -188,11 +185,6 @@ class Task(models.Model):
     content = models.TextField(blank=True, default="")
     priority = models.PositiveIntegerField(default=0)  # 0..3
     deadline = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(
-        max_length=10,
-        choices=TaskStatus.choices,
-        default=TaskStatus.ACTIVE,
-    )
     assignees = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="assigned_tasks",

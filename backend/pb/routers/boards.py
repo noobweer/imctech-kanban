@@ -6,10 +6,10 @@ from ninja import Router, Query
 from ninja.pagination import paginate
 from ninja_jwt.authentication import JWTAuth
 
-from ..models import Board, BoardStatus, Project
-from ..schemas import BoardIn, BoardOut, BoardUpdateIn
+from ..models import Board, BoardStatus, Project, ColumnStatus, ColumnKind
+from ..schemas import BoardIn, BoardOut, BoardUpdateIn, TaskOut, ColumnOut
 from ..permissions import has_project_access, has_board_access, can_edit_board
-from ..services import board_service, project_service
+from ..services import board_service, project_service, task_service, column_service
 
 router = Router()
 
@@ -56,3 +56,35 @@ def delete_board(request, board_id: uuid.UUID):
         return router.api.create_response(request, {"detail": "No permission to delete this board"}, status=403)
     board_service.archive_board(board)
     return {"success": True, "message": "Board archived successfully"}
+
+
+@router.get("/boards/{board_id}/archive/tasks", response=List[TaskOut], auth=JWTAuth())
+@paginate
+def list_archive_tasks(
+    request,
+    board_id: uuid.UUID,
+    priority: Optional[int] = Query(None),
+    assignee: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+):
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(request.auth, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+    return task_service.list_tasks(
+        board, column_kind=ColumnKind.ARCHIVE,
+        priority=priority, assignee=assignee, tag=tag, search=search,
+    )
+
+
+@router.get("/boards/{board_id}/archive/columns", response=List[ColumnOut], auth=JWTAuth())
+@paginate
+def list_archive_columns(
+    request,
+    board_id: uuid.UUID,
+    kind: str = Query("board"),
+):
+    board = get_object_or_404(Board, id=board_id)
+    if not has_board_access(request.auth, board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+    return column_service.list_columns(board, status=ColumnStatus.ARCHIVED, kind=kind)

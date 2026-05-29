@@ -256,6 +256,18 @@ Update board (name/status).
 Archive board.
 *   **Auth:** Required
 
+#### GET /boards/{board_id}/archive/tasks
+List archived tasks (tasks in the technical Archive column).
+*   **Auth:** Required
+*   **Access:** Owner, member, or staff.
+*   **Filters:** `priority`, `assignee`, `tag`, `search`.
+
+#### GET /boards/{board_id}/archive/columns
+List archived columns.
+*   **Auth:** Required
+*   **Access:** Owner, member, or staff.
+*   **Query Params:** `kind` (board/backlog)
+
 ---
 
 ### Column CRUD Endpoints
@@ -292,10 +304,20 @@ Archive column.
 *   **Auth:** Required
 *   **Access:** Board owner or staff.
 
+#### POST /columns/{column_id}/restore
+Restore an archived column.
+*   **Auth:** Required
+*   **Access:** Board owner or staff.
+
 #### DELETE /columns/{column_id}
 Soft delete column (sets status to archived).
 *   **Auth:** Required
 *   **Access:** Board owner or staff.
+
+#### POST /columns/{column_id}/clear
+Move all tasks from this column to the Archive column.
+*   **Auth:** Required
+*   **Access:** Board owner, member, or staff.
 
 #### POST /boards/{board_id}/columns/defaults
 Create default columns (To Do, In Progress, Done).

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from ninja import Schema
-from .models import BoardStatus, ColumnStatus, ColumnKind, TaskStatus
+from .models import BoardStatus, ColumnStatus, ColumnKind
 
 
 # Project Schemas
@@ -231,7 +231,6 @@ class TaskUpdateIn(Schema):
     column_id: Optional[uuid.UUID] = None
     priority: Optional[int] = None
     deadline: Optional[datetime] = None
-    status: Optional[TaskStatus] = None
     tags: Optional[List[str]] = None
     checklist: Optional[List[ChecklistItemCreateIn]] = None
     assignees: Optional[List[str]] = None
@@ -248,6 +247,11 @@ class TaskPatchIn(Schema):
 class TaskMoveIn(Schema):
     target_column_id: uuid.UUID
     position: int
+
+
+class TaskRestoreIn(Schema):
+    target_column_id: uuid.UUID
+    position: Optional[int] = None
 
 
 class TaskAssignIn(Schema):
@@ -269,7 +273,6 @@ class TaskOut(Schema):
     content: str
     priority: int
     deadline: Optional[datetime]
-    status: TaskStatus
     assignees: List[str]
     owner_username: str
     position: int

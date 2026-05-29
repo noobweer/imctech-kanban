@@ -7,13 +7,13 @@ from ninja.pagination import paginate
 from ninja_jwt.authentication import JWTAuth
 from ninja.errors import HttpError
 
-from ..models import Board, Column, Task, TaskStatus
+from ..models import Board, Column, Task
 from ..schemas import (
     TaskIn, TaskOut, TaskPatchIn, TaskMoveIn, TaskAssignIn, TaskUnassignIn,
-    ChecklistItemCreateIn, ChecklistItemPatchIn, ChecklistReorderIn
+    ChecklistItemCreateIn, ChecklistItemPatchIn, ChecklistReorderIn, TaskRestoreIn
 )
 from ..permissions import has_board_access
-from ..services import task_service, task_lifecycle
+from ..services import task_service, task_lifecycle, archive_service
 
 router = Router()
 
@@ -23,7 +23,6 @@ router = Router()
 def list_tasks(
     request,
     board_id: uuid.UUID,
-    status: Optional[TaskStatus] = Query(None),
     column_id: Optional[uuid.UUID] = Query(None),
     column_kind: Optional[str] = Query(None),
     priority: Optional[int] = Query(None),
@@ -35,7 +34,7 @@ def list_tasks(
     if not has_board_access(request.auth, board):
         raise HttpError(403, "No access to this board")
     return task_service.list_tasks(
-        board, status=status, column_id=column_id, column_kind=column_kind,
+        board, column_id=column_id, column_kind=column_kind,
         priority=priority, assignee=assignee, tag=tag, search=search,
     )
 
@@ -45,7 +44,6 @@ def list_tasks(
 def list_backlog_tasks(
     request,
     board_id: uuid.UUID,
-    status: Optional[TaskStatus] = Query(None),
     priority: Optional[int] = Query(None),
     assignee: Optional[str] = Query(None),
     tag: Optional[str] = Query(None),
@@ -55,17 +53,17 @@ def list_backlog_tasks(
     if not has_board_access(request.auth, board):
         raise HttpError(403, "No access to this board")
     return task_service.list_backlog_tasks(
-        board, status=status, priority=priority, assignee=assignee, tag=tag, search=search,
+        board, priority=priority, assignee=assignee, tag=tag, search=search,
     )
 
 
 @router.get("/columns/{column_id}/tasks", response=List[TaskOut], auth=JWTAuth())
 @paginate
-def list_column_tasks(request, column_id: uuid.UUID, status: Optional[TaskStatus] = Query(None)):
+def list_column_tasks(request, column_id: uuid.UUID):
     column = get_object_or_404(Column, id=column_id)
     if not has_board_access(request.auth, column.board):
         raise HttpError(403, "No access to this column")
-    return task_service.list_column_tasks(column, status=status)
+    return task_service.list_column_tasks(column)
 
 
 @router.get("/tasks/{task_id}", response=TaskOut, auth=JWTAuth())
@@ -220,15 +218,18 @@ def archive_task(request, task_id: uuid.UUID):
     task = get_object_or_404(Task, id=task_id)
     if not has_board_access(request.auth, task.column.board):
         raise HttpError(403, "No access to this task")
-    return task_service.archive_task(task)
+    return archive_service.archive_task(task)
 
 
 @router.post("/tasks/{task_id}/restore", response=TaskOut, auth=JWTAuth())
-def restore_task(request, task_id: uuid.UUID):
+def restore_task(request, task_id: uuid.UUID, payload: TaskRestoreIn):
     task = get_object_or_404(Task, id=task_id)
     if not has_board_access(request.auth, task.column.board):
         raise HttpError(403, "No access to this task")
-    return task_service.restore_task(task)
+    try:
+        return archive_service.restore_task(task, payload.target_column_id, payload.position)
+    except ValueError as e:
+        raise HttpError(400, str(e))
 
 
 @router.delete("/tasks/{task_id}", auth=JWTAuth())
@@ -236,5 +237,5 @@ def delete_task(request, task_id: uuid.UUID):
     task = get_object_or_404(Task, id=task_id)
     if not has_board_access(request.auth, task.column.board):
         raise HttpError(403, "No access to this task")
-    task_service.delete_task(task)
+    archive_service.archive_task(task)
     return {"success": True, "message": "Task archived"}

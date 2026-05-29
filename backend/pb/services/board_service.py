@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.db import transaction
 
-from ..models import Board, BoardStatus, Column, ColumnKind, ColumnStatus, Project, Task, TaskStatus
+from ..models import Board, BoardStatus, Column, ColumnKind, ColumnStatus, Project, Task
 from ..schemas import BoardIn, BoardUpdateIn
 
 
@@ -64,7 +64,7 @@ def recalculate_board_progress(board: Board) -> None:
     active_tasks = Task.objects.filter(
         column__board=board,
         column__kind=ColumnKind.BOARD,
-        status=TaskStatus.ACTIVE,
+        column__status=ColumnStatus.ACTIVE,
     )
     total = active_tasks.count()
     done = active_tasks.filter(column__name__iexact="done").count()

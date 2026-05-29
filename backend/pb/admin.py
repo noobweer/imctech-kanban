@@ -78,7 +78,6 @@ class TaskAdmin(admin.ModelAdmin):
         "title",
         "column",
         "owner",
-        "status",
         "priority",
         "deadline",
         "position",
@@ -86,7 +85,6 @@ class TaskAdmin(admin.ModelAdmin):
         "updated_at",
     )
     list_filter = (
-        "status",
         "priority",
         "deadline",
         "created_at",

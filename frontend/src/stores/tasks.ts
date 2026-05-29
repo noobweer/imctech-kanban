@@ -105,6 +105,21 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  async function restoreTask(taskId: string, targetColumnId: string, position?: number) {
+    try {
+      const updated = await tasksApi.restoreTask(taskId, targetColumnId, position)
+      const index = tasks.value.findIndex(t => t.id === taskId)
+      if (index !== -1) {
+        tasks.value[index] = updated
+      } else {
+        tasks.value.push(updated)
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to restore task')
+      throw e
+    }
+  }
+
   async function deleteTask(taskId: string) {
     try {
       await tasksApi.deleteTask(taskId)
@@ -268,6 +283,7 @@ export const useTasksStore = defineStore('tasks', () => {
     createTask,
     updateTask,
     archiveTask,
+    restoreTask,
     deleteTask,
     moveTask,
     addChecklistItem,

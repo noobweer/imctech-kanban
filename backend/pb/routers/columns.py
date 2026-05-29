@@ -9,7 +9,7 @@ from ninja_jwt.authentication import JWTAuth
 from ..models import Board, Column, ColumnStatus
 from ..schemas import ColumnIn, ColumnOut, ColumnUpdateIn, ColumnMoveIn
 from ..permissions import has_board_access, can_edit_board, can_edit_column
-from ..services import column_service
+from ..services import column_service, archive_service
 
 router = Router()
 
@@ -75,7 +75,18 @@ def archive_column(request, column_id: uuid.UUID):
     column = get_object_or_404(Column, id=column_id)
     if not can_edit_column(request.auth, column):
         return router.api.create_response(request, {"detail": "No permission to archive this column"}, status=403)
-    return column_service.archive_column(column)
+    try:
+        return archive_service.archive_column(column)
+    except ValueError as e:
+        return router.api.create_response(request, {"detail": str(e)}, status=400)
+
+
+@router.post("/columns/{column_id}/restore", response=ColumnOut, auth=JWTAuth())
+def restore_column(request, column_id: uuid.UUID):
+    column = get_object_or_404(Column, id=column_id)
+    if not can_edit_column(request.auth, column):
+        return router.api.create_response(request, {"detail": "No permission to restore this column"}, status=403)
+    return archive_service.restore_column(column)
 
 
 @router.delete("/columns/{column_id}", auth=JWTAuth())
@@ -83,5 +94,19 @@ def delete_column(request, column_id: uuid.UUID):
     column = get_object_or_404(Column, id=column_id)
     if not can_edit_column(request.auth, column):
         return router.api.create_response(request, {"detail": "No permission to delete this column"}, status=403)
-    column_service.archive_column(column)
-    return {"success": True, "message": "Column archived successfully"}
+    try:
+        archive_service.archive_column(column)
+        return {"success": True, "message": "Column archived successfully"}
+    except ValueError as e:
+        return router.api.create_response(request, {"detail": str(e)}, status=400)
+
+
+@router.post("/columns/{column_id}/clear", auth=JWTAuth())
+def clear_column(request, column_id: uuid.UUID):
+    column = get_object_or_404(Column, id=column_id)
+    if not has_board_access(request.auth, column.board):
+        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+    try:
+        return archive_service.clear_column(column)
+    except ValueError as e:
+        return router.api.create_response(request, {"detail": str(e)}, status=400)

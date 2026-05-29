@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.db.models import Q
 
-from ..models import Board, Column, ColumnKind, ColumnStatus, Task, TaskStatus
+from ..models import Board, Column, ColumnKind, ColumnStatus, Task
 from ..schemas import TaskIn, TaskPatchIn
 from ..permissions import has_board_access
 from .board_service import recalculate_board_progress
@@ -25,11 +25,11 @@ def _resolve_assignees(usernames: list, board: Board) -> list:
     return assignees
 
 
-def list_tasks(board: Board, status=None, column_id=None, column_kind=None,
+def list_tasks(board: Board, column_id=None, column_kind=None,
                priority=None, assignee=None, tag=None, search=None):
     tasks = Task.objects.filter(column__board=board)
-    if status:
-        tasks = tasks.filter(status=status)
+    if column_kind != ColumnKind.ARCHIVE:
+        tasks = tasks.exclude(column__kind=ColumnKind.ARCHIVE)
     if column_id:
         tasks = tasks.filter(column_id=column_id)
     if column_kind:
@@ -45,11 +45,9 @@ def list_tasks(board: Board, status=None, column_id=None, column_kind=None,
     return tasks.distinct()
 
 
-def list_backlog_tasks(board: Board, status=None, priority=None,
+def list_backlog_tasks(board: Board, priority=None,
                        assignee=None, tag=None, search=None):
     tasks = Task.objects.filter(column__board=board, column__kind=ColumnKind.BACKLOG)
-    if status:
-        tasks = tasks.filter(status=status)
     if priority is not None:
         tasks = tasks.filter(priority=priority)
     if assignee:
@@ -61,10 +59,8 @@ def list_backlog_tasks(board: Board, status=None, priority=None,
     return tasks.distinct()
 
 
-def list_column_tasks(column: Column, status=None):
+def list_column_tasks(column: Column):
     tasks = column.tasks.all()
-    if status:
-        tasks = tasks.filter(status=status)
     return tasks
 
 
@@ -137,22 +133,3 @@ def update_task(task: Task, payload: TaskPatchIn) -> Task:
     return task
 
 
-def archive_task(task: Task) -> Task:
-    task.status = TaskStatus.ARCHIVED
-    task.save()
-    recalculate_board_progress(task.column.board)
-    return task
-
-
-def restore_task(task: Task) -> Task:
-    task.status = TaskStatus.ACTIVE
-    task.save()
-    recalculate_board_progress(task.column.board)
-    return task
-
-
-def delete_task(task: Task) -> Task:
-    task.status = TaskStatus.ARCHIVED
-    task.save()
-    recalculate_board_progress(task.column.board)
-    return task
