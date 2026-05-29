@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { Plus, GripVertical, Check } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 import type { ChecklistItem, Task } from '@/types/task'
 import { useTasksStore } from '@/stores/tasks'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
 
 const props = defineProps<{
   modelValue: ChecklistItem[]
@@ -78,6 +82,7 @@ async function handleDragEnd() {
         v-model="items" 
         group="checklist" 
         handle=".drag-handle"
+        :disabled="isMentor"
         item-key="id"
         ghost-class="opacity-40"
         @end="handleDragEnd"
@@ -93,6 +98,7 @@ async function handleDragEnd() {
               <input
                 v-model="item.is_done"
                 class="w-5 h-5 rounded border-border-gray text-primary focus:ring-primary-container transition-all cursor-pointer peer"
+                :disabled="isMentor"
                 type="checkbox"
                 @change="handleToggle(index, item)"
               />
@@ -100,6 +106,7 @@ async function handleDragEnd() {
 
             <input 
               v-model="item.title"
+              :readonly="isMentor"
               class="text-sm font-medium focus:outline-none bg-transparent flex-1 min-w-0 placeholder:text-neutral-gray/50 transition-colors"
               :class="item.is_done ? 'text-text-secondary line-through' : 'text-on-surface'"
               placeholder="What needs to be done?"
@@ -108,6 +115,7 @@ async function handleDragEnd() {
             />
             
             <button 
+              v-if="!isMentor"
               type="button" 
               class="text-text-secondary hover:text-error p-1 bg-surface-container-low hover:bg-error/10 rounded-md cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
               @click="removeItem(index, item)"
@@ -120,7 +128,7 @@ async function handleDragEnd() {
       </draggable>
     </div>
     
-    <div class="pt-4 mt-auto border-t border-border-gray border-dashed shrink-0">
+    <div v-if="!isMentor" class="pt-4 mt-auto border-t border-border-gray border-dashed shrink-0">
       <button
         class="flex items-center gap-2 text-primary font-button text-sm hover:opacity-80 transition-opacity px-2 py-1 rounded-lg hover:bg-surface-container-low cursor-pointer"
         type="button"

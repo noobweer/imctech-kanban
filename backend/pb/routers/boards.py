@@ -8,7 +8,7 @@ from ninja_jwt.authentication import JWTAuth
 
 from ..models import Board, BoardStatus, Project, ColumnStatus, ColumnKind
 from ..schemas import BoardIn, BoardOut, BoardUpdateIn, TaskOut, ColumnOut
-from ..permissions import has_project_access, has_board_access, can_edit_board
+from ..permissions import has_project_access, has_board_access, can_edit_board, is_student
 from ..services import board_service, project_service, task_service, column_service
 
 router = Router()
@@ -23,6 +23,8 @@ def list_boards(request, status: Optional[BoardStatus] = Query(None)):
 @router.post("/boards", response={201: BoardOut}, auth=JWTAuth())
 def create_board(request, payload: BoardIn):
     user = request.auth
+    if is_student(user):
+        return router.api.create_response(request, {"detail": "Student is not allowed to create projects or boards", "code": "STUDENT_ACTION_FORBIDDEN"}, status=403)
     if payload.project_id:
         project = get_object_or_404(Project, id=payload.project_id)
         if not has_project_access(user, project):

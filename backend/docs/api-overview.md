@@ -218,6 +218,7 @@ List all projects accessible to the user.
 #### POST /projects
 Create a new project.
 *   **Auth:** Required
+*   **Access:** Mentor or staff (Students restricted).
 
 #### GET /projects/{project_id}
 Get project details.
@@ -243,6 +244,7 @@ List all boards accessible to the user.
 #### POST /boards
 Create a new board.
 *   **Auth:** Required
+*   **Access:** Mentor or staff (Students restricted).
 
 #### GET /boards/{board_id}
 Get board details.
@@ -332,7 +334,9 @@ Create default columns (To Do, In Progress, Done).
 - `student` - Default role
 - `mentor` - Mentor role
 
-Roles stored but not enforced in current implementation.
+Roles are enforced at the endpoint level:
+*   **student**: Can interact with tasks, but cannot create projects or boards.
+*   **mentor**: Can manage boards and columns (invited mentors act as co-managers), but cannot create, modify, move, or archive tasks.
 
 ## Security Notes
 
@@ -415,6 +419,8 @@ Leave a board as the current user.
 ---
 
 ### Task Endpoints
+
+**Note:** Users with the `mentor` role are restricted from all task mutation endpoints (create, update, move, delete, archive, assign, checklist). They only have read access to tasks.
 
 #### GET /boards/{board_id}/tasks
 List all tasks for a board.

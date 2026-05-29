@@ -12,7 +12,7 @@ from ..schemas import (
     TaskIn, TaskOut, TaskPatchIn, TaskMoveIn, TaskAssignIn, TaskUnassignIn,
     ChecklistItemCreateIn, ChecklistItemPatchIn, ChecklistReorderIn, TaskRestoreIn
 )
-from ..permissions import has_board_access
+from ..permissions import has_board_access, can_modify_task, can_create_task, is_mentor
 from ..services import task_service, task_lifecycle, archive_service
 
 router = Router()
@@ -77,7 +77,9 @@ def get_task(request, task_id: uuid.UUID):
 @router.post("/boards/{board_id}/tasks", response={201: TaskOut}, auth=JWTAuth())
 def create_board_task(request, board_id: uuid.UUID, payload: TaskIn):
     board = get_object_or_404(Board, id=board_id)
-    if not has_board_access(request.auth, board):
+    if not can_create_task(request.auth, board):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this board")
     try:
         task = task_service.create_task(board, request.auth, payload)
@@ -89,7 +91,9 @@ def create_board_task(request, board_id: uuid.UUID, payload: TaskIn):
 @router.post("/columns/{column_id}/tasks", response={201: TaskOut}, auth=JWTAuth())
 def create_column_task(request, column_id: uuid.UUID, payload: TaskIn):
     column = get_object_or_404(Column, id=column_id)
-    if not has_board_access(request.auth, column.board):
+    if not can_create_task(request.auth, column.board):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this column")
     payload.column_id = column.id
     try:
@@ -102,7 +106,9 @@ def create_column_task(request, column_id: uuid.UUID, payload: TaskIn):
 @router.patch("/tasks/{task_id}", response=TaskOut, auth=JWTAuth())
 def update_task(request, task_id: uuid.UUID, payload: TaskPatchIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No permission to edit this task")
     try:
         return task_service.update_task(task, payload)
@@ -113,7 +119,9 @@ def update_task(request, task_id: uuid.UUID, payload: TaskPatchIn):
 @router.post("/tasks/{task_id}/checklist/items", response=TaskOut, auth=JWTAuth())
 def add_checklist_item(request, task_id: uuid.UUID, payload: ChecklistItemCreateIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.add_checklist_item(task, payload.title)
@@ -124,7 +132,9 @@ def add_checklist_item(request, task_id: uuid.UUID, payload: ChecklistItemCreate
 @router.patch("/tasks/{task_id}/checklist/items/{item_id}", response=TaskOut, auth=JWTAuth())
 def update_checklist_item(request, task_id: uuid.UUID, item_id: str, payload: ChecklistItemPatchIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.patch_checklist_item(task, item_id, payload.title, payload.is_done)
@@ -137,7 +147,9 @@ def update_checklist_item(request, task_id: uuid.UUID, item_id: str, payload: Ch
 @router.post("/tasks/{task_id}/checklist/items/{item_id}/toggle", response=TaskOut, auth=JWTAuth())
 def toggle_checklist_item(request, task_id: uuid.UUID, item_id: str):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.toggle_checklist_item(task, item_id)
@@ -148,7 +160,9 @@ def toggle_checklist_item(request, task_id: uuid.UUID, item_id: str):
 @router.post("/tasks/{task_id}/checklist/items/{item_id}/delete", response=TaskOut, auth=JWTAuth())
 def delete_checklist_item(request, task_id: uuid.UUID, item_id: str):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.delete_checklist_item(task, item_id)
@@ -159,7 +173,9 @@ def delete_checklist_item(request, task_id: uuid.UUID, item_id: str):
 @router.post("/tasks/{task_id}/checklist/reorder", response=TaskOut, auth=JWTAuth())
 def reorder_checklist(request, task_id: uuid.UUID, payload: ChecklistReorderIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.reorder_checklist(task, payload.ordered_item_ids)
@@ -170,7 +186,9 @@ def reorder_checklist(request, task_id: uuid.UUID, payload: ChecklistReorderIn):
 @router.post("/tasks/{task_id}/assign", response=TaskOut, auth=JWTAuth())
 def assign_task(request, task_id: uuid.UUID, payload: TaskAssignIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.assign_task(task, payload.username)
@@ -183,7 +201,9 @@ def assign_task(request, task_id: uuid.UUID, payload: TaskAssignIn):
 @router.post("/tasks/{task_id}/unassign", response=TaskOut, auth=JWTAuth())
 def unassign_task(request, task_id: uuid.UUID, payload: TaskUnassignIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return task_lifecycle.unassign_task(task, payload.username)
@@ -194,7 +214,9 @@ def unassign_task(request, task_id: uuid.UUID, payload: TaskUnassignIn):
 @router.post("/tasks/{task_id}/move", auth=JWTAuth())
 def move_task(request, task_id: uuid.UUID, payload: TaskMoveIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         result = task_lifecycle.move_task(task, payload.target_column_id, payload.position)
@@ -216,7 +238,9 @@ def move_task(request, task_id: uuid.UUID, payload: TaskMoveIn):
 @router.post("/tasks/{task_id}/archive", response=TaskOut, auth=JWTAuth())
 def archive_task(request, task_id: uuid.UUID):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     return archive_service.archive_task(task)
 
@@ -224,7 +248,9 @@ def archive_task(request, task_id: uuid.UUID):
 @router.post("/tasks/{task_id}/restore", response=TaskOut, auth=JWTAuth())
 def restore_task(request, task_id: uuid.UUID, payload: TaskRestoreIn):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
         return archive_service.restore_task(task, payload.target_column_id, payload.position)
@@ -235,7 +261,9 @@ def restore_task(request, task_id: uuid.UUID, payload: TaskRestoreIn):
 @router.delete("/tasks/{task_id}", auth=JWTAuth())
 def delete_task(request, task_id: uuid.UUID):
     task = get_object_or_404(Task, id=task_id)
-    if not has_board_access(request.auth, task.column.board):
+    if not can_modify_task(request.auth, task):
+        if is_mentor(request.auth):
+            return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     archive_service.archive_task(task)
     return {"success": True, "message": "Task archived"}

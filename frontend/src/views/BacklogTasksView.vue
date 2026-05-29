@@ -10,6 +10,7 @@ import TaskCard from '@/components/features/TaskCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
 import { useTasksStore } from '@/stores/tasks'
 import { useColumnsStore } from '@/stores/columns'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps<{
   board: Board | null
@@ -18,6 +19,8 @@ const props = defineProps<{
 
 const tasksStore = useTasksStore()
 const columnsStore = useColumnsStore()
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
 const searchQuery = ref('')
 
 const isModalOpen = ref(false)
@@ -141,7 +144,7 @@ async function handlePushToBoard(task: Task) {
           <button class="p-2 border border-border-gray rounded-xl hover:bg-white transition-colors md:hidden text-neutral-gray">
             <Search :size="20" />
           </button>
-          <Button variant="primary" size="sm" class="gap-2 whitespace-nowrap" @click="handleAddTask">
+          <Button v-if="!isMentor" variant="primary" size="sm" class="gap-2 whitespace-nowrap" @click="handleAddTask">
             <Plus :size="20" /> 
             Add Task
           </Button>

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { MoreVertical, CalendarDays, CheckSquare } from 'lucide-vue-next'
 import type { Task } from '@/types/task'
 import { useBoardsStore } from '@/stores/boards'
+import { useAuthStore } from '@/stores/auth'
 import Dropdown from '@/components/ui/Dropdown.vue'
 import DropdownItem from '@/components/ui/DropdownItem.vue'
 
@@ -12,6 +13,8 @@ const props = defineProps<{
 }>()
 
 const boardsStore = useBoardsStore()
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
 
 const emit = defineEmits<{
   click: [task: Task]
@@ -79,13 +82,13 @@ function getAssigneeName(username: string) {
         </template>
         <div class="py-1">
           <DropdownItem icon="pencil" @click="emit('edit', task)">
-            Edit Task
+            {{ isMentor ? 'View Task' : 'Edit Task' }}
           </DropdownItem>
-          <DropdownItem icon="archive" variant="danger" @click="emit('archive', task)">
+          <DropdownItem v-if="!isMentor" icon="archive" variant="danger" @click="emit('archive', task)">
             Archive Task
           </DropdownItem>
-          <div v-if="allowPushToBoard" class="my-1 border-t border-border-gray/50"></div>
-          <DropdownItem v-if="allowPushToBoard" @click="emit('push-to-board', task)">
+          <div v-if="allowPushToBoard && !isMentor" class="my-1 border-t border-border-gray/50"></div>
+          <DropdownItem v-if="allowPushToBoard && !isMentor" @click="emit('push-to-board', task)">
             Move to Board
           </DropdownItem>
         </div>

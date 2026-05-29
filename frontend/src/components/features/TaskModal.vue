@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { Plus, ListChecks, Flag, CalendarDays, Users, Check, AlignLeft } from 'lucide-vue-next'
 import type { TaskIn, TaskUpdateIn, Task, ChecklistItem } from '@/types/task'
 import { useTasksStore } from '@/stores/tasks'
 import { useBoardsStore } from '@/stores/boards'
+import { useAuthStore } from '@/stores/auth'
 import Modal from '@/components/ui/Modal.vue'
 import MarkdownEditor from '@/components/features/MarkdownEditor.vue'
 import ChecklistEditor from '@/components/features/ChecklistEditor.vue'
@@ -18,6 +19,8 @@ const props = defineProps<{
 
 const boardsStore = useBoardsStore()
 const tasksStore = useTasksStore()
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
 
 const emit = defineEmits<{
   close: []
@@ -136,6 +139,7 @@ function handleSave() {
             :class="{ 'is-shaking text-error placeholder:text-error/50': isShaking }"
             placeholder="Task Title..."
             type="text"
+            :readonly="isMentor"
             required
             autofocus
           />
@@ -193,6 +197,7 @@ function handleSave() {
           <div class="flex bg-surface-container-low rounded-xl p-1 gap-1">
             <button 
               type="button"
+              :disabled="isMentor"
               @click="priority = 0" 
               :class="[
                 'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
@@ -203,6 +208,7 @@ function handleSave() {
             </button>
             <button 
               type="button"
+              :disabled="isMentor"
               @click="priority = 1" 
               :class="[
                 'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
@@ -213,6 +219,7 @@ function handleSave() {
             </button>
             <button 
               type="button"
+              :disabled="isMentor"
               @click="priority = 2" 
               :class="[
                 'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
@@ -233,6 +240,7 @@ function handleSave() {
             id="due-date"
             v-model="deadline"
             class="w-full bg-white border border-border-gray rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all outline-none"
+            :readonly="isMentor"
             type="date"
           />
         </div>
@@ -253,6 +261,7 @@ function handleSave() {
             
             <div class="relative" ref="assigneesDropdownRef">
               <button
+                v-if="!isMentor"
                 type="button"
                 class="w-8 h-8 rounded-full border-2 border-dashed border-border-gray flex items-center justify-center text-text-secondary hover:border-primary-container hover:text-primary-container transition-all cursor-pointer"
                 @click.stop="isAssigneesDropdownOpen = !isAssigneesDropdownOpen"
@@ -295,7 +304,7 @@ function handleSave() {
         <Button variant="ghost" size="md" @click="emit('close')">
           Cancel
         </Button>
-        <Button variant="primary" size="md" type="submit" form="task-form">
+        <Button v-if="!isMentor" variant="primary" size="md" type="submit" form="task-form">
           {{ task ? 'Save Changes' : 'Create Task' }}
         </Button>
       </div>

@@ -83,8 +83,8 @@ def join_board_via_invite(request, invite_id: uuid.UUID):
     except LookupError as e:
         key = str(e)
         if key == "already_owner":
-            return router.api.create_response(request, {"detail": "You are already the owner of this board"}, status=200)
-        return router.api.create_response(request, {"detail": "You are already a member of this board"}, status=200)
+            return {"success": True, "message": "You are already the owner of this board"}
+        return {"success": True, "message": "You are already a member of this board"}
     except ValueError as e:
         return router.api.create_response(request, {"detail": str(e)}, status=400)
     return {"success": True, "message": f"You have joined the board '{board.name}'"}

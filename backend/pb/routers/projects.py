@@ -8,7 +8,7 @@ from ninja_jwt.authentication import JWTAuth
 
 from ..models import Project
 from ..schemas import ProjectIn, ProjectOut
-from ..permissions import has_project_access, can_edit_project
+from ..permissions import has_project_access, can_edit_project, is_student
 from ..services import project_service
 
 router = Router()
@@ -22,6 +22,8 @@ def list_projects(request):
 
 @router.post("/projects", response={201: ProjectOut}, auth=JWTAuth())
 def create_project(request, payload: ProjectIn):
+    if is_student(request.auth):
+        return router.api.create_response(request, {"detail": "Student is not allowed to create projects or boards", "code": "STUDENT_ACTION_FORBIDDEN"}, status=403)
     project = project_service.create_project(payload.name)
     return 201, project
 

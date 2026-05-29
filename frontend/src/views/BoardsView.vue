@@ -12,6 +12,7 @@ const authStore = useAuthStore()
 const boardsStore = useBoardsStore()
 
 const isMentor = computed(() => authStore.user?.role === 'mentor')
+const canCreateBoard = computed(() => authStore.user?.role !== 'student')
 const hasBoards = computed(() => boardsStore.filteredBoards.length > 0)
 
 onMounted(() => {
@@ -45,7 +46,7 @@ function handleCreateBoard() {
           </div>
 
           <button
-            v-if="isMentor"
+            v-if="canCreateBoard"
             class="bg-primary-container text-white px-4 py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1"
             @click="handleCreateBoard"
           >
@@ -111,7 +112,7 @@ function handleCreateBoard() {
             </button>
           </div>
           <button
-            v-if="isMentor"
+            v-if="canCreateBoard"
             class="bg-primary-container cursor-pointer text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
             @click="handleCreateBoard"
           >
@@ -210,7 +211,7 @@ function handleCreateBoard() {
           </div>
 
           <!-- CTA -->
-          <div v-if="isMentor" class="pt-4">
+          <div v-if="canCreateBoard" class="pt-4">
             <button
               class="bg-primary-container hover:opacity-90 text-white px-8 py-4 rounded-xl flex items-center gap-3 font-['Inter'] text-lg font-semibold mx-auto transition-all shadow-lg shadow-purple-500/20 active:scale-95"
               @click="handleCreateBoard"

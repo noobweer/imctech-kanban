@@ -9,6 +9,11 @@ import TaskCard from '@/components/features/TaskCard.vue'
 import Dropdown from '@/components/ui/Dropdown.vue'
 import DropdownItem from '@/components/ui/DropdownItem.vue'
 import { useTasksStore } from '@/stores/tasks'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
+const isStudent = computed(() => authStore.user?.role === 'student')
 
 const tasksStore = useTasksStore()
 
@@ -86,7 +91,7 @@ function onDragEnd() {
     <!-- Column Header -->
     <div class="mb-3 px-2 flex items-center justify-between group/header h-10">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">
-        <h2 class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors" @click="startEditing">
+        <h2 class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors" @click="!isStudent && startEditing()">
           {{ column.name }}
         </h2>
         <span class="bg-surface-container text-xs font-bold px-2 py-0.5 rounded-full text-neutral-gray">
@@ -107,6 +112,7 @@ function onDragEnd() {
       <div class="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity">
         <!-- Quick Add Task -->
         <button 
+          v-if="!isMentor"
           class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary"
           title="Add task"
           @click="emit('add-task', column.id)"
@@ -123,17 +129,17 @@ function onDragEnd() {
           </template>
           
           <div class="py-1">
-            <DropdownItem v-if="!isFirst" icon="chevron-left" @click="emit('move-left', column.id)">
+            <DropdownItem v-if="!isFirst && !isStudent" icon="chevron-left" @click="emit('move-left', column.id)">
               Move Left
             </DropdownItem>
-            <DropdownItem v-if="!isLast" icon="chevron-right" @click="emit('move-right', column.id)">
+            <DropdownItem v-if="!isLast && !isStudent" icon="chevron-right" @click="emit('move-right', column.id)">
               Move Right
             </DropdownItem>
-            <div v-if="!isFirst || !isLast" class="my-1 border-t border-border-gray/50"></div>
-            <DropdownItem icon="trash" @click="emit('clear-tasks', column.id)">
+            <div v-if="(!isFirst || !isLast) && !isStudent" class="my-1 border-t border-border-gray/50"></div>
+            <DropdownItem v-if="!isMentor" icon="trash" @click="emit('clear-tasks', column.id)">
               Clear Tasks to Archive
             </DropdownItem>
-            <DropdownItem icon="archive" variant="danger" @click="emit('archive', column.id)">
+            <DropdownItem v-if="!isStudent" icon="archive" variant="danger" @click="emit('archive', column.id)">
               Archive Column
             </DropdownItem>
           </div>
@@ -145,6 +151,7 @@ function onDragEnd() {
     <draggable
       v-model="localTasks"
       group="tasks"
+      :disabled="isMentor"
       item-key="id"
       :animation="200"
       ghost-class="opacity-40"
