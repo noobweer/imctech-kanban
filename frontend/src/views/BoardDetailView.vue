@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button.vue'
 import ColumnCard from '@/components/features/ColumnCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
 import ColumnModal from '@/components/features/ColumnModal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 
 const props = defineProps<{
   board: Board | null
@@ -21,8 +22,15 @@ const loadingColumns = ref(columnsStore.columns.length === 0)
 
 const isModalOpen = ref(false)
 const isColumnModalOpen = ref(false)
+const showArchiveColumnConfirm = ref(false)
+const showClearColumnConfirm = ref(false)
+const showArchiveTaskConfirm = ref(false)
 const editingTask = ref<Task | null>(null)
 const defaultColumnForNewTask = ref<string | undefined>(undefined)
+
+const columnToArchive = ref<string | null>(null)
+const columnToClear = ref<string | null>(null)
+const taskToArchive = ref<Task | null>(null)
 
 async function loadColumns() {
   if (!props.board) return
@@ -70,8 +78,28 @@ async function handleRenameColumn(id: string, name: string) {
 }
 
 async function handleArchiveColumn(id: string) {
-  if (confirm('Are you sure you want to archive this column?')) {
-    await columnsStore.archiveColumn(id)
+  columnToArchive.value = id
+  showArchiveColumnConfirm.value = true
+}
+
+async function confirmArchiveColumn() {
+  if (columnToArchive.value) {
+    await columnsStore.archiveColumn(columnToArchive.value)
+    showArchiveColumnConfirm.value = false
+    columnToArchive.value = null
+  }
+}
+
+async function handleClearTasks(id: string) {
+  columnToClear.value = id
+  showClearColumnConfirm.value = true
+}
+
+async function confirmClearTasks() {
+  if (columnToClear.value) {
+    await columnsStore.clearColumn(columnToClear.value)
+    showClearColumnConfirm.value = false
+    columnToClear.value = null
   }
 }
 
@@ -96,6 +124,19 @@ function handleEditTask(task: Task) {
   editingTask.value = task
   defaultColumnForNewTask.value = undefined
   isModalOpen.value = true
+}
+
+async function handleArchiveTask(task: Task) {
+  taskToArchive.value = task
+  showArchiveTaskConfirm.value = true
+}
+
+async function confirmArchiveTask() {
+  if (taskToArchive.value) {
+    await tasksStore.archiveTask(taskToArchive.value.id)
+    showArchiveTaskConfirm.value = false
+    taskToArchive.value = null
+  }
 }
 
 async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
@@ -157,8 +198,10 @@ onUnmounted(() => {
           @move-right="handleMoveColumn($event, 'right')"
           @rename="handleRenameColumn"
           @archive="handleArchiveColumn"
+          @clear-tasks="handleClearTasks"
           @add-task="handleAddTask"
           @edit-task="handleEditTask"
+          @archive-task="handleArchiveTask"
           @move-task="handleMoveTask"
           @drag-start="isDraggingTask = true"
           @drag-end="isDraggingTask = false"
@@ -203,6 +246,37 @@ onUnmounted(() => {
       :isOpen="isColumnModalOpen"
       @close="isColumnModalOpen = false"
       @save="handleSaveColumn"
+    />
+
+    <!-- Confirmation Modals -->
+    <ConfirmModal
+      :is-open="showArchiveColumnConfirm"
+      title="Archive Column"
+      description="Are you sure you want to archive this column? It will be moved to the Archive tab, along with all its active tasks."
+      confirm-text="Archive Column"
+      is-destructive
+      @close="showArchiveColumnConfirm = false"
+      @confirm="confirmArchiveColumn"
+    />
+
+    <ConfirmModal
+      :is-open="showClearColumnConfirm"
+      title="Clear Tasks"
+      description="Are you sure you want to move all active tasks in this column to the Archive?"
+      confirm-text="Archive All Tasks"
+      is-destructive
+      @close="showClearColumnConfirm = false"
+      @confirm="confirmClearTasks"
+    />
+
+    <ConfirmModal
+      :is-open="showArchiveTaskConfirm"
+      title="Archive Task"
+      description="Are you sure you want to archive this task? It will be moved to the Archive tab."
+      confirm-text="Archive Task"
+      is-destructive
+      @close="showArchiveTaskConfirm = false"
+      @confirm="confirmArchiveTask"
     />
   </main>
 </template>

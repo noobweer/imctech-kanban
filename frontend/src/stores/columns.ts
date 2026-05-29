@@ -138,6 +138,35 @@ export const useColumnsStore = defineStore('columns', () => {
     }
   }
 
+  async function restoreColumn(id: string) {
+    try {
+      await columnsApi.restoreColumn(id)
+      const column = columns.value.find((c) => c.id === id)
+      if (column) {
+        column.status = 'active'
+      } else if (currentBoardId.value) {
+        // Just refetch to be safe since position was recalculated by backend
+        await fetchColumns(currentBoardId.value, true)
+      }
+    } catch (error) {
+      console.error('Failed to restore column:', error)
+      throw error
+    }
+  }
+
+  async function clearColumn(id: string) {
+    try {
+      await columnsApi.clearColumn(id)
+      // Re-fetch columns to update sum_tasks
+      if (currentBoardId.value) {
+        await fetchColumns(currentBoardId.value, true)
+      }
+    } catch (error) {
+      console.error('Failed to clear column:', error)
+      throw error
+    }
+  }
+
   return {
     columns,
     loading,
@@ -148,6 +177,8 @@ export const useColumnsStore = defineStore('columns', () => {
     updateColumn,
     moveColumn,
     archiveColumn,
+    restoreColumn,
+    clearColumn,
     startPolling,
     stopPolling,
   }

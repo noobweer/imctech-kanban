@@ -11,13 +11,13 @@ export const useTasksStore = defineStore('tasks', () => {
   const toast = useToast()
 
   const backlogTasks = computed(() => {
-    const filtered = tasks.value.filter(t => t.column_kind === 'backlog' && t.status === 'active')
+    const filtered = tasks.value.filter(t => t.column_kind === 'backlog')
     return filtered.sort((a, b) => a.position - b.position)
   })
   
   const getTasksByColumnId = computed(() => {
     return (columnId: string) => {
-      const filtered = tasks.value.filter(t => t.column_id === columnId && t.status === 'active')
+      const filtered = tasks.value.filter(t => t.column_id === columnId)
       return filtered.sort((a, b) => a.position - b.position)
     }
   })
@@ -133,7 +133,7 @@ export const useTasksStore = defineStore('tasks', () => {
   function updateTaskInStore(updatedTask: Partial<Task> & { id: string }) {
     const index = tasks.value.findIndex(t => t.id === updatedTask.id)
     if (index !== -1) {
-      tasks.value[index] = { ...tasks.value[index], ...updatedTask }
+      tasks.value[index] = { ...tasks.value[index], ...updatedTask } as Task
     }
   }
 
@@ -143,21 +143,21 @@ export const useTasksStore = defineStore('tasks', () => {
     let previousTaskState: Task | null = null
     
     if (taskIndex !== -1) {
-      previousTaskState = { ...tasks.value[taskIndex] }
+      previousTaskState = { ...tasks.value[taskIndex] } as Task
       
       // Calculate a fake position float for optimistic sorting
       const targetTasks = tasks.value
-        .filter(t => t.column_id === targetColumnId && t.status === 'active' && t.id !== taskId)
+        .filter(t => t.column_id === targetColumnId && t.id !== taskId)
         .sort((a, b) => a.position - b.position)
         
       let optimisticPosition = 65536.0
       if (targetTasks.length > 0) {
         if (position === 0) {
-          optimisticPosition = targetTasks[0].position / 2.0
+          optimisticPosition = targetTasks[0]!.position / 2.0
         } else if (position >= targetTasks.length) {
-          optimisticPosition = targetTasks[targetTasks.length - 1].position + 65536.0
+          optimisticPosition = targetTasks[targetTasks.length - 1]!.position + 65536.0
         } else {
-          optimisticPosition = (targetTasks[position - 1].position + targetTasks[position].position) / 2.0
+          optimisticPosition = (targetTasks[position - 1]!.position + targetTasks[position]!.position) / 2.0
         }
       }
 
@@ -165,7 +165,7 @@ export const useTasksStore = defineStore('tasks', () => {
         ...tasks.value[taskIndex], 
         column_id: targetColumnId, 
         position: optimisticPosition 
-      }
+      } as Task
     }
 
     try {

@@ -24,8 +24,10 @@ const emit = defineEmits<{
   (e: 'move-right', id: string): void
   (e: 'rename', id: string, name: string): void
   (e: 'archive', id: string): void
+  (e: 'clear-tasks', id: string): void
   (e: 'add-task', columnId: string): void
   (e: 'edit-task', task: Task): void
+  (e: 'archive-task', task: Task): void
   (e: 'move-task', taskId: string, targetColumnId: string, position: number): void
   (e: 'drag-start'): void
   (e: 'drag-end'): void
@@ -128,6 +130,9 @@ function onDragEnd() {
               Move Right
             </DropdownItem>
             <div v-if="!isFirst || !isLast" class="my-1 border-t border-border-gray/50"></div>
+            <DropdownItem icon="trash" @click="emit('clear-tasks', column.id)">
+              Clear Tasks to Archive
+            </DropdownItem>
             <DropdownItem icon="archive" variant="danger" @click="emit('archive', column.id)">
               Archive Column
             </DropdownItem>
@@ -154,6 +159,7 @@ function onDragEnd() {
           :task="task"
           @click="emit('edit-task', task)"
           @edit="emit('edit-task', task)"
+          @archive="emit('archive-task', task)"
         />
       </template>
       

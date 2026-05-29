@@ -16,10 +16,11 @@ const boardsStore = useBoardsStore()
 const emit = defineEmits<{
   click: [task: Task]
   edit: [task: Task]
+  archive: [task: Task]
   'push-to-board': [task: Task]
 }>()
 
-const isDone = computed(() => props.task.status === 'archived' || props.task.column_name?.toLowerCase() === 'done')
+const isDone = computed(() => props.task.column_kind === 'archive' || props.task.column_name?.toLowerCase() === 'done')
 
 const progressText = computed(() => `${props.task.checklist_done_count}/${props.task.checklist_total_count}`)
 
@@ -77,8 +78,11 @@ function getAssigneeName(username: string) {
           </button>
         </template>
         <div class="py-1">
-          <DropdownItem @click="emit('edit', task)">
+          <DropdownItem icon="pencil" @click="emit('edit', task)">
             Edit Task
+          </DropdownItem>
+          <DropdownItem icon="archive" variant="danger" @click="emit('archive', task)">
+            Archive Task
           </DropdownItem>
           <div v-if="allowPushToBoard" class="my-1 border-t border-border-gray/50"></div>
           <DropdownItem v-if="allowPushToBoard" @click="emit('push-to-board', task)">

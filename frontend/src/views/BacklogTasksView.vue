@@ -4,6 +4,8 @@ import { Plus, Search } from 'lucide-vue-next'
 import type { Board } from '@/types/board'
 import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 import Button from '@/components/ui/Button.vue'
+import { useToast } from '@/composables/useToast'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
 import { useTasksStore } from '@/stores/tasks'
@@ -19,6 +21,8 @@ const columnsStore = useColumnsStore()
 const searchQuery = ref('')
 
 const isModalOpen = ref(false)
+const showArchiveTaskConfirm = ref(false)
+const taskToArchive = ref<Task | null>(null)
 const editingTask = ref<Task | null>(null)
 
 // Initialize and poll tasks
@@ -71,6 +75,19 @@ async function handleSaveTask(data: TaskIn | TaskUpdateIn) {
     isModalOpen.value = false
   } catch (error) {
     // Error handled in store via toast
+  }
+}
+
+async function handleArchiveTask(task: Task) {
+  taskToArchive.value = task
+  showArchiveTaskConfirm.value = true
+}
+
+async function confirmArchiveTask() {
+  if (taskToArchive.value) {
+    await tasksStore.archiveTask(taskToArchive.value.id)
+    showArchiveTaskConfirm.value = false
+    taskToArchive.value = null
   }
 }
 
@@ -149,6 +166,7 @@ async function handlePushToBoard(task: Task) {
           :allow-push-to-board="true"
           @click="handleEditTask"
           @edit="handleEditTask"
+          @archive="handleArchiveTask"
           @push-to-board="handlePushToBoard"
         />
       </TransitionGroup>
@@ -164,6 +182,16 @@ async function handlePushToBoard(task: Task) {
       :boardId="board?.id" 
       @close="isModalOpen = false" 
       @save="handleSaveTask" 
+    />
+
+    <ConfirmModal
+      :is-open="showArchiveTaskConfirm"
+      title="Archive Task"
+      description="Are you sure you want to archive this task? It will be moved to the Archive tab."
+      confirm-text="Archive Task"
+      is-destructive
+      @close="showArchiveTaskConfirm = false"
+      @confirm="confirmArchiveTask"
     />
   </main>
 </template>

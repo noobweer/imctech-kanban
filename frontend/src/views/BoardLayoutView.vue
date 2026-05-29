@@ -105,7 +105,17 @@ onMounted(loadBoardData)
         >
           Backlog
         </router-link>
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors border-b-2 border-transparent" href="#">Archive</a>
+        <router-link 
+          :to="`/boards/${boardId}/archive`"
+          class="py-4 font-medium text-sm transition-colors border-b-2"
+          :class="[
+            route.name === 'board-archive' 
+              ? 'border-primary-container text-primary-container' 
+              : 'border-transparent text-text-secondary hover:text-primary-container'
+          ]"
+        >
+          Archive
+        </router-link>
       </div>
       <div class="flex gap-4 md:gap-8 min-w-max">
         <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">

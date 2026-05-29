@@ -3,6 +3,7 @@ export interface Column {
   board_id: string
   board_name: string
   name: string
+  kind: 'board' | 'backlog' | 'archive'
   position: number
   status: 'active' | 'archived'
   sum_tasks: number

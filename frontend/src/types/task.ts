@@ -16,7 +16,6 @@ export interface Task {
   content: string
   priority: number
   deadline: string | null
-  status: 'active' | 'archived'
   assignees: string[]
   owner_username: string
   position: number
@@ -45,7 +44,6 @@ export interface TaskUpdateIn {
   column_id?: string
   priority?: number
   deadline?: string | null
-  status?: 'active' | 'archived'
   tags?: string[]
   checklist?: ChecklistItem[]
   assignees?: string[]

@@ -31,25 +31,6 @@ watch(items, (newVal) => {
   })
 }, { deep: true })
 
-// Success Check Animation State
-const animatingItems = ref<Set<string | number>>(new Set())
-
-function animateSuccess(idOrIndex: string | number) {
-  animatingItems.value.add(idOrIndex)
-  setTimeout(() => {
-    animatingItems.value.delete(idOrIndex)
-  }, 550)
-}
-
-function handlePathMount(el: Element | null, idOrIndex: string | number) {
-  if (el instanceof SVGPathElement && animatingItems.value.has(idOrIndex)) {
-    const length = Math.ceil(el.getTotalLength())
-    el.style.strokeDasharray = `${length}`
-    el.style.strokeDashoffset = `${length}`
-    // Force reflow
-    void el.getBoundingClientRect()
-  }
-}
 
 async function addItem() {
   if (props.task) {
@@ -69,9 +50,6 @@ async function removeItem(index: number, item: ChecklistItem) {
 }
 
 async function handleToggle(index: number, item: ChecklistItem) {
-  if (item.is_done) {
-    animateSuccess(item.id || index)
-  }
   if (props.task && item.id) {
     await tasksStore.toggleChecklistItem(props.task.id, item.id)
   }
@@ -118,15 +96,6 @@ async function handleDragEnd() {
                 type="checkbox"
                 @change="handleToggle(index, item)"
               />
-              <div 
-                v-if="item.is_done" 
-                class="t-success-check absolute inset-0 pointer-events-none text-success-green pointer-events-none"
-                :class="animatingItems.has(item.id || index) ? 'is-animating' : 'is-done'"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <path :ref="(el) => handlePathMount(el as Element, item.id || index)" d="M20 6L9 17l-5-5"/>
-                </svg>
-              </div>
             </div>
 
             <input 

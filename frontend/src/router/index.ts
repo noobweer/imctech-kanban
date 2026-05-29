@@ -40,6 +40,11 @@ const router = createRouter({
           name: 'board-backlog',
           component: () => import('@/views/BacklogTasksView.vue'),
         },
+        {
+          path: 'archive',
+          name: 'board-archive',
+          component: () => import('@/views/ArchiveView.vue'),
+        },
       ],
     },
     {

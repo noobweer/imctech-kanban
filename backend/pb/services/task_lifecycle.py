@@ -149,7 +149,7 @@ def unassign_task(task: Task, username: str) -> Task:
 
 
 def update_column_sum_tasks(column: Column):
-    column.sum_tasks = column.tasks.exclude(status='archived').count()
+    column.sum_tasks = column.tasks.count()
     column.save(update_fields=["sum_tasks"])
 
 
@@ -176,7 +176,7 @@ def move_task(task: Task, target_column_id: uuid.UUID, position: int) -> dict:
             if task.position == position:
                 return {"task": task, "affected_column_ids": [str(source_col.id)], "reordered_tasks": {}}
                 
-            active_tasks = list(source_col.tasks.filter(status='active').exclude(id=task.id).order_by('position'))
+            active_tasks = list(source_col.tasks.exclude(id=task.id).order_by('position'))
             
             if position > len(active_tasks) + 1:
                 position = len(active_tasks) + 1
@@ -194,8 +194,8 @@ def move_task(task: Task, target_column_id: uuid.UUID, position: int) -> dict:
             return {"task": task, "affected_column_ids": [str(source_col.id)], "reordered_tasks": reordered_tasks}
             
         else:
-            source_tasks = list(source_col.tasks.filter(status='active').exclude(id=task.id).order_by('position'))
-            target_tasks = list(target_col.tasks.filter(status='active').order_by('position'))
+            source_tasks = list(source_col.tasks.exclude(id=task.id).order_by('position'))
+            target_tasks = list(target_col.tasks.order_by('position'))
             
             reordered_tasks = {}
             for idx, t in enumerate(source_tasks):
