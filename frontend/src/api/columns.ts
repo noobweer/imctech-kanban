@@ -50,4 +50,16 @@ export const columnsApi = {
       method: 'DELETE',
     })
   },
+
+  async restoreColumn(id: string): Promise<Column> {
+    return apiClient(`/columns/${id}/restore`, {
+      method: 'POST',
+    })
+  },
+
+  async clearColumn(id: string): Promise<{ success: boolean; archived_tasks_count: number; affected_column_ids: string[] }> {
+    return apiClient(`/columns/${id}/clear`, {
+      method: 'POST',
+    })
+  },
 }

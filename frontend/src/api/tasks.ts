@@ -45,9 +45,10 @@ export const tasksApi = {
     })
   },
 
-  restoreTask(taskId: string) {
+  restoreTask(taskId: string, targetColumnId: string, position?: number) {
     return apiClient<Task>(`/tasks/${taskId}/restore`, {
-      method: 'POST'
+      method: 'POST',
+      body: { target_column_id: targetColumnId, position }
     })
   },
 

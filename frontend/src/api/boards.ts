@@ -23,6 +23,14 @@ export const boardsApi = {
     })
   },
 
+  async getArchiveTasks(boardId: string, params?: Record<string, any>) {
+    return apiClient(`/boards/${boardId}/archive/tasks`, { params })
+  },
+
+  async getArchiveColumns(boardId: string, params?: Record<string, any>) {
+    return apiClient(`/boards/${boardId}/archive/columns`, { params })
+  },
+
   async createBoard(data: CreateBoardData): Promise<Board> {
     return apiClient('/boards', {
       method: 'POST',
