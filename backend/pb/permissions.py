@@ -69,3 +69,39 @@ def can_create_task(user, board) -> bool:
     if is_mentor(user):
         return False
     return has_board_access(user, board)
+
+
+def can_read_task_comments(user, task) -> bool:
+    return has_board_access(user, task.column.board)
+
+
+def can_create_task_comment(user, task) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+
+    board_access = has_board_access(user, task.column.board)
+    if not board_access:
+        return False
+
+    if is_mentor(user):
+        return True
+
+    # Student / Assignee
+    # Only if task already has not-deleted comments AND user is assignee
+    has_active_comments = task.comments.filter(is_deleted=False).exists()
+    if has_active_comments and task.assignees.filter(id=user.id).exists():
+        return True
+
+    return False
+
+
+def can_edit_task_comment(user, comment) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+    return comment.owner == user
+
+
+def can_delete_task_comment(user, comment) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+    return comment.owner == user

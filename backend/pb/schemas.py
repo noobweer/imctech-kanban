@@ -328,3 +328,53 @@ class TaskOut(Schema):
             return 0
         return len(obj.checklist)
 
+
+# --- Comment Schemas ---
+
+class TaskCommentCreateIn(Schema):
+    content: str
+    links: Optional[List[str]] = []
+
+
+class TaskCommentUpdateIn(Schema):
+    content: Optional[str] = None
+    links: Optional[List[str]] = None
+
+
+class TaskCommentOut(Schema):
+    id: uuid.UUID
+    task_id: uuid.UUID
+    owner_username: str
+    owner_name: Optional[str] = None
+    owner_role: Optional[str] = None
+    content: str
+    links: List[str]
+    created_at: datetime
+    updated_at: datetime
+
+    @staticmethod
+    def resolve_task_id(obj):
+        return obj.task.id
+
+    @staticmethod
+    def resolve_owner_username(obj):
+        return obj.owner.username
+
+    @staticmethod
+    def resolve_owner_name(obj):
+        profile = getattr(obj.owner, "profile", None)
+        return getattr(profile, "name", None) if profile else None
+
+    @staticmethod
+    def resolve_owner_role(obj):
+        profile = getattr(obj.owner, "profile", None)
+        return getattr(profile, "role", None) if profile else None
+
+
+class TaskCommentStateOut(Schema):
+    task_id: uuid.UUID
+    comments_count: int
+    has_comments: bool
+    has_unread_comments: bool
+    last_comment_at: Optional[datetime] = None
+    comments_state: str

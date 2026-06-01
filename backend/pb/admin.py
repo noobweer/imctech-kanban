@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Board, Column, Invite, Task
+from .models import Project, Board, Column, Invite, Task, TaskComment, TaskCommentReadState
 
 
 @admin.register(Project)
@@ -96,3 +96,20 @@ class TaskAdmin(admin.ModelAdmin):
     raw_id_fields = ("column", "owner")
     filter_horizontal = ("assignees",)
 
+
+@admin.register(TaskComment)
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ("id", "task", "owner", "is_deleted", "created_at", "updated_at")
+    list_filter = ("is_deleted", "created_at", "updated_at", "task__column__board")
+    search_fields = ("content", "owner__username", "task__title")
+    readonly_fields = ("id", "created_at", "updated_at", "deleted_at")
+    raw_id_fields = ("task", "owner")
+
+
+@admin.register(TaskCommentReadState)
+class TaskCommentReadStateAdmin(admin.ModelAdmin):
+    list_display = ("id", "task", "user", "last_read_at", "updated_at")
+    list_filter = ("last_read_at", "updated_at", "task__column__board")
+    search_fields = ("task__title", "user__username")
+    readonly_fields = ("id", "created_at", "updated_at")
+    raw_id_fields = ("task", "user")

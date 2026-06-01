@@ -215,3 +215,45 @@ class Task(models.Model):
     def __str__(self):
         return f"{self.title} ({self.column.name})"
 
+
+class TaskComment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="comments")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="task_comments")
+    content = models.TextField()
+    links = models.JSONField(default=list, blank=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["task", "created_at"]),
+            models.Index(fields=["owner", "created_at"]),
+            models.Index(fields=["task", "is_deleted"]),
+        ]
+
+    def __str__(self):
+        return f"Comment {self.id} by {self.owner} on {self.task}"
+
+
+class TaskCommentReadState(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="comment_read_states")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comment_read_states")
+    last_read_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("task", "user")
+        indexes = [
+            models.Index(fields=["task", "user"]),
+            models.Index(fields=["user", "last_read_at"]),
+        ]
+
+    def __str__(self):
+        return f"ReadState {self.id} for {self.user} on {self.task}"
+

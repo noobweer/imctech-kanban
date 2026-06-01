@@ -1,0 +1,9 @@
+feat(backend): implement task comments system and restructure API docs
+
+- Add `TaskComment` and `TaskCommentReadState` models with soft-delete
+- Implement service layer for comment CRUD and read-state tracking
+- Add API endpoints for listing, creating, updating, and deleting comments
+- Add endpoints for calculating comment read states per user and per board
+- Register new models in Django admin
+- Split monolithic `api-overview.md` into router-specific markdown files
+- Add API documentation for the new comments endpoints
