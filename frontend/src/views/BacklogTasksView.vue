@@ -8,6 +8,7 @@ import { useToast } from '@/composables/useToast'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
+import TaskViewModal from '@/components/features/TaskViewModal.vue'
 import { useTasksStore } from '@/stores/tasks'
 import { useColumnsStore } from '@/stores/columns'
 import { useAuthStore } from '@/stores/auth'
@@ -24,9 +25,11 @@ const isMentor = computed(() => authStore.user?.role === 'mentor')
 const searchQuery = ref('')
 
 const isModalOpen = ref(false)
+const isViewModalOpen = ref(false)
 const showArchiveTaskConfirm = ref(false)
 const taskToArchive = ref<Task | null>(null)
 const editingTask = ref<Task | null>(null)
+const viewingTask = ref<Task | null>(null)
 
 // Initialize and poll tasks
 watch(() => props.board, (newBoard) => {
@@ -62,8 +65,14 @@ function handleAddTask() {
   isModalOpen.value = true
 }
 
+function handleViewTask(task: Task) {
+  viewingTask.value = task
+  isViewModalOpen.value = true
+}
+
 function handleEditTask(task: Task) {
   editingTask.value = task
+  isViewModalOpen.value = false
   isModalOpen.value = true
 }
 
@@ -167,7 +176,7 @@ async function handlePushToBoard(task: Task) {
           :key="task.id" 
           :task="task"
           :allow-push-to-board="true"
-          @click="handleEditTask"
+          @click="handleViewTask"
           @edit="handleEditTask"
           @archive="handleArchiveTask"
           @push-to-board="handlePushToBoard"
@@ -185,6 +194,14 @@ async function handlePushToBoard(task: Task) {
       :boardId="board?.id" 
       @close="isModalOpen = false" 
       @save="handleSaveTask" 
+    />
+
+    <TaskViewModal
+      :isOpen="isViewModalOpen"
+      :task="viewingTask"
+      :boardId="board?.id"
+      @close="isViewModalOpen = false"
+      @edit="handleEditTask"
     />
 
     <ConfirmModal

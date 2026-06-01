@@ -8,6 +8,7 @@ import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 import Button from '@/components/ui/Button.vue'
 import ColumnCard from '@/components/features/ColumnCard.vue'
 import TaskModal from '@/components/features/TaskModal.vue'
+import TaskViewModal from '@/components/features/TaskViewModal.vue'
 import ColumnModal from '@/components/features/ColumnModal.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 
@@ -21,11 +22,13 @@ const tasksStore = useTasksStore()
 const loadingColumns = ref(columnsStore.columns.length === 0)
 
 const isModalOpen = ref(false)
+const isViewModalOpen = ref(false)
 const isColumnModalOpen = ref(false)
 const showArchiveColumnConfirm = ref(false)
 const showClearColumnConfirm = ref(false)
 const showArchiveTaskConfirm = ref(false)
 const editingTask = ref<Task | null>(null)
+const viewingTask = ref<Task | null>(null)
 const defaultColumnForNewTask = ref<string | undefined>(undefined)
 
 const columnToArchive = ref<string | null>(null)
@@ -120,9 +123,15 @@ function handleAddTask(columnId: string) {
   isModalOpen.value = true
 }
 
+function handleViewTask(task: Task) {
+  viewingTask.value = task
+  isViewModalOpen.value = true
+}
+
 function handleEditTask(task: Task) {
   editingTask.value = task
   defaultColumnForNewTask.value = undefined
+  isViewModalOpen.value = false
   isModalOpen.value = true
 }
 
@@ -200,6 +209,7 @@ onUnmounted(() => {
           @archive="handleArchiveColumn"
           @clear-tasks="handleClearTasks"
           @add-task="handleAddTask"
+          @view-task="handleViewTask"
           @edit-task="handleEditTask"
           @archive-task="handleArchiveTask"
           @move-task="handleMoveTask"
@@ -240,6 +250,14 @@ onUnmounted(() => {
       :defaultColumnId="defaultColumnForNewTask"
       @close="isModalOpen = false" 
       @save="handleSaveTask" 
+    />
+
+    <TaskViewModal
+      :isOpen="isViewModalOpen"
+      :task="viewingTask"
+      :boardId="board?.id"
+      @close="isViewModalOpen = false"
+      @edit="handleEditTask"
     />
 
     <ColumnModal

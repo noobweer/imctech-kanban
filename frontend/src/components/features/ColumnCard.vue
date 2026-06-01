@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Plus, MoreHorizontal, Pencil, Trash2, MoreVertical } from 'lucide-vue-next'
+import { Plus, MoreVertical } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 import type { Column } from '@/types/column'
 import type { Task } from '@/types/task'
@@ -31,6 +31,7 @@ const emit = defineEmits<{
   (e: 'archive', id: string): void
   (e: 'clear-tasks', id: string): void
   (e: 'add-task', columnId: string): void
+  (e: 'view-task', task: Task): void
   (e: 'edit-task', task: Task): void
   (e: 'archive-task', task: Task): void
   (e: 'move-task', taskId: string, targetColumnId: string, position: number): void
@@ -164,7 +165,7 @@ function onDragEnd() {
       <template #item="{ element: task }">
         <TaskCard 
           :task="task"
-          @click="emit('edit-task', task)"
+          @click="emit('view-task', task)"
           @edit="emit('edit-task', task)"
           @archive="emit('archive-task', task)"
         />

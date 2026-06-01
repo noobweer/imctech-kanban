@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { tasksApi } from '@/api/tasks'
+import { useCommentsStore } from '@/stores/comments'
 import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 
 export const useTasksStore = defineStore('tasks', () => {
@@ -9,6 +10,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const toast = useToast()
+  const commentsStore = useCommentsStore()
 
   const backlogTasks = computed(() => {
     const filtered = tasks.value.filter(t => t.column_kind === 'backlog')
@@ -40,6 +42,9 @@ export const useTasksStore = defineStore('tasks', () => {
       const items = data && !Array.isArray(data) && 'items' in data ? data.items : data
       
       tasks.value = Array.isArray(items) ? items : []
+      
+      // Fetch comment states for the board
+      await commentsStore.fetchBoardStates(boardId)
     } catch (e: any) {
       if (!isSilent) {
         error.value = e.message || 'Failed to load tasks'
