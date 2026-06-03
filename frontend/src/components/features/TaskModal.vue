@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
-import { Plus, ListChecks, Flag, CalendarDays, Users, Check, AlignLeft } from 'lucide-vue-next'
+import { Plus, ListChecks, Flag, CalendarDays, Users, Check, AlignLeft, Tag as TagIcon, X } from 'lucide-vue-next'
 import type { TaskIn, TaskUpdateIn, Task, ChecklistItem } from '@/types/task'
 import { useTasksStore } from '@/stores/tasks'
 import { useBoardsStore } from '@/stores/boards'
@@ -34,6 +34,8 @@ const priority = ref<number>(1) // 0=Low, 1=Medium, 2=High
 const deadline = ref<string>('')
 const checklist = ref<ChecklistItem[]>([])
 const assignees = ref<string[]>([])
+const tags = ref<string[]>([])
+const tagInput = ref('')
 const isAssigneesDropdownOpen = ref(false)
 const assigneesDropdownRef = ref<HTMLElement | null>(null)
 const activeTab = ref<'details' | 'checklist'>('details')
@@ -59,6 +61,18 @@ async function toggleAssignee(username: string) {
   }
 }
 
+function addTag() {
+  const val = tagInput.value.trim()
+  if (val && !tags.value.includes(val)) {
+    tags.value.push(val)
+  }
+  tagInput.value = ''
+}
+
+function removeTag(tag: string) {
+  tags.value = tags.value.filter(t => t !== tag)
+}
+
 // Initialize form when opening
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
@@ -71,6 +85,7 @@ watch(() => props.isOpen, (newVal) => {
       deadline.value = props.task.deadline ? (props.task.deadline.split('T')[0] || '') : ''
       checklist.value = JSON.parse(JSON.stringify(props.task.checklist || []))
       assignees.value = [...(props.task.assignees || [])]
+      tags.value = [...(props.task.tags || [])]
     } else {
       title.value = ''
       content.value = ''
@@ -78,7 +93,9 @@ watch(() => props.isOpen, (newVal) => {
       deadline.value = ''
       checklist.value = []
       assignees.value = []
+      tags.value = []
     }
+    tagInput.value = ''
     activeTab.value = 'details'
   } else {
     isAssigneesDropdownOpen.value = false
@@ -109,7 +126,7 @@ function handleSave() {
     deadline: deadline.value ? new Date(deadline.value).toISOString() : null,
     checklist: checklist.value.filter(i => i.title.trim()),
     assignees: assignees.value,
-    tags: ['Task']
+    tags: tags.value
   }
 
   if (!props.task && props.defaultColumnId) {
@@ -295,6 +312,44 @@ function handleSave() {
             </div>
           </div>
         </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-3 flex items-center gap-2">
+            <TagIcon :size="14" /> Tags
+          </label>
+          <div class="space-y-3">
+            <input
+              v-if="!isMentor"
+              v-model="tagInput"
+              @keydown.enter.prevent="addTag"
+              @keydown.,.prevent="addTag"
+              placeholder="Add tag and press Enter..."
+              class="w-full bg-white border border-border-gray rounded-xl px-3 py-2 text-sm text-on-surface focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all outline-none"
+            />
+            <TransitionGroup 
+              name="t-list" 
+              tag="div" 
+              class="flex flex-wrap gap-2"
+            >
+              <div 
+                v-for="tag in tags" 
+                :key="tag"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface text-[12px] font-semibold border border-border-gray/50 hover:bg-surface-container-highest transition-colors"
+              >
+                {{ tag }}
+                <button 
+                  v-if="!isMentor"
+                  type="button" 
+                  @click="removeTag(tag)" 
+                  class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <X :size="12" />
+                </button>
+              </div>
+            </TransitionGroup>
+          </div>
+        </div>
       </div>
     </form>
 
@@ -325,5 +380,16 @@ function handleSave() {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-border-gray);
   border-radius: 10px;
+}
+
+/* Transitions for tags */
+.t-list-enter-active,
+.t-list-leave-active {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-list-enter-from,
+.t-list-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

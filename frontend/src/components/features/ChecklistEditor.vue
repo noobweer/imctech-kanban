@@ -38,8 +38,13 @@ watch(items, (newVal) => {
 
 async function addItem() {
   if (props.task) {
-    await tasksStore.addChecklistItem(props.task.id, 'New Item')
-    // Store updates task, parent will pass down new items via modelValue watcher
+    const updatedTask = await tasksStore.addChecklistItem(props.task.id, 'New Item')
+    if (updatedTask && updatedTask.checklist) {
+      const newItem = updatedTask.checklist[updatedTask.checklist.length - 1]
+      if (newItem) {
+        items.value.push(newItem)
+      }
+    }
   } else {
     items.value.push({ title: 'New Item', is_done: false })
   }
@@ -48,6 +53,7 @@ async function addItem() {
 async function removeItem(index: number, item: ChecklistItem) {
   if (props.task && item.id) {
     await tasksStore.deleteChecklistItem(props.task.id, item.id)
+    items.value.splice(index, 1)
   } else {
     items.value.splice(index, 1)
   }
@@ -74,8 +80,8 @@ async function handleDragEnd() {
 </script>
 
 <template>
-  <div class="border border-border-gray rounded-xl p-6 flex flex-col flex-grow bg-white">
-    <div class="flex-grow space-y-3 mb-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+  <div class="border border-border-gray rounded-xl p-5 md:p-6 flex flex-col h-full max-h-[400px] bg-white overflow-hidden min-h-[250px]">
+    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-4">
       <div v-if="items.length === 0" class="text-sm text-text-secondary italic">No items added. Click below to add one.</div>
       
       <draggable 

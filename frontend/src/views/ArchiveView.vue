@@ -194,25 +194,15 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
               <div v-for="i in 4" :key="i" class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
             </div>
             
-            <TransitionGroup v-else-if="filteredTasks.length > 0" name="t-task" tag="div" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6">
-              <div v-for="task in filteredTasks" :key="task.id" class="relative group">
+            <TransitionGroup v-else-if="filteredTasks.length > 0" name="t-task" tag="div" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 items-stretch">
+              <div v-for="task in filteredTasks" :key="task.id" class="h-full">
                 <TaskCard 
                   :task="task"
-                  class="opacity-80 grayscale-[20%] group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-default"
+                  :is-archive-mode="true"
+                  class="h-full opacity-70 hover:opacity-100 transition-opacity duration-300 cursor-default"
                   @click="handleOpenRestoreTask(task)"
+                  @restore="handleOpenRestoreTask"
                 />
-                <!-- Overlay Button for Restore -->
-                <div class="absolute inset-0 bg-surface-white/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all rounded-xl z-10 pointer-events-none">
-                  <Button 
-                    variant="primary" 
-                    size="md" 
-                    class="pointer-events-auto flex items-center gap-2 shadow-xl scale-95 group-hover:scale-100 transition-transform"
-                    @click.stop="handleOpenRestoreTask(task)"
-                  >
-                    <ArchiveRestore :size="16" />
-                    Restore Task
-                  </Button>
-                </div>
               </div>
             </TransitionGroup>
 

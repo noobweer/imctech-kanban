@@ -5,9 +5,9 @@ import { useToast, type ToastType } from '@/composables/useToast'
 const { toasts, remove } = useToast()
 
 function colorClasses(type: ToastType) {
-  if (type === 'success') return 'border-l-[3px] border-l-success-green bg-success-subtle text-success-green-text'
-  if (type === 'error')   return 'border-l-[3px] border-l-error bg-error/10 text-error'
-  return                         'border-l-[3px] border-l-primary bg-primary-container/10 text-primary-container'
+  if (type === 'success') return 'border-l-[3px] border-l-[var(--color-success-green)] bg-[var(--color-success-subtle)] text-[var(--color-success-green-text)]'
+  if (type === 'error')   return 'border-l-[3px] border-l-[var(--color-error)] bg-[rgba(186,26,26,0.1)] text-[var(--color-error)]'
+  return                         'border-l-[3px] border-l-[var(--color-primary-container)] bg-[rgba(113,50,245,0.1)] text-[var(--color-primary-container)]'
 }
 
 function label(type: ToastType) {

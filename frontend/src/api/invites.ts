@@ -41,7 +41,7 @@ export const invitesApi = {
     })
   },
 
-  async joinByInvite(inviteId: string): Promise<{ success: boolean; message: string }> {
+  async joinByInvite(inviteId: string): Promise<{ success: boolean; message: string; board_id?: string }> {
     return apiClient(`/invites/${inviteId}/join`, {
       method: 'POST',
     })

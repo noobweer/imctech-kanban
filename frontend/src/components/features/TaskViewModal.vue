@@ -14,6 +14,7 @@ import {
   ListChecks,
   MessageSquare,
   Users,
+  Tag as TagIcon,
 } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { computed, ref, watch } from 'vue'
@@ -36,6 +37,16 @@ const commentsStore = useCommentsStore()
 
 const isMentor = computed(() => authStore.user?.role === 'mentor')
 const canEdit = computed(() => !isMentor.value)
+
+const canCreateComment = computed(() => {
+  if (isMentor.value) return true
+  if (!props.task) return false
+  
+  const hasComments = totalComments.value > 0
+  const isAssignee = props.task.assignees?.includes(authStore.user?.username || '')
+  
+  return hasComments && isAssignee
+})
 
 const activeTab = ref<'details' | 'checklist' | 'comments'>('details')
 
@@ -260,7 +271,7 @@ function getAssigneeName(username: string) {
             v-show="activeTab === 'comments'"
             class="flex-1 flex flex-col h-full animate-in fade-in duration-300 relative border border-border-gray/50 rounded-xl overflow-hidden bg-surface-container-lowest/50"
           >
-            <CommentsList v-if="task" :task-id="task.id" :can-create="true" />
+            <CommentsList v-if="task" :task-id="task.id" :can-create="canCreateComment" />
           </div>
         </div>
       </div>
@@ -330,6 +341,24 @@ function getAssigneeName(username: string) {
               />
             </template>
             <span v-else class="text-text-secondary italic text-sm">Unassigned</span>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div v-if="task?.tags?.length">
+          <label
+            class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-3 flex items-center gap-2"
+          >
+            <TagIcon :size="14" /> Tags
+          </label>
+          <div class="flex flex-wrap gap-2">
+            <div 
+              v-for="tag in task.tags" 
+              :key="tag"
+              class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface text-[12px] font-semibold border border-border-gray/50 hover:bg-surface-container-highest transition-colors"
+            >
+              {{ tag }}
+            </div>
           </div>
         </div>
       </div>

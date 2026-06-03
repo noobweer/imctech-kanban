@@ -116,7 +116,7 @@ def update_task(request, task_id: uuid.UUID, payload: TaskPatchIn):
         raise HttpError(400, str(e))
 
 
-@router.post("/tasks/{task_id}/checklist/items", response=TaskOut, auth=JWTAuth())
+@router.post("/tasks/{task_id}/checklist/items", response={201: TaskOut}, auth=JWTAuth())
 def add_checklist_item(request, task_id: uuid.UUID, payload: ChecklistItemCreateIn):
     task = get_object_or_404(Task, id=task_id)
     if not can_modify_task(request.auth, task):
@@ -124,7 +124,7 @@ def add_checklist_item(request, task_id: uuid.UUID, payload: ChecklistItemCreate
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.add_checklist_item(task, payload.title)
+        return 201, task_lifecycle.add_checklist_item(task, payload.title)
     except ValueError as e:
         raise HttpError(400, str(e))
 

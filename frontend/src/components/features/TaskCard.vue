@@ -5,12 +5,13 @@ import { useAuthStore } from '@/stores/auth'
 import { useBoardsStore } from '@/stores/boards'
 import { useCommentsStore } from '@/stores/comments'
 import type { Task } from '@/types/task'
-import { CalendarDays, CheckSquare, MessageSquare, MoreVertical } from 'lucide-vue-next'
+import { CalendarDays, CheckSquare, MessageSquare, MoreVertical, ArchiveRestore } from 'lucide-vue-next'
 import { computed } from 'vue'
 
 const props = defineProps<{
   task: Task
   allowPushToBoard?: boolean
+  isArchiveMode?: boolean
 }>()
 
 const boardsStore = useBoardsStore()
@@ -28,6 +29,7 @@ const emit = defineEmits<{
   click: [task: Task]
   edit: [task: Task]
   archive: [task: Task]
+  restore: [task: Task]
   'push-to-board': [task: Task]
 }>()
 
@@ -52,11 +54,13 @@ const progressClass = computed(() => {
   return 'bg-surface-container text-neutral-gray opacity-70'
 })
 
-const firstTag = computed(() => props.task.tags?.[0] || 'Task')
+const tags = computed(() => props.task.tags || [])
+const firstTag = computed(() => tags.value[0])
+const remainingTagsCount = computed(() => Math.max(0, tags.value.length - 1))
 
 const tagClass = computed(() => {
   if (isDone.value) return 'bg-surface-container-low text-neutral-gray'
-  if (firstTag.value.toLowerCase() === 'bug') return 'bg-error-container text-error'
+  if (firstTag.value && firstTag.value.toLowerCase() === 'bug') return 'bg-[var(--color-error)]/10 text-[var(--color-error)]'
   return 'bg-surface-container-high text-on-surface'
 })
 
@@ -92,7 +96,17 @@ function getAssigneeName(username: string) {
       >
         {{ task.title }}
       </h3>
-      <Dropdown position="bottom-right" @click.stop>
+      
+      <button
+        v-if="isArchiveMode && !isMentor"
+        class="text-[var(--color-primary-container)] bg-[var(--color-primary-container)]/10 hover:bg-[var(--color-primary-container)]/20 transition-all shrink-0 p-2 rounded-xl active:scale-95 shadow-sm"
+        title="Restore Task"
+        @click.stop="emit('restore', task)"
+      >
+        <ArchiveRestore :size="18" />
+      </button>
+
+      <Dropdown v-else-if="!isArchiveMode" position="bottom-right" @click.stop>
         <template #trigger>
           <button
             class="text-neutral-gray hover:text-on-surface transition-colors shrink-0 p-1 rounded hover:bg-black/5"
@@ -146,9 +160,14 @@ function getAssigneeName(username: string) {
           <CheckSquare :size="12" />
           {{ progressText }}
         </span>
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold capitalize" :class="tagClass">
-          {{ firstTag }}
-        </span>
+        <template v-if="tags.length > 0">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="tagClass">
+            {{ firstTag }}
+          </span>
+          <span v-if="remainingTagsCount > 0" class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-text-secondary">
+            +{{ remainingTagsCount }}
+          </span>
+        </template>
 
         <span
           v-if="totalComments > 0"

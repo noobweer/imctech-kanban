@@ -210,6 +210,7 @@ export const useTasksStore = defineStore('tasks', () => {
     try {
       const updated = await tasksApi.addChecklistItem(taskId, title)
       updateTaskInStore(updated)
+      return updated
     } catch (e: any) {
       toast.error(e.message || 'Failed to add item')
       throw e

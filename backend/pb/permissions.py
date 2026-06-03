@@ -87,9 +87,9 @@ def can_create_task_comment(user, task) -> bool:
         return True
 
     # Student / Assignee
-    # Only if task already has not-deleted comments OR user is assignee
+    # Only if task already has not-deleted comments AND user is assignee
     has_active_comments = task.comments.filter(is_deleted=False).exists()
-    if has_active_comments or task.assignees.filter(id=user.id).exists():
+    if has_active_comments and task.assignees.filter(id=user.id).exists():
         return True
 
     return False

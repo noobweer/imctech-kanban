@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { invitesApi } from '@/api/invites'
 import type { InvitePublicInfo } from '@/api/invites'
+import Button from '@/components/ui/Button.vue'
+import { ClipboardList, XCircle } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,9 +15,18 @@ const invite = ref<InvitePublicInfo | null>(null)
 const loading = ref(true)
 const joining = ref(false)
 const error = ref<string | null>(null)
+const isErrorShaking = ref(false)
 const success = ref(false)
+const joinedBoardId = ref<string | undefined>(undefined)
+
+const enterPage = ref(false)
 
 onMounted(async () => {
+  // Trigger page enter animation
+  nextTick(() => {
+    enterPage.value = true
+  })
+
   try {
     const data = await invitesApi.getInvite(inviteId)
     invite.value = data as InvitePublicInfo
@@ -31,16 +42,33 @@ onMounted(async () => {
 })
 
 async function handleJoin() {
+  if (isErrorShaking.value) return
   joining.value = true
   error.value = null
+  
   try {
-    await invitesApi.joinByInvite(inviteId)
+    const res = await invitesApi.joinByInvite(inviteId)
+    joinedBoardId.value = res.board_id
     success.value = true
-    // Redirect to boards after short delay
-    setTimeout(() => router.push('/boards'), 1500)
+    
+    // Redirect to the specific board after a snappier 1s delay
+    setTimeout(() => {
+      if (joinedBoardId.value) {
+        router.push(`/boards/${joinedBoardId.value}`)
+      } else {
+        router.push('/boards')
+      }
+    }, 1000)
+    
   } catch (e: any) {
     const detail = e?.data?.detail || e?.message || 'Failed to join board.'
     error.value = detail
+    
+    isErrorShaking.value = true
+    setTimeout(() => {
+      isErrorShaking.value = false
+    }, 500)
+    
   } finally {
     joining.value = false
   }
@@ -56,85 +84,89 @@ function getStatusMessage(): string | null {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center bg-surface-white px-4">
-    <div class="w-full max-w-md">
+  <main class="min-h-screen flex items-center justify-center bg-[var(--color-background)] px-4">
+    <div 
+      class="w-full max-w-md transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+      :class="enterPage ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-6 blur-sm'"
+    >
 
-      <!-- Loading -->
-      <div v-if="loading" class="text-center space-y-4 animate-pulse">
-        <div class="h-8 w-48 bg-surface-container-high rounded mx-auto"></div>
-        <div class="h-4 w-64 bg-surface-container rounded mx-auto"></div>
-        <div class="h-12 w-full bg-surface-container-high rounded-xl"></div>
+      <!-- Loading Skeleton -->
+      <div v-if="loading" class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6">
+        <div class="w-16 h-16 rounded-2xl bg-surface-container-high animate-pulse mx-auto"></div>
+        <div class="space-y-3">
+          <div class="h-4 w-40 bg-surface-container rounded mx-auto animate-pulse"></div>
+          <div class="h-8 w-64 bg-surface-container-high rounded mx-auto animate-pulse"></div>
+        </div>
+        <div class="h-[52px] w-full bg-surface-container-high rounded-xl animate-pulse mt-2"></div>
       </div>
 
       <!-- Error (invite not found) -->
-      <div v-else-if="error && !invite" class="text-center space-y-4">
-        <div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mx-auto">
-          <span class="text-2xl">✕</span>
+      <div v-else-if="error && !invite" class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6">
+        <div class="w-16 h-16 rounded-2xl bg-[var(--color-error)]/10 text-[var(--color-error)] flex items-center justify-center mx-auto">
+          <XCircle :size="32" stroke-width="1.5" />
         </div>
-        <h1 class="text-xl md:text-2xl font-bold text-text-primary font-['Space_Grotesk']">
-          Invalid Invite
-        </h1>
-        <p class="text-text-secondary text-sm">{{ error }}</p>
-        <button
-          class="w-full py-3 bg-primary-container text-white font-semibold rounded-xl hover:bg-purple-deep transition-all"
-          @click="router.push('/boards')"
-        >
+        <div class="space-y-2">
+          <h1 class="text-2xl font-bold text-text-primary tracking-tight">Invalid Invite</h1>
+          <p class="text-text-secondary">{{ error }}</p>
+        </div>
+        <Button variant="primary" size="lg" class="w-full mt-2" @click="router.push('/boards')">
           Go to Boards
-        </button>
+        </Button>
       </div>
 
       <!-- Invite card -->
-      <div v-else-if="invite" class="bg-white rounded-2xl border border-border-gray shadow-modal p-4 md:p-8 space-y-4 md:space-y-6">
-
+      <div 
+        v-else-if="invite" 
+        class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 space-y-6 t-input"
+        :class="{ 'is-shaking border-[var(--color-error)]': isErrorShaking }"
+      >
         <!-- Board info -->
-        <div class="text-center space-y-2">
-          <div class="w-16 h-16 rounded-2xl bg-primary-container/10 flex items-center justify-center mx-auto mb-4">
-            <span class="text-3xl">📋</span>
+        <div class="text-center space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-[var(--color-primary-container)]/10 text-[var(--color-primary-container)] flex items-center justify-center mx-auto">
+            <ClipboardList :size="32" stroke-width="1.5" />
           </div>
-          <p class="text-sm text-text-secondary">You've been invited to join</p>
-          <h1 class="text-xl md:text-2xl font-bold text-text-primary font-['Space_Grotesk']">
-            {{ invite.board_name }}
-          </h1>
+          <div class="space-y-1">
+            <p class="text-sm font-medium text-text-secondary">You've been invited to join</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
+              {{ invite.board_name }}
+            </h1>
+          </div>
         </div>
 
         <!-- Status warning (expired / exhausted / inactive) -->
         <div
           v-if="getStatusMessage()"
-          class="px-4 py-3 bg-error/5 border border-error/20 rounded-xl text-sm text-error text-center"
+          class="px-4 py-3 bg-[var(--color-error)]/5 border border-[var(--color-error)]/20 rounded-xl text-sm font-medium text-[var(--color-error)] text-center"
         >
           {{ getStatusMessage() }}
         </div>
 
-        <!-- Success state -->
-        <div
-          v-else-if="success"
-          class="px-4 py-3 bg-success-subtle border border-success-green-text/20 rounded-xl text-sm text-success-green-text text-center"
-        >
-          🎉 You've joined the board! Redirecting…
+        <!-- API error -->
+        <div v-if="error && !isErrorShaking" class="px-4 py-3 bg-[var(--color-error)]/5 border border-[var(--color-error)]/20 rounded-xl text-sm font-medium text-[var(--color-error)] text-center">
+          {{ error }}
         </div>
 
-        <!-- Join button -->
-        <button
-          v-if="!getStatusMessage() && !success"
-          :disabled="joining"
-          class="w-full py-3 bg-primary-container text-white font-semibold text-base rounded-xl hover:bg-purple-deep transition-all shadow-dropdown active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-          @click="handleJoin"
-        >
-          {{ joining ? 'Joining…' : 'Join Board' }}
-        </button>
+        <div class="space-y-3 pt-2">
+          <!-- Join button -->
+          <Button
+            variant="primary"
+            size="lg"
+            class="w-full text-[16px]"
+            :disabled="joining || success || !!getStatusMessage()"
+            @click="handleJoin"
+          >
+            {{ success ? 'Joined!' : (joining ? 'Joining…' : 'Join Board') }}
+          </Button>
 
-        <!-- API error -->
-        <p v-if="error && invite" class="text-sm text-error text-center">
-          {{ error }}
-        </p>
-
-        <!-- Already joined? -->
-        <button
-          class="w-full text-sm text-text-secondary hover:text-primary-container transition-colors"
-          @click="router.push('/boards')"
-        >
-          Back to my boards
-        </button>
+          <!-- Already joined? -->
+          <Button
+            variant="ghost"
+            class="w-full text-text-secondary h-11"
+            @click="router.push('/boards')"
+          >
+            Back to my boards
+          </Button>
+        </div>
       </div>
     </div>
   </main>
