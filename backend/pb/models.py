@@ -198,6 +198,7 @@ class Task(models.Model):
     position = models.PositiveIntegerField()
     tags = models.JSONField(default=list, blank=True)
     checklist = models.JSONField(default=list, blank=True)
+    added_to_board_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -257,3 +258,46 @@ class TaskCommentReadState(models.Model):
     def __str__(self):
         return f"ReadState {self.id} for {self.user} on {self.task}"
 
+
+class ActivityLog(models.Model):
+    ACTION_TYPES = [
+        ("task_created",      "Task Created"),
+        ("task_moved",        "Task Moved"),
+        ("task_archived",     "Task Archived"),
+        ("task_restored",     "Task Restored"),
+        ("task_assigned",     "Task Assigned"),
+        ("task_unassigned",   "Task Unassigned"),
+        ("task_deadline_set", "Task Deadline Set"),
+        ("column_created",    "Column Created"),
+        ("column_moved",      "Column Moved"),
+        ("column_archived",   "Column Archived"),
+        ("column_cleared",    "Column Cleared"),
+        ("member_joined",     "Member Joined"),
+        ("member_left",       "Member Left"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    board = models.ForeignKey(
+        Board,
+        on_delete=models.CASCADE,
+        related_name="activity_logs",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="activity_logs",
+    )
+    action_type = models.CharField(max_length=30, choices=ACTION_TYPES)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["board", "created_at"]),
+            models.Index(fields=["board", "action_type"]),
+        ]
+
+    def __str__(self):
+        return f"{self.action_type} by {self.actor} in {self.board.name}"

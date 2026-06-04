@@ -2,6 +2,7 @@ from django.db import models, transaction
 
 from ..models import Board, Column, ColumnStatus
 from ..schemas import ColumnIn, ColumnUpdateIn
+from .activity_service import create_log
 
 
 def list_columns(board: Board, status=None, kind: str = "board"):
@@ -28,6 +29,15 @@ def create_column(board: Board, payload: ColumnIn) -> Column:
             board=board,
             name=payload.name,
             position=position,
+        )
+        
+        create_log(
+            board=board,
+            action_type="column_created",
+            metadata={
+                "column_id": str(column.id),
+                "column_name": column.name,
+            }
         )
     return column
 
@@ -76,6 +86,17 @@ def move_column(column: Column, new_position: int) -> Column:
 
         column.position = new_position
         column.save()
+        
+        create_log(
+            board=column.board,
+            action_type="column_moved",
+            metadata={
+                "column_id": str(column.id),
+                "column_name": column.name,
+                "from_position": old_position,
+                "to_position": new_position,
+            }
+        )
     return column
 
 

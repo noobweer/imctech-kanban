@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from ..models import Board, Invite
 from ..schemas import InviteIn, InvitePatchIn
+from .activity_service import create_log
 
 
 def list_invites(board: Board):
@@ -92,5 +93,11 @@ def join_board(invite: Invite, user) -> Board:
     with transaction.atomic():
         board.members.add(user)
         Invite.objects.filter(id=invite.id).update(used_count=models.F("used_count") + 1)
+        
+        create_log(
+            board=board,
+            action_type="member_joined",
+            metadata={"username": user.username}
+        )
 
     return board

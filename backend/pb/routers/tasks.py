@@ -29,6 +29,8 @@ def list_tasks(
     assignee: Optional[str] = Query(None),
     tag: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    deadline_filter: Optional[str] = Query(None),
 ):
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(request.auth, board):
@@ -36,6 +38,7 @@ def list_tasks(
     return task_service.list_tasks(
         board, column_id=column_id, column_kind=column_kind,
         priority=priority, assignee=assignee, tag=tag, search=search,
+        sort_by=sort_by, deadline_filter=deadline_filter
     )
 
 

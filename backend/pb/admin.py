@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Board, Column, Invite, Task, TaskComment, TaskCommentReadState
+from .models import Project, Board, Column, Invite, Task, TaskComment, TaskCommentReadState, ActivityLog
 
 
 @admin.register(Project)
@@ -113,3 +113,12 @@ class TaskCommentReadStateAdmin(admin.ModelAdmin):
     search_fields = ("task__title", "user__username")
     readonly_fields = ("id", "created_at", "updated_at")
     raw_id_fields = ("task", "user")
+
+
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "board", "actor", "action_type", "created_at")
+    list_filter = ("action_type", "created_at", "board")
+    search_fields = ("actor__username", "board__name")
+    readonly_fields = ("id", "created_at")
+    raw_id_fields = ("board", "actor")

@@ -64,7 +64,7 @@ bun run dev
 
 - **Framework:** Django with [Django Ninja](https://django-ninja.rest-framework.com/) for type-safe APIs.
 - **Authentication:** JWT-based. Logic resides in the `users` app (`users/api.py`, `users/models.py`).
-- **Migrations:** Always run `uv run python manage.py makemigrations` and `migrate` after model changes.
+- **Migrations:** Always run migrations inside the container: `docker compose exec backend uv run python manage.py makemigrations` and `docker compose exec backend uv run python manage.py migrate` after model changes.
 - **Timezone:** `Asia/Vladivostok`.
 - **Verify:** Run `uv run manage.py check` inside the Docker container (`docker compose exec backend bash`).
 

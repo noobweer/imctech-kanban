@@ -6,7 +6,7 @@
 List all tasks for a board.
 *   **Auth:** Required
 *   **Access:** Owner, member, or staff.
-*   **Filters:** `status`, `column_id`, `column_kind`, `priority`, `assignee`, `tag`, `search`.
+*   **Filters:** `status`, `column_id`, `column_kind`, `priority`, `assignee`, `tag`, `search`, `sort_by`, `deadline_filter`.
 
 #### GET /boards/{board_id}/backlog/tasks
 List tasks in the Backlog column.

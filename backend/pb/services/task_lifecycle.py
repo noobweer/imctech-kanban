@@ -1,11 +1,23 @@
 import uuid
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from ..models import Task, Column, Board
+from ..models import Task, Column, Board, ColumnKind
 from ..permissions import has_board_access
 from .board_service import recalculate_board_progress
+from .activity_service import create_log
+from django.utils import timezone
 
 User = get_user_model()
+
+
+def _set_board_timestamp(task, column, force_update=False):
+    """
+    Устанавливает дату попадания на доску.
+    force_update=True используется для восстановления из архива.
+    """
+    if column.kind == ColumnKind.BOARD:
+        if force_update or task.added_to_board_at is None:
+            task.added_to_board_at = timezone.now()
 
 
 def normalize_checklist_data(raw_checklist: list) -> list:
@@ -135,6 +147,15 @@ def assign_task(task: Task, username: str) -> Task:
         raise PermissionError("ASSIGNEE_NOT_BOARD_MEMBER")
         
     task.assignees.add(user)
+    create_log(
+        board=board,
+        action_type="task_assigned",
+        metadata={
+            "task_id": str(task.id),
+            "task_title": task.title,
+            "username": user.username,
+        }
+    )
     return task
 
 
@@ -145,6 +166,15 @@ def unassign_task(task: Task, username: str) -> Task:
         raise LookupError("ASSIGNEE_NOT_FOUND")
         
     task.assignees.remove(user)
+    create_log(
+        board=task.column.board,
+        action_type="task_unassigned",
+        metadata={
+            "task_id": str(task.id),
+            "task_title": task.title,
+            "username": user.username,
+        }
+    )
     return task
 
 
@@ -214,7 +244,8 @@ def move_task(task: Task, target_column_id: uuid.UUID, position: int) -> dict:
                 t.position = idx + 1
                 reordered_tasks[str(t.id)] = t.position
                 
-            task.save(update_fields=["column", "position", "updated_at"])
+            _set_board_timestamp(task, target_col)
+            task.save(update_fields=["column", "position", "updated_at", "added_to_board_at"])
             target_tasks_without_self = [t for t in target_tasks if t.id != task.id]
             if target_tasks_without_self:
                 Task.objects.bulk_update(target_tasks_without_self, ["position"])
@@ -223,6 +254,17 @@ def move_task(task: Task, target_column_id: uuid.UUID, position: int) -> dict:
             update_column_sum_tasks(target_col)
             
             recalculate_board_progress(board)
+            
+            create_log(
+                board=board,
+                action_type="task_moved",
+                metadata={
+                    "task_id": str(task.id),
+                    "task_title": task.title,
+                    "from_column": source_col.name,
+                    "to_column": target_col.name
+                }
+            )
             
             return {
                 "task": task,

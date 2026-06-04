@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 
 from ..models import Board
 from ..schemas import MemberOut
+from .activity_service import create_log
 
 User = get_user_model()
 
@@ -41,6 +42,12 @@ def remove_member(board: Board, username: str) -> None:
     if not board.members.filter(id=target.id).exists():
         raise LookupError(f"User '{username}' is not a member of this board.")
     board.members.remove(target)
+    
+    create_log(
+        board=board,
+        action_type="member_left",
+        metadata={"username": target.username}
+    )
 
 
 def leave_board(board: Board, user) -> None:
@@ -49,3 +56,9 @@ def leave_board(board: Board, user) -> None:
     if not board.members.filter(id=user.id).exists():
         raise ValueError("You are not a member of this board.")
     board.members.remove(user)
+    
+    create_log(
+        board=board,
+        action_type="member_left",
+        metadata={"username": user.username}
+    )

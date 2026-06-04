@@ -7,8 +7,19 @@ from ..schemas import TaskIn, TaskPatchIn
 from ..permissions import has_board_access
 from .board_service import recalculate_board_progress
 from .task_lifecycle import normalize_checklist_data, update_column_sum_tasks
+from .activity_service import create_log
+from django.utils import timezone
 
 User = get_user_model()
+
+def _set_board_timestamp(task, column, force_update=False):
+    """
+    Устанавливает дату попадания на доску.
+    force_update=True используется для восстановления из архива.
+    """
+    if column.kind == ColumnKind.BOARD:
+        if force_update or task.added_to_board_at is None:
+            task.added_to_board_at = timezone.now()
 
 
 
@@ -26,7 +37,8 @@ def _resolve_assignees(usernames: list, board: Board) -> list:
 
 
 def list_tasks(board: Board, column_id=None, column_kind=None,
-               priority=None, assignee=None, tag=None, search=None):
+               priority=None, assignee=None, tag=None, search=None,
+               sort_by=None, deadline_filter=None):
     tasks = Task.objects.filter(column__board=board)
     if column_kind != ColumnKind.ARCHIVE:
         tasks = tasks.exclude(column__kind=ColumnKind.ARCHIVE)
@@ -42,7 +54,20 @@ def list_tasks(board: Board, column_id=None, column_kind=None,
         tasks = tasks.filter(tags__contains=[tag])
     if search:
         tasks = tasks.filter(Q(title__icontains=search) | Q(content__icontains=search))
-    return tasks.distinct()
+        
+    if deadline_filter == "due_soon_or_overdue":
+        now = timezone.now()
+        due_soon_threshold = now + timezone.timedelta(days=3)
+        tasks = tasks.filter(deadline__isnull=False, deadline__lte=due_soon_threshold)
+        
+    tasks = tasks.distinct()
+    
+    if sort_by == "-added_to_board_at":
+        tasks = tasks.order_by(models.F('added_to_board_at').desc(nulls_last=True))
+    elif sort_by == "added_to_board_at":
+        tasks = tasks.order_by(models.F('added_to_board_at').asc(nulls_last=True))
+        
+    return tasks
 
 
 def list_backlog_tasks(board: Board, priority=None,
@@ -111,13 +136,27 @@ def create_task(board: Board, user, payload: TaskIn) -> Task:
         if assignees:
             task.assignees.set(assignees)
 
+        _set_board_timestamp(task, column)
+        task.save(update_fields=["added_to_board_at"])
+
         update_column_sum_tasks(column)
         recalculate_board_progress(board)
+        
+        create_log(
+            board=board,
+            action_type="task_created",
+            metadata={
+                "task_id": str(task.id),
+                "task_title": task.title,
+                "column_name": column.name,
+            }
+        )
     return task
 
 
 def update_task(task: Task, payload: TaskPatchIn) -> Task:
     with transaction.atomic():
+        deadline_changed = False
         if payload.title is not None:
             task.title = payload.title
         if payload.content is not None:
@@ -125,11 +164,24 @@ def update_task(task: Task, payload: TaskPatchIn) -> Task:
         if payload.priority is not None:
             task.priority = payload.priority
         if payload.deadline is not None:
+            if task.deadline != payload.deadline:
+                deadline_changed = True
             task.deadline = payload.deadline
         if payload.tags is not None:
             task.tags = [t for t in payload.tags if t]
 
         task.save()
+        
+        if deadline_changed:
+            create_log(
+                board=task.column.board,
+                action_type="task_deadline_set",
+                metadata={
+                    "task_id": str(task.id),
+                    "task_title": task.title,
+                    "deadline": task.deadline.isoformat() if task.deadline else None,
+                }
+            )
     return task
 
 

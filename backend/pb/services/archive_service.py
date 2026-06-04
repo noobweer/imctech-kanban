@@ -1,7 +1,8 @@
 from django.db import transaction, models
 from ..models import Board, Column, ColumnKind, ColumnStatus, Task
 from .board_service import recalculate_board_progress
-from .task_lifecycle import update_column_sum_tasks
+from .task_lifecycle import update_column_sum_tasks, _set_board_timestamp
+from .activity_service import create_log
 
 def get_or_create_archive_column(board: Board) -> Column:
     column = Column.objects.filter(
@@ -47,6 +48,16 @@ def archive_task(task: Task) -> Task:
         update_column_sum_tasks(source_col)
         update_column_sum_tasks(archive_col)
         recalculate_board_progress(board)
+        
+        create_log(
+            board=board,
+            action_type="task_archived",
+            metadata={
+                "task_id": str(task.id),
+                "task_title": task.title,
+                "from_column": source_col.name,
+            }
+        )
     
     return task
 
@@ -72,10 +83,12 @@ def restore_task(task: Task, target_column_id, position=None) -> Task:
         if position is None:
             max_pos = target_column.tasks.aggregate(models.Max("position"))["position__max"] or 0
             task.position = max_pos + 1
-            task.save(update_fields=["column", "position"])
+            _set_board_timestamp(task, target_column, force_update=True)
+            task.save(update_fields=["column", "position", "added_to_board_at"])
         else:
             task.position = position
-            task.save(update_fields=["column", "position"])
+            _set_board_timestamp(task, target_column, force_update=True)
+            task.save(update_fields=["column", "position", "added_to_board_at"])
             target_tasks.insert(position - 1, task)
             for idx, t in enumerate(target_tasks, start=1):
                 if t.position != idx:
@@ -92,6 +105,16 @@ def restore_task(task: Task, target_column_id, position=None) -> Task:
         update_column_sum_tasks(archive_col)
         update_column_sum_tasks(target_column)
         recalculate_board_progress(board)
+        
+        create_log(
+            board=board,
+            action_type="task_restored",
+            metadata={
+                "task_id": str(task.id),
+                "task_title": task.title,
+                "to_column": target_column.name,
+            }
+        )
     
     return task
 
@@ -116,6 +139,15 @@ def archive_column(column: Column) -> Column:
                 c.save(update_fields=["position"])
 
         recalculate_board_progress(board)
+        
+        create_log(
+            board=board,
+            action_type="column_archived",
+            metadata={
+                "column_id": str(column.id),
+                "column_name": column.name,
+            }
+        )
 
     return column
 
@@ -166,6 +198,16 @@ def clear_column(column: Column) -> dict:
         update_column_sum_tasks(column)
         update_column_sum_tasks(archive_col)
         recalculate_board_progress(board)
+        
+        create_log(
+            board=board,
+            action_type="column_cleared",
+            metadata={
+                "column_id": str(column.id),
+                "column_name": column.name,
+                "archived_tasks_count": count,
+            }
+        )
 
     return {
         "success": True,
