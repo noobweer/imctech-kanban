@@ -2,6 +2,8 @@ import uuid
 from typing import Optional
 from django.shortcuts import get_object_or_404
 from ninja import Router
+from ninja.errors import HttpError
+from ninja_jwt.authentication import JWTAuth
 
 from ..models import Board
 from ..schemas import ProgressOut, ActivityOut, DeadlinesOut
@@ -10,28 +12,28 @@ from ..services.overview_service import get_progress, get_activity, get_deadline
 
 router = Router()
 
-@router.get("/{board_id}/overview/progress", response=ProgressOut)
+@router.get("/{board_id}/overview/progress", response=ProgressOut, auth=JWTAuth())
 def get_board_progress(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
-    if not has_board_access(request.user, board):
-        raise PermissionError("Access denied")
+    if not has_board_access(request.auth, board):
+        raise HttpError(403, "Access denied")
     
     return get_progress(board)
 
 
-@router.get("/{board_id}/overview/activity", response=ActivityOut)
+@router.get("/{board_id}/overview/activity", response=ActivityOut, auth=JWTAuth())
 def get_board_activity(request, board_id: uuid.UUID, period: str = "weekly"):
     board = get_object_or_404(Board, id=board_id)
-    if not has_board_access(request.user, board):
-        raise PermissionError("Access denied")
+    if not has_board_access(request.auth, board):
+        raise HttpError(403, "Access denied")
     
     return get_activity(board, period=period)
 
 
-@router.get("/{board_id}/overview/deadlines", response=DeadlinesOut)
+@router.get("/{board_id}/overview/deadlines", response=DeadlinesOut, auth=JWTAuth())
 def get_board_deadlines(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
-    if not has_board_access(request.user, board):
-        raise PermissionError("Access denied")
+    if not has_board_access(request.auth, board):
+        raise HttpError(403, "Access denied")
     
     return get_deadlines(board)

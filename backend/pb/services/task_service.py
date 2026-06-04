@@ -20,6 +20,8 @@ def _set_board_timestamp(task, column, force_update=False):
     if column.kind == ColumnKind.BOARD:
         if force_update or task.added_to_board_at is None:
             task.added_to_board_at = timezone.now()
+    elif column.kind == ColumnKind.BACKLOG:
+        task.added_to_board_at = None
 
 
 
@@ -30,9 +32,12 @@ def _resolve_assignees(usernames: list, board: Board) -> list:
     assignees = list(User.objects.filter(username__in=usernames))
     if len(assignees) != len(usernames):
         raise LookupError("One or more assignees not found.")
+    from ..permissions import is_mentor
     for a in assignees:
         if not has_board_access(a, board):
             raise PermissionError(f"Assignee {a.username} has no access to board.")
+        if is_mentor(a):
+            raise PermissionError(f"Mentor {a.username} cannot be assigned to tasks.")
     return assignees
 
 

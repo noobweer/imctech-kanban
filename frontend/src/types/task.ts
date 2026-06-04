@@ -25,6 +25,7 @@ export interface Task {
   checklist_total_count: number
   created_at: string
   updated_at: string
+  added_to_board_at: string | null
 }
 
 export interface TaskIn {

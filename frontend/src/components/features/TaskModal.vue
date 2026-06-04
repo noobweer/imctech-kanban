@@ -21,6 +21,7 @@ const boardsStore = useBoardsStore()
 const tasksStore = useTasksStore()
 const authStore = useAuthStore()
 const isMentor = computed(() => authStore.user?.role === 'mentor')
+const assignableMembers = computed(() => boardsStore.members.filter(m => m.role !== 'mentor'))
 
 const emit = defineEmits<{
   close: []
@@ -289,10 +290,10 @@ function handleSave() {
               <Transition name="t-dropdown">
                 <div v-if="isAssigneesDropdownOpen" class="absolute top-full mt-2 left-0 md:right-0 md:left-auto origin-top-left md:origin-top-right w-64 bg-white border border-border-gray rounded-xl shadow-dropdown z-50 py-2 max-h-60 overflow-y-auto custom-scrollbar">
                   <div v-if="boardsStore.membersLoading" class="px-4 py-3 text-sm text-text-secondary">Loading members...</div>
-                  <div v-else-if="boardsStore.members.length === 0" class="px-4 py-3 text-sm text-text-secondary">No members found</div>
+                  <div v-else-if="assignableMembers.length === 0" class="px-4 py-3 text-sm text-text-secondary">No assignable members found</div>
                   <button
                     v-else
-                    v-for="member in boardsStore.members"
+                    v-for="member in assignableMembers"
                     :key="member.username"
                     type="button"
                     class="w-full text-left px-4 py-2 hover:bg-surface-container-lowest flex items-center justify-between transition-colors cursor-pointer"

@@ -45,6 +45,11 @@ const router = createRouter({
           name: 'board-archive',
           component: () => import('@/views/ArchiveView.vue'),
         },
+        {
+          path: 'overview',
+          name: 'board-overview',
+          component: () => import('@/components/board/OverviewTab.vue'),
+        },
       ],
     },
     {

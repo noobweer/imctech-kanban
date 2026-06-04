@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { Plus, Layout } from 'lucide-vue-next'
+import ColumnCard from '@/components/features/ColumnCard.vue'
+import ColumnModal from '@/components/features/ColumnModal.vue'
+import TaskModal from '@/components/features/TaskModal.vue'
+import TaskViewModal from '@/components/features/TaskViewModal.vue'
+import Button from '@/components/ui/Button.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { useColumnsStore } from '@/stores/columns'
 import { useTasksStore } from '@/stores/tasks'
 import type { Board } from '@/types/board'
 import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
-import Button from '@/components/ui/Button.vue'
-import ColumnCard from '@/components/features/ColumnCard.vue'
-import TaskModal from '@/components/features/TaskModal.vue'
-import TaskViewModal from '@/components/features/TaskViewModal.vue'
-import ColumnModal from '@/components/features/ColumnModal.vue'
-import ConfirmModal from '@/components/ui/ConfirmModal.vue'
+import { Layout, Plus } from 'lucide-vue-next'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   board: Board | null
@@ -37,10 +37,10 @@ const taskToArchive = ref<Task | null>(null)
 
 async function loadColumns() {
   if (!props.board) return
-  
+
   // If we already have columns, load silently in the background
   const isSilent = columnsStore.columns.length > 0
-  
+
   if (!isSilent) loadingColumns.value = true
   try {
     await columnsStore.fetchColumns(props.board.id, isSilent)
@@ -108,7 +108,7 @@ async function confirmClearTasks() {
 
 async function handleMoveColumn(id: string, direction: 'left' | 'right') {
   const currentColumns = columnsStore.activeColumns
-  const index = currentColumns.findIndex(c => c.id === id)
+  const index = currentColumns.findIndex((c) => c.id === id)
   if (index === -1) return
 
   const targetColumn = direction === 'left' ? currentColumns[index - 1] : currentColumns[index + 1]
@@ -169,12 +169,16 @@ async function handleMoveTask(taskId: string, targetColumnId: string, position: 
 
 const isDraggingTask = ref(false)
 
-watch(() => props.board, (newBoard) => {
-  if (newBoard) {
-    loadColumns()
-    loadTasks()
-  }
-}, { immediate: true })
+watch(
+  () => props.board,
+  (newBoard) => {
+    if (newBoard) {
+      loadColumns()
+      loadTasks()
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   loadColumns()
@@ -189,15 +193,25 @@ onUnmounted(() => {
 
 <template>
   <!-- Column Canvas -->
-  <main v-dragscroll="!isDraggingTask" class="h-full overflow-x-scroll p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing">
+  <main
+    v-dragscroll="!isDraggingTask"
+    class="h-full overflow-x-scroll p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing"
+  >
     <div v-if="loadingBoard || loadingColumns" class="flex gap-4 min-h-full max-w-max">
-      <div v-for="i in 4" :key="i" class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"></div>
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="w-80 h-[500px] border border-border-gray rounded-xl animate-pulse"
+      ></div>
     </div>
-    
-    <div v-else-if="columnsStore.activeColumns.length > 0" class="flex items-start gap-4 pb-4 min-h-full w-max">
+
+    <div
+      v-else-if="columnsStore.activeColumns.length > 0"
+      class="flex items-start gap-4 pb-4 min-h-full w-max"
+    >
       <TransitionGroup name="t-column">
-        <ColumnCard 
-          v-for="(column, index) in columnsStore.activeColumns" 
+        <ColumnCard
+          v-for="(column, index) in columnsStore.activeColumns"
           :key="column.id"
           :column="column"
           :tasks="getTasksForColumn(column.id)"
@@ -216,40 +230,45 @@ onUnmounted(() => {
           @drag-start="isDraggingTask = true"
           @drag-end="isDraggingTask = false"
         />
-        
+
         <!-- Add Column Placeholder -->
-        <button 
+        <button
           key="add-column-button"
-          class="w-80 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
+          class="w-70 h-16 flex items-center justify-center gap-2 border-2 border-dashed border-border-gray/30 rounded-xl text-text-secondary hover:border-primary-container/30 hover:text-primary-container transition-all shrink-0 cursor-pointer bg-surface-container-low/20"
           @click="handleCreateColumn"
         >
           <Plus :size="20" />
-          Add Another Column
+          Add Column
         </button>
       </TransitionGroup>
     </div>
 
     <div v-else class="h-full flex flex-col items-center justify-center text-center">
       <div class="bg-surface-white p-12 rounded-2xl shadow-xl border border-border-gray max-w-lg">
-        <div class="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6">
+        <div
+          class="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6"
+        >
           <Layout :size="40" class="text-primary-container opacity-40" />
         </div>
         <h2 class="text-2xl font-bold text-text-primary mb-3">No columns yet</h2>
-        <p class="text-text-secondary mb-8 leading-relaxed">Your board is empty. Start by loading default columns or design your custom workflow from scratch.</p>
+        <p class="text-text-secondary mb-8 leading-relaxed">
+          Your board is empty. Start by loading default columns or design your custom workflow from
+          scratch.
+        </p>
         <div class="flex items-center justify-center gap-4">
           <Button variant="primary" @click="handleCreateDefaultColumns">Load Defaults</Button>
           <Button variant="outlined" @click="handleCreateColumn">Create Custom</Button>
         </div>
       </div>
     </div>
-    
-    <TaskModal 
-      :isOpen="isModalOpen" 
-      :task="editingTask" 
+
+    <TaskModal
+      :isOpen="isModalOpen"
+      :task="editingTask"
       :boardId="board?.id"
       :defaultColumnId="defaultColumnForNewTask"
-      @close="isModalOpen = false" 
-      @save="handleSaveTask" 
+      @close="isModalOpen = false"
+      @save="handleSaveTask"
     />
 
     <TaskViewModal

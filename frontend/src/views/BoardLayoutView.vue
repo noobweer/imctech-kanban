@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, PieChart, MessageSquare } from 'lucide-vue-next'
 import { boardsApi } from '@/api/boards'
 import type { Board } from '@/types/board'
 import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
 import BoardMembersModal from '@/components/features/BoardMembersModal.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const isMentor = computed(() => authStore.user?.role === 'mentor')
 
 const route = useRoute()
 const router = useRouter()
@@ -118,10 +122,19 @@ onMounted(loadBoardData)
         </router-link>
       </div>
       <div class="flex gap-4 md:gap-8 min-w-max">
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">
+        <router-link 
+          v-if="isMentor"
+          :to="`/boards/${boardId}/overview`"
+          class="py-4 font-medium text-sm transition-colors border-b-2"
+          :class="[
+            route.name === 'board-overview' 
+              ? 'border-primary-container text-primary-container' 
+              : 'border-transparent text-text-secondary hover:text-primary-container'
+          ]"
+        >
           <span class="flex items-center gap-2"><PieChart :size="16" /> Overview</span>
-        </a>
-        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors" href="#">
+        </router-link>
+        <a class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors border-b-2 border-transparent" href="#">
           <span class="flex items-center gap-2"><MessageSquare :size="16" /> Comments</span>
         </a>
       </div>

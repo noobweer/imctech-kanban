@@ -7,6 +7,7 @@ import type { Column } from '@/types/column'
 import TaskCard from '@/components/features/TaskCard.vue'
 import Button from '@/components/ui/Button.vue'
 import RestoreTaskModal from '@/components/features/RestoreTaskModal.vue'
+import ArchiveColumnTasksModal from '@/components/features/ArchiveColumnTasksModal.vue'
 import { boardsApi } from '@/api/boards'
 import { columnsApi } from '@/api/columns'
 import { useTasksStore } from '@/stores/tasks'
@@ -29,6 +30,9 @@ const tasksStore = useTasksStore()
 
 const isModalOpen = ref(false)
 const taskToRestore = ref<Task | null>(null)
+
+const isColumnModalOpen = ref(false)
+const columnToView = ref<Column | null>(null)
 
 async function loadArchiveData() {
   if (!props.board) return
@@ -82,6 +86,11 @@ function handleOpenRestoreTask(task: Task) {
   isModalOpen.value = true
 }
 
+function handleOpenColumnTasks(column: Column) {
+  columnToView.value = column
+  isColumnModalOpen.value = true
+}
+
 async function handleRestoreTask(taskId: string, targetColumnId: string) {
   try {
     await tasksStore.restoreTask(taskId, targetColumnId)
@@ -122,19 +131,27 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
       </div>
 
       <!-- Tab Switcher -->
-      <div class="flex items-center gap-2 mb-8 bg-surface-container-low p-1.5 rounded-2xl w-fit shrink-0 border border-border-gray/50">
+      <div class="inline-flex p-1 bg-surface-container-high rounded-xl mb-8 shrink-0 w-fit">
         <button 
           @click="activeTab = 'columns'"
-          class="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-all"
-          :class="activeTab === 'columns' ? 'bg-primary-container text-white shadow-md' : 'text-text-secondary hover:text-text-primary hover:bg-surface-container-high'"
+          :class="[
+            'flex items-center gap-2 px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
+            activeTab === 'columns'
+              ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
+              : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+          ]"
         >
           <Layout :size="16" />
           Columns
         </button>
         <button 
           @click="activeTab = 'tasks'"
-          class="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-all"
-          :class="activeTab === 'tasks' ? 'bg-primary-container text-white shadow-md' : 'text-text-secondary hover:text-text-primary hover:bg-surface-container-high'"
+          :class="[
+            'flex items-center gap-2 px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
+            activeTab === 'tasks'
+              ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
+              : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+          ]"
         >
           <CheckSquare :size="16" />
           Tasks
@@ -155,27 +172,34 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
               <div 
                 v-for="col in filteredColumns" 
                 :key="col.id" 
-                class="flex flex-col bg-surface-white border border-border-gray rounded-xl p-5 hover:border-primary-container/30 hover:shadow-lg transition-all group"
+                class="bg-white p-4 md:p-5 rounded-xl border border-border-gray shadow-sm hover:shadow-lg hover:border-primary-container/50 transition-all duration-200 flex flex-col gap-3 cursor-pointer group"
+                @click="handleOpenColumnTasks(col)"
               >
-                <div class="flex items-start justify-between mb-4">
-                  <h3 class="font-bold text-text-primary text-lg truncate pr-2" :title="col.name">{{ col.name }}</h3>
-                  <div class="p-2 bg-surface-container-low rounded-lg shrink-0">
-                    <Layout :size="20" class="text-neutral-gray" />
-                  </div>
-                </div>
-                <div class="mt-auto flex items-center justify-between">
-                  <span class="text-sm font-medium text-text-secondary">
-                    {{ col.sum_tasks }} task{{ col.sum_tasks !== 1 ? 's' : '' }}
-                  </span>
-                  <Button 
-                    variant="outlined" 
-                    size="sm" 
-                    class="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-2"
-                    @click="handleRestoreColumn(col.id)"
+                <div class="flex justify-between items-start gap-2">
+                  <h3 class="font-sub-heading text-[16px] font-bold text-on-surface leading-tight transition-all truncate pr-2" :title="col.name">
+                    {{ col.name }}
+                  </h3>
+                  
+                  <button
+                    class="text-[var(--color-primary-container)] bg-[var(--color-primary-container)]/10 hover:bg-[var(--color-primary-container)]/20 transition-all shrink-0 p-2 rounded-xl active:scale-95 shadow-sm"
+                    title="Restore Column"
+                    @click.stop="handleRestoreColumn(col.id)"
                   >
-                    <ArchiveRestore :size="14" />
-                    Restore
-                  </Button>
+                    <ArchiveRestore :size="18" />
+                  </button>
+                </div>
+                
+                <p class="text-xs text-text-secondary line-clamp-2 min-h-[18px]">
+                  Archived Column
+                </p>
+
+                <div class="flex items-end justify-between mt-auto pt-3">
+                  <div class="flex gap-2 flex-wrap items-center">
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-neutral-gray w-fit">
+                      <Layout :size="12" />
+                      {{ col.sum_tasks }} task{{ col.sum_tasks !== 1 ? 's' : '' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </TransitionGroup>
@@ -223,6 +247,14 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
       :task="taskToRestore"
       @close="isModalOpen = false"
       @restore="handleRestoreTask"
+    />
+
+    <ArchiveColumnTasksModal
+      v-if="board"
+      :is-open="isColumnModalOpen"
+      :column="columnToView"
+      :board-id="board.id"
+      @close="isColumnModalOpen = false"
     />
   </main>
 </template>

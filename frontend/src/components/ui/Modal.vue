@@ -58,6 +58,7 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition
+      appear
       enter-active-class="transition-opacity duration-200 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
@@ -70,7 +71,7 @@ onUnmounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
         @click.self="handleBackdropClick"
       >
-        <Transition name="t-modal">
+        <Transition appear name="t-modal">
           <div
             v-if="modelValue"
             class="bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] w-full max-h-[90vh] flex flex-col"

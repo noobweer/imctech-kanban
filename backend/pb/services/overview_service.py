@@ -58,7 +58,10 @@ def get_activity(board: Board, period: str = "weekly") -> dict:
     col_names = [c.name for c in active_columns]
 
     members_data = {}
+    from ..permissions import is_mentor
     for member in board.members.all():
+        if is_mentor(member):
+            continue
         members_data[member.username] = {
             "username": member.username,
             "name": getattr(member, 'profile', None) and getattr(member.profile, 'name', None) or member.username,
@@ -68,17 +71,22 @@ def get_activity(board: Board, period: str = "weekly") -> dict:
     # "Done" logic: find final moved to Done
     done_tasks = {} # task_id -> {actor, is_done}
     for log in logs:
+        task_id = log.metadata.get("task_id")
+        actor = log.actor.username if log.actor else None
+        
         if log.action_type == "task_moved":
-            task_id = log.metadata.get("task_id")
             to_col = log.metadata.get("to_column")
             from_col = log.metadata.get("from_column")
-            actor = log.actor.username if log.actor else None
             
             if to_col == "Done":
                 done_tasks[task_id] = {"actor": actor, "is_done": True}
             elif from_col == "Done" and to_col != "Done":
                 if task_id in done_tasks:
                     done_tasks[task_id]["is_done"] = False
+                    
+        elif log.action_type == "task_created":
+            if log.metadata.get("column_name") == "Done":
+                done_tasks[task_id] = {"actor": actor, "is_done": True}
 
     # Current task distribution for users
     for col in active_columns:
@@ -149,13 +157,14 @@ def get_deadlines(board: Board) -> dict:
     overdue.sort(key=lambda t: t.deadline)
     due_soon.sort(key=lambda t: t.deadline)
 
+    from ..permissions import is_mentor
     def _format(t):
         return {
             "id": t.id,
             "title": t.title,
             "deadline": t.deadline,
             "column": t.column.name,
-            "assignees": [a.username for a in t.assignees.all()],
+            "assignees": [a.username for a in t.assignees.all() if not is_mentor(a)],
             "priority": t.priority,
             "added_to_board_at": t.added_to_board_at,
         }

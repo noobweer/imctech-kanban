@@ -7,6 +7,7 @@ import { useCommentsStore } from '@/stores/comments'
 import type { Task } from '@/types/task'
 import { CalendarDays, CheckSquare, MessageSquare, MoreVertical, ArchiveRestore } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { format } from 'date-fns'
 
 const props = defineProps<{
   task: Task
@@ -64,10 +65,18 @@ const tagClass = computed(() => {
   return 'bg-surface-container-high text-on-surface'
 })
 
-const formattedDeadline = computed(() => {
-  if (!props.task.deadline) return 'No deadline'
-  const date = new Date(props.task.deadline)
-  return `Due ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+const formattedDateString = computed(() => {
+  const parts = []
+  // We check if added_to_board_at is defined and not null
+  if ((props.task as any).added_to_board_at) {
+    const addedDate = new Date((props.task as any).added_to_board_at)
+    parts.push(`Add on board ${format(addedDate, 'MMM d')}`)
+  }
+  if (props.task.deadline) {
+    const deadlineDate = new Date(props.task.deadline)
+    parts.push(`Due ${format(deadlineDate, 'MMM d')}`)
+  }
+  return parts.join(' / ')
 })
 
 const isDeadlineClose = computed(() => {
@@ -142,12 +151,12 @@ function getAssigneeName(username: string) {
     </p>
 
     <div
-      v-if="task.deadline"
+      v-if="formattedDateString"
       class="flex items-center gap-1.5 text-neutral-gray/80"
       :class="{ 'text-error font-semibold': isDeadlineClose }"
     >
       <CalendarDays :size="14" />
-      <span class="text-xs font-medium">{{ formattedDeadline }}</span>
+      <span class="text-xs font-medium">{{ formattedDateString }}</span>
     </div>
 
     <div class="flex items-end justify-between mt-auto pt-3">

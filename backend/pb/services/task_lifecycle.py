@@ -146,6 +146,10 @@ def assign_task(task: Task, username: str) -> Task:
     if not has_board_access(user, board):
         raise PermissionError("ASSIGNEE_NOT_BOARD_MEMBER")
         
+    from ..permissions import is_mentor
+    if is_mentor(user):
+        raise PermissionError("MENTOR_CANNOT_BE_ASSIGNED")
+        
     task.assignees.add(user)
     create_log(
         board=board,
