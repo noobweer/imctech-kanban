@@ -94,7 +94,7 @@ function onDragEnd() {
 <template>
   <section
     data-no-dragscroll
-    class="flex flex-col w-[280px] md:w-80 max-h-full shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors"
+    class="flex flex-col w-[280px] md:w-80 h-full shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors"
   >
     <!-- Column Header -->
     <div class="mb-3 px-2 flex items-center justify-between group/header h-10 shrink-0">

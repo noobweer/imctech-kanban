@@ -8,6 +8,7 @@ import type {
   TaskCommentUpdateIn,
 } from '@/types/comment'
 import { useToast } from '@/composables/useToast'
+import { useAuthStore } from './auth'
 
 export const useCommentsStore = defineStore('comments', () => {
   const boardStates = ref<Record<string, TaskCommentStateOut>>({})
@@ -15,6 +16,7 @@ export const useCommentsStore = defineStore('comments', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const toast = useToast()
+  const authStore = useAuthStore()
 
   async function fetchBoardStates(boardId: string) {
     try {
@@ -46,15 +48,18 @@ export const useCommentsStore = defineStore('comments', () => {
   async function createComment(taskId: string, data: TaskCommentCreateIn) {
     try {
       const comment = await commentsApi.createComment(taskId, data)
+      
+      // Optimistic update
       const exists = activeTaskComments.value.some((c) => c.id === comment.id)
       if (!exists) {
-        activeTaskComments.value.push(comment)
+        if (activeTaskComments.value.length === 0 || activeTaskComments.value[0]?.task_id === taskId) {
+          activeTaskComments.value.push(comment)
+        }
       } else {
         const idx = activeTaskComments.value.findIndex((c) => c.id === comment.id)
         if (idx !== -1) activeTaskComments.value[idx] = comment
       }
 
-      // Update state optimistically
       if (!boardStates.value[taskId]) {
         boardStates.value[taskId] = {
           task_id: taskId,
@@ -64,8 +69,13 @@ export const useCommentsStore = defineStore('comments', () => {
           has_unread_comments: false,
         }
       } else {
-        boardStates.value[taskId].comments_count += 1
+        if (!exists) {
+          boardStates.value[taskId].comments_count += 1
+        }
+        boardStates.value[taskId].comments_state = 'read'
+        boardStates.value[taskId].has_unread_comments = false
       }
+
       return comment
     } catch (e: any) {
       toast.error(e.message || 'Failed to post comment')
@@ -120,28 +130,42 @@ export const useCommentsStore = defineStore('comments', () => {
 
   function handleSocketEvent(type: string, payload: any) {
     if (type === 'comment.created') {
+      const isMine = payload.owner_username === authStore.user?.username
+
       const exists = activeTaskComments.value.some((c) => c.id === payload.id)
       if (
         !exists &&
-        activeTaskComments.value.length > 0 &&
-        activeTaskComments.value[0]?.task_id === payload.task_id
+        (activeTaskComments.value.length === 0 || activeTaskComments.value[0]?.task_id === payload.task_id) &&
+        payload.task_id // Need to be careful to only push if we are currently viewing this task
       ) {
-        activeTaskComments.value.push(payload)
+        // Only push if we are currently viewing this task. We check if activeTaskComments is empty
+        // or matches the task_id. But wait, if it's empty, we might not be viewing ANY task!
+        // So we only push if activeTaskComments has the same task_id.
+        if (activeTaskComments.value.length > 0 && activeTaskComments.value[0]?.task_id === payload.task_id) {
+          activeTaskComments.value.push(payload)
+        }
       }
 
       const taskId = payload.task_id
       if (!boardStates.value[taskId]) {
         boardStates.value[taskId] = {
           task_id: taskId,
-          comments_state: 'unread',
+          comments_state: isMine ? 'read' : 'unread',
           comments_count: 1,
           has_comments: true,
-          has_unread_comments: true,
+          has_unread_comments: !isMine,
         }
       } else {
-        boardStates.value[taskId].comments_count += 1
-        boardStates.value[taskId].comments_state = 'unread'
-        boardStates.value[taskId].has_unread_comments = true
+        if (!exists) {
+          boardStates.value[taskId].comments_count += 1
+        }
+        if (!isMine) {
+          boardStates.value[taskId].comments_state = 'unread'
+          boardStates.value[taskId].has_unread_comments = true
+        } else {
+          boardStates.value[taskId].comments_state = 'read'
+          boardStates.value[taskId].has_unread_comments = false
+        }
       }
     } else if (type === 'comment.updated') {
       const idx = activeTaskComments.value.findIndex((c) => c.id === payload.id)

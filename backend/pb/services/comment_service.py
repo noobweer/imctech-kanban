@@ -4,13 +4,15 @@ from django.utils import timezone
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 
-from ..models import Task, Board, TaskComment, TaskCommentReadState
+from ..models import Task, Board, TaskComment, TaskCommentReadState, ColumnKind, ColumnStatus
+from django.db.models import Q
 from ..permissions import (
     can_read_task_comments,
     can_create_task_comment,
     can_edit_task_comment,
     can_delete_task_comment,
     has_board_access,
+    is_mentor,
 )
 
 
@@ -148,3 +150,81 @@ def get_board_comments_states(user, board: Board, task_ids: Optional[List[uuid.U
         states.append(get_task_comment_state(user, task))
 
     return states
+
+
+def get_comments_feed(board: Board, user, filter_type: str) -> dict:
+    if not has_board_access(user, board):
+        raise PermissionError("BOARD_ACCESS_DENIED")
+
+    # Exclude archived columns
+    base_qs = Task.objects.filter(
+        column__board=board
+    ).exclude(
+        column__kind=ColumnKind.ARCHIVE
+    ).exclude(
+        column__status=ColumnStatus.ARCHIVED
+    )
+
+    feed_tasks = []
+
+    if filter_type == "new":
+        if is_mentor(user):
+            # Mentor sees tasks where they have commented
+            qs = base_qs.filter(comments__owner=user, comments__is_deleted=False)
+        else:
+            # Student sees tasks where they are assignee
+            qs = base_qs.filter(assignees=user, comments__is_deleted=False)
+            
+        qs = qs.distinct().prefetch_related("comments", "comment_read_states", "assignees", "column")
+
+        for task in qs:
+            state = get_task_comment_state(user, task)
+            if state["comments_state"] == "unread":
+                feed_tasks.append({
+                    "task": task,
+                    "state": state
+                })
+
+    elif filter_type == "activity":
+        q_commented = Q(comments__owner=user, comments__is_deleted=False)
+        q_assigned = Q(assignees=user, comments__is_deleted=False)
+
+        qs = base_qs.filter(q_commented | q_assigned).distinct()
+        qs = qs.prefetch_related("comments", "comment_read_states", "assignees", "column")
+
+        for task in qs:
+            state = get_task_comment_state(user, task)
+            feed_tasks.append({
+                "task": task,
+                "state": state
+            })
+
+    else:
+        raise ValueError("Invalid filter_type")
+
+    # Sort by last_comment_at descending
+    feed_tasks = [t for t in feed_tasks if t["state"]["last_comment_at"] is not None]
+    feed_tasks.sort(key=lambda x: x["state"]["last_comment_at"], reverse=True)
+
+    out_tasks = [
+        {
+            "id": item["task"].id,
+            "title": item["task"].title,
+            "column": item["task"].column.name,
+            "priority": item["task"].priority,
+            "deadline": item["task"].deadline,
+            "added_to_board_at": item["task"].added_to_board_at,
+            "assignees": [a.username for a in item["task"].assignees.all()],
+            "comments_count": item["state"]["comments_count"],
+            "last_comment_at": item["state"]["last_comment_at"],
+            "comments_state": item["state"]["comments_state"],
+        }
+        for item in feed_tasks
+    ]
+
+    return {
+        "filter": filter_type,
+        "total": len(out_tasks),
+        "tasks": out_tasks
+    }
+

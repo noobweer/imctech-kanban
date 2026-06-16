@@ -36,3 +36,9 @@ Get comment read states for tasks in a board.
 *   **Auth:** Required
 *   **Access:** Owner, member, or staff of the board.
 *   **Query Params:** `task_ids` (Optional list of UUIDs).
+
+#### GET /boards/{board_id}/comments/feed
+Get task feed based on comments activity for the board.
+*   **Auth:** Required
+*   **Access:** Owner, member, or staff of the board.
+*   **Query Params:** `filter` (str: `new` or `activity`. Defaults to `new`).

@@ -420,3 +420,22 @@ class DeadlineTaskOut(Schema):
 class DeadlinesOut(Schema):
     overdue: List[DeadlineTaskOut]
     due_soon: List[DeadlineTaskOut]
+
+# --- Comment Feed Schemas ---
+
+class CommentFeedTaskOut(Schema):
+    id: uuid.UUID
+    title: str
+    column: str
+    priority: int
+    deadline: Optional[datetime]
+    added_to_board_at: Optional[datetime]
+    assignees: List[str]
+    comments_count: int
+    last_comment_at: Optional[datetime]
+    comments_state: str  # none | read | unread
+
+class CommentFeedOut(Schema):
+    filter: str
+    total: int
+    tasks: List[CommentFeedTaskOut]

@@ -50,6 +50,11 @@ const router = createRouter({
           name: 'board-overview',
           component: () => import('@/components/board/OverviewTab.vue'),
         },
+        {
+          path: 'comments',
+          name: 'board-comments',
+          component: () => import('@/views/CommentsView.vue'),
+        },
       ],
     },
     {

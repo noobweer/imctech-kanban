@@ -22,6 +22,7 @@ def user_to_schema(user: User) -> UserOutSchema:
     """Convert User + UserProfile to UserOutSchema"""
     profile = user.profile
     return UserOutSchema(
+        id=user.id,
         username=user.username,
         name=profile.name,
         role=profile.role,

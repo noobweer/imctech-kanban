@@ -11,6 +11,7 @@ class RegisterSchema(Schema):
 
 
 class UserOutSchema(Schema):
+    id: int
     username: str
     name: str
     role: str

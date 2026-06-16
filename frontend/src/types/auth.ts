@@ -11,7 +11,7 @@ export interface SignUpData {
 }
 
 export interface AuthUser {
-  id: string
+  id: string | number
   username: string
   name: string
   role: 'student' | 'mentor'

@@ -1,6 +1,7 @@
 import { apiClient } from './client'
 import type { Board } from '@/types/board'
 import type { CreateColumnData } from '@/types/column'
+import type { CommentFeedOut } from '@/types/commentFeed'
 
 export interface CreateBoardData {
   name: string
@@ -31,6 +32,12 @@ export const boardsApi = {
 
   async getArchiveColumns(boardId: string, params?: Record<string, any>) {
     return apiClient(`/boards/${boardId}/archive/columns`, { params })
+  },
+
+  async getCommentsFeed(boardId: string, filter: 'new' | 'activity'): Promise<CommentFeedOut> {
+    return apiClient(`/boards/${boardId}/comments/feed`, {
+      query: { filter },
+    })
   },
 
   async createBoard(data: CreateBoardData): Promise<Board> {

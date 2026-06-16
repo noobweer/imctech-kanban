@@ -162,12 +162,17 @@ onMounted(loadBoardData)
         >
           <span class="flex items-center gap-2"><PieChart :size="16" /> Overview</span>
         </router-link>
-        <a
-          class="py-4 font-medium text-text-secondary hover:text-primary-container text-sm transition-colors border-b-2 border-transparent"
-          href="#"
+        <router-link
+          :to="`/boards/${boardId}/comments`"
+          class="py-4 font-medium text-sm transition-colors border-b-2"
+          :class="[
+            route.name === 'board-comments'
+              ? 'border-primary-container text-primary-container'
+              : 'border-transparent text-text-secondary hover:text-primary-container',
+          ]"
         >
           <span class="flex items-center gap-2"><MessageSquare :size="16" /> Comments</span>
-        </a>
+        </router-link>
       </div>
     </nav>
 

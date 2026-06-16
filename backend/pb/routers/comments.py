@@ -3,6 +3,7 @@ import json
 from typing import List, Optional
 from ninja import Router, Query
 from ninja_jwt.authentication import JWTAuth
+from ninja.errors import HttpError
 from django.shortcuts import get_object_or_404
 
 from ..models import Task, Board, TaskComment
@@ -11,6 +12,7 @@ from ..schemas import (
     TaskCommentUpdateIn,
     TaskCommentOut,
     TaskCommentStateOut,
+    CommentFeedOut,
 )
 from ..services.comment_service import (
     list_task_comments,
@@ -20,6 +22,7 @@ from ..services.comment_service import (
     mark_comments_as_read,
     get_task_comment_state,
     get_board_comments_states,
+    get_comments_feed,
 )
 from ..services.ws_service import broadcast_board_event
 
@@ -93,3 +96,14 @@ def get_comment_state(request, task_id: uuid.UUID):
 def get_comments_states(request, board_id: uuid.UUID, task_ids: Optional[List[uuid.UUID]] = Query(None)):
     board = get_object_or_404(Board, id=board_id)
     return get_board_comments_states(request.user, board, task_ids=task_ids)
+
+
+@router.get("/boards/{board_id}/comments/feed", response=CommentFeedOut)
+def get_comments_feed_endpoint(request, board_id: uuid.UUID, filter: str = Query("new")):
+    board = get_object_or_404(Board, id=board_id)
+    try:
+        return get_comments_feed(board, request.user, filter)
+    except PermissionError as e:
+        raise HttpError(403, str(e))
+    except ValueError as e:
+        raise HttpError(400, str(e))
