@@ -1,5 +1,6 @@
 import uuid
 from typing import List
+from django.http import JsonResponse
 
 from django.shortcuts import get_object_or_404
 from ninja import Router
@@ -17,7 +18,7 @@ router = Router()
 def list_board_invites(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to view invites"}, status=403)
+        return JsonResponse({"detail": "No permission to view invites"}, status=403)
     return invite_service.list_invites(board)
 
 
@@ -25,22 +26,22 @@ def list_board_invites(request, board_id: uuid.UUID):
 def get_current_invite(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to view invites"}, status=403)
+        return JsonResponse({"detail": "No permission to view invites"}, status=403)
     try:
         return invite_service.get_current_invite(board)
     except Invite.DoesNotExist:
-        return router.api.create_response(request, {"detail": "No active invite found for this board"}, status=404)
+        return JsonResponse({"detail": "No active invite found for this board"}, status=404)
 
 
 @router.post("/boards/{board_id}/invites", response={201: InviteOut}, auth=JWTAuth())
 def create_invite(request, board_id: uuid.UUID, payload: InviteIn):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to create invites"}, status=403)
+        return JsonResponse({"detail": "No permission to create invites"}, status=403)
     try:
         invite = invite_service.create_invite(board, request.auth, payload)
     except ValueError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=400)
+        return JsonResponse({"detail": str(e)}, status=400)
     return 201, invite
 
 
@@ -49,7 +50,7 @@ def get_invite(request, invite_id: uuid.UUID):
     try:
         invite = invite_service.get_invite(invite_id)
     except Invite.DoesNotExist:
-        return router.api.create_response(request, {"detail": "Not found"}, status=404)
+        return JsonResponse({"detail": "Not found"}, status=404)
     if can_edit_board(request.auth, invite.board):
         return InviteOut.from_orm(invite)
     return InvitePublicOut.from_orm(invite)
@@ -59,18 +60,18 @@ def get_invite(request, invite_id: uuid.UUID):
 def patch_invite(request, invite_id: uuid.UUID, payload: InvitePatchIn):
     invite = get_object_or_404(Invite.objects.select_related("board", "created_by"), id=invite_id)
     if not can_edit_board(request.auth, invite.board):
-        return router.api.create_response(request, {"detail": "No permission to update this invite"}, status=403)
+        return JsonResponse({"detail": "No permission to update this invite"}, status=403)
     try:
         return invite_service.patch_invite(invite, payload)
     except ValueError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=400)
+        return JsonResponse({"detail": str(e)}, status=400)
 
 
 @router.delete("/invites/{invite_id}", auth=JWTAuth())
 def deactivate_invite(request, invite_id: uuid.UUID):
     invite = get_object_or_404(Invite.objects.select_related("board"), id=invite_id)
     if not can_edit_board(request.auth, invite.board):
-        return router.api.create_response(request, {"detail": "No permission to deactivate this invite"}, status=403)
+        return JsonResponse({"detail": "No permission to deactivate this invite"}, status=403)
     invite_service.deactivate_invite(invite)
     return {"success": True, "message": "Invite deactivated"}
 
@@ -86,5 +87,5 @@ def join_board_via_invite(request, invite_id: uuid.UUID):
             return {"success": True, "message": "You are already the owner of this board", "board_id": str(board.id)}
         return {"success": True, "message": "You are already a member of this board", "board_id": str(board.id)}
     except ValueError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=400)
+        return JsonResponse({"detail": str(e)}, status=400)
     return {"success": True, "message": f"You have joined the board '{board.name}'", "board_id": str(board.id)}

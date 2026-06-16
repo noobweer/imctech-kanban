@@ -1,5 +1,6 @@
 import uuid
 from typing import List, Optional
+from django.http import JsonResponse
 
 from django.shortcuts import get_object_or_404
 from ninja import Router, Query
@@ -24,11 +25,11 @@ def list_boards(request, status: Optional[BoardStatus] = Query(None)):
 def create_board(request, payload: BoardIn):
     user = request.auth
     if is_student(user):
-        return router.api.create_response(request, {"detail": "Student is not allowed to create projects or boards", "code": "STUDENT_ACTION_FORBIDDEN"}, status=403)
+        return JsonResponse({"detail": "Student is not allowed to create projects or boards", "code": "STUDENT_ACTION_FORBIDDEN"}, status=403)
     if payload.project_id:
         project = get_object_or_404(Project, id=payload.project_id)
         if not has_project_access(user, project):
-            return router.api.create_response(request, {"detail": "No access to this project"}, status=403)
+            return JsonResponse({"detail": "No access to this project"}, status=403)
     else:
         project = project_service.create_project(payload.name)
     board = board_service.create_board(user, payload, project)
@@ -39,7 +40,7 @@ def create_board(request, payload: BoardIn):
 def retrieve_board(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(request.auth, board):
-        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+        return JsonResponse({"detail": "No access to this board"}, status=403)
     return board
 
 
@@ -47,7 +48,7 @@ def retrieve_board(request, board_id: uuid.UUID):
 def update_board(request, board_id: uuid.UUID, payload: BoardUpdateIn):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to edit this board"}, status=403)
+        return JsonResponse({"detail": "No permission to edit this board"}, status=403)
     return board_service.update_board(board, payload)
 
 
@@ -55,7 +56,7 @@ def update_board(request, board_id: uuid.UUID, payload: BoardUpdateIn):
 def delete_board(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to delete this board"}, status=403)
+        return JsonResponse({"detail": "No permission to delete this board"}, status=403)
     board_service.archive_board(board)
     return {"success": True, "message": "Board archived successfully"}
 
@@ -72,7 +73,7 @@ def list_archive_tasks(
 ):
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(request.auth, board):
-        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+        return JsonResponse({"detail": "No access to this board"}, status=403)
     return task_service.list_tasks(
         board, column_kind=ColumnKind.ARCHIVE,
         priority=priority, assignee=assignee, tag=tag, search=search,
@@ -88,5 +89,5 @@ def list_archive_columns(
 ):
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(request.auth, board):
-        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+        return JsonResponse({"detail": "No access to this board"}, status=403)
     return column_service.list_columns(board, status=ColumnStatus.ARCHIVED, kind=kind)

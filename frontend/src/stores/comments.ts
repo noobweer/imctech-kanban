@@ -46,7 +46,13 @@ export const useCommentsStore = defineStore('comments', () => {
   async function createComment(taskId: string, data: TaskCommentCreateIn) {
     try {
       const comment = await commentsApi.createComment(taskId, data)
-      activeTaskComments.value.push(comment)
+      const exists = activeTaskComments.value.some((c) => c.id === comment.id)
+      if (!exists) {
+        activeTaskComments.value.push(comment)
+      } else {
+        const idx = activeTaskComments.value.findIndex((c) => c.id === comment.id)
+        if (idx !== -1) activeTaskComments.value[idx] = comment
+      }
 
       // Update state optimistically
       if (!boardStates.value[taskId]) {

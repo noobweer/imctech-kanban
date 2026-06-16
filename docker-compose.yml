@@ -16,7 +16,7 @@ services:
     build:
       context: ./backend
     container_name: kanban_backend
-    command: uv run daphne -b 0.0.0.0 -p 8000 config.asgi:application
+    command: sh -c "uv run python manage.py collectstatic --noinput && uv run python manage.py migrate && uv run daphne -b 0.0.0.0 -p 8000 config.asgi:application"
     volumes:
       - ./backend:/app
       - /app/.venv

@@ -1,5 +1,6 @@
 import uuid
 from typing import List
+from django.http import JsonResponse
 
 from django.shortcuts import get_object_or_404
 from ninja import Router
@@ -17,7 +18,7 @@ router = Router()
 def list_board_members(request, board_id: uuid.UUID):
     board = get_object_or_404(Board, id=board_id)
     if not has_board_access(request.auth, board):
-        return router.api.create_response(request, {"detail": "No access to this board"}, status=403)
+        return JsonResponse({"detail": "No access to this board"}, status=403)
     return member_service.list_members(board)
 
 
@@ -25,15 +26,15 @@ def list_board_members(request, board_id: uuid.UUID):
 def remove_member(request, board_id: uuid.UUID, username: str):
     board = get_object_or_404(Board, id=board_id)
     if not can_edit_board(request.auth, board):
-        return router.api.create_response(request, {"detail": "No permission to remove members"}, status=403)
+        return JsonResponse({"detail": "No permission to remove members"}, status=403)
     try:
         member_service.remove_member(board, username)
     except member_service.User.DoesNotExist as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=404)
+        return JsonResponse({"detail": str(e)}, status=404)
     except LookupError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=404)
+        return JsonResponse({"detail": str(e)}, status=404)
     except ValueError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=400)
+        return JsonResponse({"detail": str(e)}, status=400)
     return {"success": True, "message": f"User '{username}' has been removed from the board"}
 
 
@@ -43,5 +44,5 @@ def leave_board(request, board_id: uuid.UUID):
     try:
         member_service.leave_board(board, request.auth)
     except ValueError as e:
-        return router.api.create_response(request, {"detail": str(e)}, status=400)
+        return JsonResponse({"detail": str(e)}, status=400)
     return {"success": True, "message": f"You have left the board '{board.name}'"}

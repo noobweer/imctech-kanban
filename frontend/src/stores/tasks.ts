@@ -56,7 +56,12 @@ export const useTasksStore = defineStore('tasks', () => {
     loading.value = true
     try {
       const newTask = await tasksApi.createTask(boardId, data)
-      tasks.value.push(newTask)
+      const exists = tasks.value.some((t) => t.id === newTask.id)
+      if (!exists) {
+        tasks.value.push(newTask)
+      } else {
+        updateTaskInStore(newTask)
+      }
       return newTask
     } catch (e: any) {
       toast.error(e.message || 'Failed to create task')
@@ -171,12 +176,6 @@ export const useTasksStore = defineStore('tasks', () => {
             storeTask.position = newPos
           }
         }
-      }
-
-      // Silent sync to guarantee absolute truth from backend
-      const taskBoardId = tasks.value.find((t) => t.id === taskId)?.board_id
-      if (taskBoardId) {
-        fetchTasks(taskBoardId, true)
       }
 
       return result

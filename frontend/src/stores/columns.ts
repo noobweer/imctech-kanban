@@ -56,7 +56,13 @@ export const useColumnsStore = defineStore('columns', () => {
   async function createColumn(boardId: string, data: CreateColumnData) {
     try {
       const newColumn = await columnsApi.createColumn(boardId, data)
-      columns.value.push(newColumn)
+      const exists = columns.value.some((c) => c.id === newColumn.id)
+      if (!exists) {
+        columns.value.push(newColumn)
+      } else {
+        const index = columns.value.findIndex((c) => c.id === newColumn.id)
+        if (index !== -1) columns.value[index] = newColumn
+      }
       return newColumn
     } catch (error) {
       console.error('Failed to create column:', error)

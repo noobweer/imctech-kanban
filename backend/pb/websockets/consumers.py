@@ -1,8 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .permissions import has_board_access
-from .models import Board
+from ..permissions import has_board_access
+from ..models import Board
 
 @database_sync_to_async
 def check_board_access(user, board_id):
@@ -21,7 +21,9 @@ class BoardConsumer(AsyncWebsocketConsumer):
         self.user = self.scope.get('user')
 
         has_access = await check_board_access(self.user, self.board_id)
+        print(f"WS Consumer: User={self.user}, Board={self.board_id}, HasAccess={has_access}")
         if not has_access:
+            print("WS Consumer: Closing connection due to lack of access")
             await self.close()
             return
 

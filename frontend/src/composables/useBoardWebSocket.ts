@@ -37,7 +37,7 @@ export function useBoardWebSocket() {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
+    const host = import.meta.env.DEV ? `${window.location.hostname}:8000` : window.location.host
     const url = `${protocol}//${host}/ws/boards/${currentBoardId}/?token=${token}`
 
     ws.value = new WebSocket(url)
@@ -57,7 +57,7 @@ export function useBoardWebSocket() {
         const { type, payload, actor_id } = data
 
         // Echo Cancellation: Ignore events triggered by the current user
-        if (actor_id && authStore.user && actor_id === authStore.user.id) {
+        if (actor_id && authStore.user && String(actor_id) === String(authStore.user.id)) {
           return
         }
 

@@ -25,8 +25,11 @@ class JWTAuthMiddleware:
         token = query_params.get("token", [None])[0]
 
         if token:
+            print("WS Auth: Got token:", token[:15], "...")
             scope["user"] = await get_user_from_token(token)
+            print("WS Auth: User resolved to:", scope["user"])
         else:
+            print("WS Auth: No token provided")
             scope["user"] = AnonymousUser()
 
         return await self.inner(scope, receive, send)
