@@ -205,7 +205,7 @@ onUnmounted(() => {
 
     <div
       v-else-if="columnsStore.activeColumns.length > 0"
-      class="flex items-start gap-4 pb-4 min-h-full w-max"
+      class="flex items-start gap-4 pb-4 h-full w-max"
     >
       <TransitionGroup name="t-column">
         <ColumnCard

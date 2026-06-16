@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { tasksApi } from '@/api/tasks'
 import { useCommentsStore } from '@/stores/comments'
+import { useColumnsStore } from '@/stores/columns'
 import type { Task, TaskIn, TaskUpdateIn } from '@/types/task'
 
 export const useTasksStore = defineStore('tasks', () => {
@@ -11,6 +12,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const error = ref<string | null>(null)
   const toast = useToast()
   const commentsStore = useCommentsStore()
+  const columnsStore = useColumnsStore()
 
   const backlogTasks = computed(() => {
     const filtered = tasks.value.filter((t) => t.column_kind === 'backlog')
@@ -155,10 +157,13 @@ export const useTasksStore = defineStore('tasks', () => {
         }
       }
 
+      const targetColumn = columnsStore.columns.find((c) => c.id === targetColumnId)
+
       tasks.value[taskIndex] = {
         ...tasks.value[taskIndex],
         column_id: targetColumnId,
         position: optimisticPosition,
+        ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name })
       } as Task
     }
 
@@ -277,7 +282,13 @@ export const useTasksStore = defineStore('tasks', () => {
     ) {
       updateTaskInStore(payload)
     } else if (type === 'task.moved') {
-      if (payload.task) updateTaskInStore(payload.task)
+      if (payload.task) {
+        const targetColumn = columnsStore.columns.find((c) => c.id === payload.task.column_id)
+        updateTaskInStore({
+          ...payload.task,
+          ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name })
+        })
+      }
       if (payload.reordered_tasks) {
         for (const [id, newPos] of Object.entries(payload.reordered_tasks)) {
           const storeTask = tasks.value.find((t) => t.id === id)

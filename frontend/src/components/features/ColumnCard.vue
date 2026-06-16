@@ -94,10 +94,10 @@ function onDragEnd() {
 <template>
   <section
     data-no-dragscroll
-    class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors"
+    class="flex flex-col w-[280px] md:w-80 max-h-full shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors"
   >
     <!-- Column Header -->
-    <div class="mb-3 px-2 flex items-center justify-between group/header h-10">
+    <div class="mb-3 px-2 flex items-center justify-between group/header h-10 shrink-0">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">
         <h2
           class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors"
@@ -192,7 +192,7 @@ function onDragEnd() {
       @start="emit('drag-start')"
       @end="emit('drag-end')"
       @change="onTasksChange"
-      class="flex-1 flex flex-col gap-3 overflow-y-scroll max-h-[calc(100vh-300px)] custom-scrollbar pb-10 min-h-[100px]"
+      class="flex-1 min-h-[100px] flex flex-col gap-3 overflow-y-auto custom-scrollbar pb-2"
     >
       <template #item="{ element: task }">
         <TaskCard
