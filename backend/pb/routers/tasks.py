@@ -1,4 +1,5 @@
 import uuid
+import json
 from typing import List, Optional
 
 from django.shortcuts import get_object_or_404
@@ -14,8 +15,12 @@ from ..schemas import (
 )
 from ..permissions import has_board_access, can_modify_task, can_create_task, is_mentor
 from ..services import task_service, task_lifecycle, archive_service
+from ..services.ws_service import broadcast_board_event
 
 router = Router()
+
+def _serialize(schema_cls, obj):
+    return json.loads(schema_cls.from_orm(obj).json())
 
 
 @router.get("/boards/{board_id}/tasks", response=List[TaskOut], auth=JWTAuth())
@@ -86,6 +91,7 @@ def create_board_task(request, board_id: uuid.UUID, payload: TaskIn):
         raise HttpError(403, "No access to this board")
     try:
         task = task_service.create_task(board, request.auth, payload)
+        broadcast_board_event(board.id, "task.created", _serialize(TaskOut, task), request.auth.id)
     except (LookupError, PermissionError) as e:
         raise HttpError(400, str(e))
     return 201, task
@@ -101,6 +107,7 @@ def create_column_task(request, column_id: uuid.UUID, payload: TaskIn):
     payload.column_id = column.id
     try:
         task = task_service.create_task(column.board, request.auth, payload)
+        broadcast_board_event(column.board_id, "task.created", _serialize(TaskOut, task), request.auth.id)
     except (LookupError, PermissionError) as e:
         raise HttpError(400, str(e))
     return 201, task
@@ -114,7 +121,9 @@ def update_task(request, task_id: uuid.UUID, payload: TaskPatchIn):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No permission to edit this task")
     try:
-        return task_service.update_task(task, payload)
+        task = task_service.update_task(task, payload)
+        broadcast_board_event(task.column.board_id, "task.updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except (LookupError, PermissionError) as e:
         raise HttpError(400, str(e))
 
@@ -127,7 +136,9 @@ def add_checklist_item(request, task_id: uuid.UUID, payload: ChecklistItemCreate
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return 201, task_lifecycle.add_checklist_item(task, payload.title)
+        task = task_lifecycle.add_checklist_item(task, payload.title)
+        broadcast_board_event(task.column.board_id, "task.checklist_updated", _serialize(TaskOut, task), request.auth.id)
+        return 201, task
     except ValueError as e:
         raise HttpError(400, str(e))
 
@@ -140,7 +151,9 @@ def update_checklist_item(request, task_id: uuid.UUID, item_id: str, payload: Ch
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.patch_checklist_item(task, item_id, payload.title, payload.is_done)
+        task = task_lifecycle.patch_checklist_item(task, item_id, payload.title, payload.is_done)
+        broadcast_board_event(task.column.board_id, "task.checklist_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except LookupError as e:
         raise HttpError(404, str(e))
     except ValueError as e:
@@ -155,7 +168,9 @@ def toggle_checklist_item(request, task_id: uuid.UUID, item_id: str):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.toggle_checklist_item(task, item_id)
+        task = task_lifecycle.toggle_checklist_item(task, item_id)
+        broadcast_board_event(task.column.board_id, "task.checklist_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except LookupError as e:
         raise HttpError(404, str(e))
 
@@ -168,7 +183,9 @@ def delete_checklist_item(request, task_id: uuid.UUID, item_id: str):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.delete_checklist_item(task, item_id)
+        task = task_lifecycle.delete_checklist_item(task, item_id)
+        broadcast_board_event(task.column.board_id, "task.checklist_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except LookupError as e:
         raise HttpError(404, str(e))
 
@@ -181,7 +198,9 @@ def reorder_checklist(request, task_id: uuid.UUID, payload: ChecklistReorderIn):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.reorder_checklist(task, payload.ordered_item_ids)
+        task = task_lifecycle.reorder_checklist(task, payload.ordered_item_ids)
+        broadcast_board_event(task.column.board_id, "task.checklist_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except ValueError as e:
         raise HttpError(400, str(e))
 
@@ -194,7 +213,9 @@ def assign_task(request, task_id: uuid.UUID, payload: TaskAssignIn):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.assign_task(task, payload.username)
+        task = task_lifecycle.assign_task(task, payload.username)
+        broadcast_board_event(task.column.board_id, "task.assignees_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except LookupError as e:
         raise HttpError(404, str(e))
     except PermissionError as e:
@@ -209,7 +230,9 @@ def unassign_task(request, task_id: uuid.UUID, payload: TaskUnassignIn):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return task_lifecycle.unassign_task(task, payload.username)
+        task = task_lifecycle.unassign_task(task, payload.username)
+        broadcast_board_event(task.column.board_id, "task.assignees_updated", _serialize(TaskOut, task), request.auth.id)
+        return task
     except LookupError as e:
         raise HttpError(404, str(e))
 
@@ -223,15 +246,17 @@ def move_task(request, task_id: uuid.UUID, payload: TaskMoveIn):
         raise HttpError(403, "No access to this task")
     try:
         result = task_lifecycle.move_task(task, payload.target_column_id, payload.position)
-        return {
+        payload_data = {
             "task": {
                 "id": str(result["task"].id),
                 "column_id": str(result["task"].column_id),
                 "position": result["task"].position
             },
-            "affected_column_ids": result["affected_column_ids"],
+            "affected_column_ids": [str(cid) for cid in result["affected_column_ids"]],
             "reordered_tasks": result["reordered_tasks"]
         }
+        broadcast_board_event(task.column.board_id, "task.moved", payload_data, request.auth.id)
+        return payload_data
     except LookupError as e:
         raise HttpError(404, str(e))
     except ValueError as e:
@@ -245,7 +270,9 @@ def archive_task(request, task_id: uuid.UUID):
         if is_mentor(request.auth):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
-    return archive_service.archive_task(task)
+    task = archive_service.archive_task(task)
+    broadcast_board_event(task.column.board_id, "task.archived", _serialize(TaskOut, task), request.auth.id)
+    return task
 
 
 @router.post("/tasks/{task_id}/restore", response=TaskOut, auth=JWTAuth())
@@ -256,7 +283,9 @@ def restore_task(request, task_id: uuid.UUID, payload: TaskRestoreIn):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     try:
-        return archive_service.restore_task(task, payload.target_column_id, payload.position)
+        task = archive_service.restore_task(task, payload.target_column_id, payload.position)
+        broadcast_board_event(task.column.board_id, "task.restored", _serialize(TaskOut, task), request.auth.id)
+        return task
     except ValueError as e:
         raise HttpError(400, str(e))
 
@@ -269,4 +298,7 @@ def delete_task(request, task_id: uuid.UUID):
             return router.api.create_response(request, {"detail": "Mentor is not allowed to modify this resource", "code": "MENTOR_ACTION_FORBIDDEN"}, status=403)
         raise HttpError(403, "No access to this task")
     archive_service.archive_task(task)
+    # Refresh to get archived column id
+    task.refresh_from_db()
+    broadcast_board_event(task.column.board_id, "task.archived", _serialize(TaskOut, task), request.auth.id)
     return {"success": True, "message": "Task archived"}
