@@ -102,15 +102,12 @@ watch([activeMode, activityPeriod], () => {
 
         <!-- Activity Filter Select -->
         <Transition name="fade-slide">
-          <div
-            v-if="activeMode === 'activity'"
-            class="w-full md:w-48 shrink-0"
-          >
+          <div v-if="activeMode === 'activity'" class="w-full md:w-48 shrink-0">
             <Select
               v-model="activityPeriod"
               :options="[
                 { label: 'Weekly Activity', value: 'weekly' },
-                { label: 'All Time Activity', value: 'all_time' }
+                { label: 'All Time Activity', value: 'all_time' },
               ]"
             />
           </div>

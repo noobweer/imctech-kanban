@@ -132,9 +132,7 @@ async function handleCreate() {
       <div class="max-w-[1000px] w-full mx-auto">
         <div class="space-y-4">
           <!-- Section 1: Identity -->
-          <section
-            class="bg-white rounded-xl p-6 shadow-dropdown border border-border-gray"
-          >
+          <section class="bg-white rounded-xl p-6 shadow-dropdown border border-border-gray">
             <div class="flex flex-col md:flex-row gap-6">
               <div class="md:w-1/4">
                 <div class="flex items-center gap-3 mb-2">

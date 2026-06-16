@@ -40,9 +40,9 @@ async function loadArchiveData() {
   try {
     const [tasksRes, columnsRes] = await Promise.all([
       boardsApi.getArchiveTasks(props.board.id),
-      boardsApi.getArchiveColumns(props.board.id)
+      boardsApi.getArchiveColumns(props.board.id),
     ])
-    
+
     // Check if response is wrapped in pagination { items: [], count: ... }
     archivedTasks.value = Array.isArray(tasksRes) ? tasksRes : (tasksRes as any).items || []
     archivedColumns.value = Array.isArray(columnsRes) ? columnsRes : (columnsRes as any).items || []
@@ -53,28 +53,34 @@ async function loadArchiveData() {
   }
 }
 
-watch(() => props.board, (newBoard) => {
-  if (newBoard) {
-    loadArchiveData()
-  }
-}, { immediate: true })
+watch(
+  () => props.board,
+  (newBoard) => {
+    if (newBoard) {
+      loadArchiveData()
+    }
+  },
+  { immediate: true },
+)
 
 const filteredTasks = computed(() => {
   if (!searchQuery.value) return archivedTasks.value
   const q = searchQuery.value.toLowerCase()
-  return archivedTasks.value.filter(t => t.title.toLowerCase().includes(q) || t.content?.toLowerCase().includes(q))
+  return archivedTasks.value.filter(
+    (t) => t.title.toLowerCase().includes(q) || t.content?.toLowerCase().includes(q),
+  )
 })
 
 const filteredColumns = computed(() => {
   if (!searchQuery.value) return archivedColumns.value
   const q = searchQuery.value.toLowerCase()
-  return archivedColumns.value.filter(c => c.name.toLowerCase().includes(q))
+  return archivedColumns.value.filter((c) => c.name.toLowerCase().includes(q))
 })
 
 async function handleRestoreColumn(columnId: string) {
   try {
     await columnsApi.restoreColumn(columnId)
-    archivedColumns.value = archivedColumns.value.filter(c => c.id !== columnId)
+    archivedColumns.value = archivedColumns.value.filter((c) => c.id !== columnId)
     toast.success('Column restored')
   } catch (error: any) {
     toast.error(error.message || 'Failed to restore column')
@@ -94,7 +100,7 @@ function handleOpenColumnTasks(column: Column) {
 async function handleRestoreTask(taskId: string, targetColumnId: string) {
   try {
     await tasksStore.restoreTask(taskId, targetColumnId)
-    archivedTasks.value = archivedTasks.value.filter(t => t.id !== taskId)
+    archivedTasks.value = archivedTasks.value.filter((t) => t.id !== taskId)
     isModalOpen.value = false
     toast.success('Task restored')
   } catch (error) {
@@ -106,16 +112,26 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
 <template>
   <main class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar">
     <div class="max-w-7xl mx-auto flex flex-col min-h-full relative">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 shrink-0">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 shrink-0"
+      >
         <div class="flex items-center gap-4">
-          <h2 class="font-section-heading text-[36px] font-bold text-on-surface whitespace-nowrap leading-tight tracking-tight">
+          <h2
+            class="font-section-heading text-[36px] font-bold text-on-surface whitespace-nowrap leading-tight tracking-tight"
+          >
             Archive
           </h2>
-          <span class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-neutral-gray mt-1">
-            {{ activeTab === 'columns' ? filteredColumns.length + ' Columns' : filteredTasks.length + ' Tasks' }}
+          <span
+            class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-neutral-gray mt-1"
+          >
+            {{
+              activeTab === 'columns'
+                ? filteredColumns.length + ' Columns'
+                : filteredTasks.length + ' Tasks'
+            }}
           </span>
         </div>
-        
+
         <div class="flex items-center gap-3 w-full md:w-auto">
           <!-- Integrated Search Bar -->
           <div class="relative w-full md:w-64">
@@ -127,30 +143,30 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
               type="text"
             />
           </div>
-        </div>      
+        </div>
       </div>
 
       <!-- Tab Switcher -->
       <div class="inline-flex p-1 bg-surface-container-high rounded-xl mb-8 shrink-0 w-fit">
-        <button 
+        <button
           @click="activeTab = 'columns'"
           :class="[
             'flex items-center gap-2 px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
             activeTab === 'columns'
               ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
-              : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+              : 'text-neutral-gray hover:text-primary-container cursor-pointer',
           ]"
         >
           <Layout :size="16" />
           Columns
         </button>
-        <button 
+        <button
           @click="activeTab = 'tasks'"
           :class="[
             'flex items-center gap-2 px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
             activeTab === 'tasks'
               ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
-              : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+              : 'text-neutral-gray hover:text-primary-container cursor-pointer',
           ]"
         >
           <CheckSquare :size="16" />
@@ -161,25 +177,39 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
       <!-- Content Area -->
       <div class="relative flex-1">
         <Transition name="t-page" mode="out-in">
-          
           <!-- Columns Tab -->
           <div v-if="activeTab === 'columns'" key="columns">
-            <div v-if="loadingBoard || loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              <div v-for="i in 4" :key="i" class="h-32 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
+            <div
+              v-if="loadingBoard || loading"
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            >
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="h-32 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"
+              ></div>
             </div>
-            
-            <TransitionGroup v-else-if="filteredColumns.length > 0" name="t-task" tag="div" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              <div 
-                v-for="col in filteredColumns" 
-                :key="col.id" 
+
+            <TransitionGroup
+              v-else-if="filteredColumns.length > 0"
+              name="t-task"
+              tag="div"
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            >
+              <div
+                v-for="col in filteredColumns"
+                :key="col.id"
                 class="bg-white p-4 md:p-5 rounded-xl border border-border-gray shadow-sm hover:shadow-lg hover:border-primary-container/50 transition-all duration-200 flex flex-col gap-3 cursor-pointer group"
                 @click="handleOpenColumnTasks(col)"
               >
                 <div class="flex justify-between items-start gap-2">
-                  <h3 class="font-sub-heading text-[16px] font-bold text-on-surface leading-tight transition-all truncate pr-2" :title="col.name">
+                  <h3
+                    class="font-sub-heading text-[16px] font-bold text-on-surface leading-tight transition-all truncate pr-2"
+                    :title="col.name"
+                  >
                     {{ col.name }}
                   </h3>
-                  
+
                   <button
                     class="text-[var(--color-primary-container)] bg-[var(--color-primary-container)]/10 hover:bg-[var(--color-primary-container)]/20 transition-all shrink-0 p-2 rounded-xl active:scale-95 shadow-sm"
                     title="Restore Column"
@@ -188,14 +218,14 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
                     <ArchiveRestore :size="18" />
                   </button>
                 </div>
-                
-                <p class="text-xs text-text-secondary line-clamp-2 min-h-[18px]">
-                  Archived Column
-                </p>
+
+                <p class="text-xs text-text-secondary line-clamp-2 min-h-[18px]">Archived Column</p>
 
                 <div class="flex items-end justify-between mt-auto pt-3">
                   <div class="flex gap-2 flex-wrap items-center">
-                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-neutral-gray w-fit">
+                    <span
+                      class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-neutral-gray w-fit"
+                    >
                       <Layout :size="12" />
                       {{ col.sum_tasks }} task{{ col.sum_tasks !== 1 ? 's' : '' }}
                     </span>
@@ -205,7 +235,9 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
             </TransitionGroup>
 
             <div v-else class="h-64 flex flex-col items-center justify-center text-center">
-              <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4">
+              <div
+                class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4"
+              >
                 <Layout :size="32" class="text-neutral-gray opacity-50" />
               </div>
               <p class="text-text-secondary text-lg">No archived columns found.</p>
@@ -214,13 +246,25 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
 
           <!-- Tasks Tab -->
           <div v-else-if="activeTab === 'tasks'" key="tasks">
-            <div v-if="loadingBoard || loading" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              <div v-for="i in 4" :key="i" class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
+            <div
+              v-if="loadingBoard || loading"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
+            >
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"
+              ></div>
             </div>
-            
-            <TransitionGroup v-else-if="filteredTasks.length > 0" name="t-task" tag="div" class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 items-stretch">
+
+            <TransitionGroup
+              v-else-if="filteredTasks.length > 0"
+              name="t-task"
+              tag="div"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 items-stretch"
+            >
               <div v-for="task in filteredTasks" :key="task.id" class="h-full">
-                <TaskCard 
+                <TaskCard
                   :task="task"
                   :is-archive-mode="true"
                   class="h-full opacity-70 hover:opacity-100 transition-opacity duration-300 cursor-default"
@@ -231,17 +275,18 @@ async function handleRestoreTask(taskId: string, targetColumnId: string) {
             </TransitionGroup>
 
             <div v-else class="h-64 flex flex-col items-center justify-center text-center">
-              <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4">
+              <div
+                class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4"
+              >
                 <CheckSquare :size="32" class="text-neutral-gray opacity-50" />
               </div>
               <p class="text-text-secondary text-lg">No archived tasks found.</p>
             </div>
           </div>
-
         </Transition>
       </div>
     </div>
-    
+
     <RestoreTaskModal
       :is-open="isModalOpen"
       :task="taskToRestore"

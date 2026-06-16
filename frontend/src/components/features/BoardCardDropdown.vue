@@ -29,17 +29,15 @@ function openMembers() {
   <div>
     <Dropdown position="bottom-right">
       <template #trigger>
-        <button class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg bg-white hover:bg-gray-100 cursor-pointer">
+        <button
+          class="text-neutral-gray hover:text-text-primary transition-colors p-1 rounded-lg bg-white hover:bg-gray-100 cursor-pointer"
+        >
           <MoreVertical :size="20" />
         </button>
       </template>
 
-      <DropdownItem icon="settings" @click="openSettings">
-        General Settings
-      </DropdownItem>
-      <DropdownItem icon="users" @click="openMembers">
-        Members & Invites
-      </DropdownItem>
+      <DropdownItem icon="settings" @click="openSettings"> General Settings </DropdownItem>
+      <DropdownItem icon="users" @click="openMembers"> Members & Invites </DropdownItem>
     </Dropdown>
 
     <BoardSettingsModal v-model="showSettingsModal" :board="board" />

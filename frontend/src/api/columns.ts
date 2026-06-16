@@ -2,7 +2,10 @@ import { apiClient } from './client'
 import type { Column, CreateColumnData, UpdateColumnData, MoveColumnData } from '@/types/column'
 
 export const columnsApi = {
-  async getBoardColumns(boardId: string, status?: 'active' | 'archived'): Promise<Column[] | { items: Column[]; count: number }> {
+  async getBoardColumns(
+    boardId: string,
+    status?: 'active' | 'archived',
+  ): Promise<Column[] | { items: Column[]; count: number }> {
     return apiClient(`/boards/${boardId}/columns`, {
       query: status ? { status } : {},
     })
@@ -57,7 +60,9 @@ export const columnsApi = {
     })
   },
 
-  async clearColumn(id: string): Promise<{ success: boolean; archived_tasks_count: number; affected_column_ids: string[] }> {
+  async clearColumn(
+    id: string,
+  ): Promise<{ success: boolean; archived_tasks_count: number; affected_column_ids: string[] }> {
     return apiClient(`/columns/${id}/clear`, {
       method: 'POST',
     })

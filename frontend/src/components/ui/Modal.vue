@@ -42,7 +42,7 @@ watch(
     } else {
       document.body.style.overflow = ''
     }
-  }
+  },
 )
 
 onMounted(() => {
@@ -78,7 +78,10 @@ onUnmounted(() => {
             :style="{ maxWidth }"
           >
             <!-- Header -->
-            <div v-if="title || $slots.header" class="flex items-center justify-between p-4 md:p-6 border-b border-border-gray shrink-0">
+            <div
+              v-if="title || $slots.header"
+              class="flex items-center justify-between p-4 md:p-6 border-b border-border-gray shrink-0"
+            >
               <slot name="header">
                 <h2 class="text-xl font-semibold text-text-primary">{{ title }}</h2>
               </slot>

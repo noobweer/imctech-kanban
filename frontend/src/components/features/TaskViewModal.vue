@@ -41,10 +41,10 @@ const canEdit = computed(() => !isMentor.value)
 const canCreateComment = computed(() => {
   if (isMentor.value) return true
   if (!props.task) return false
-  
+
   const hasComments = totalComments.value > 0
   const isAssignee = props.task.assignees?.includes(authStore.user?.username || '')
-  
+
   return hasComments && isAssignee
 })
 
@@ -352,8 +352,8 @@ function getAssigneeName(username: string) {
             <TagIcon :size="14" /> Tags
           </label>
           <div class="flex flex-wrap gap-2">
-            <div 
-              v-for="tag in task.tags" 
+            <div
+              v-for="tag in task.tags"
               :key="tag"
               class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface text-[12px] font-semibold border border-border-gray/50 hover:bg-surface-container-highest transition-colors"
             >

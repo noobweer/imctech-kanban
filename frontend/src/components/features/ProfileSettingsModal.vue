@@ -25,7 +25,7 @@ watch(
       displayName.value = authStore.user.name
       error.value = ''
     }
-  }
+  },
 )
 
 function close() {
@@ -51,12 +51,15 @@ function handleSave() {
 </script>
 
 <template>
-  <Modal :model-value="modelValue" title="Profile Settings" max-width="450px" @update:model-value="emit('update:modelValue', $event)">
+  <Modal
+    :model-value="modelValue"
+    title="Profile Settings"
+    max-width="450px"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-2">
-          Display Name
-        </label>
+        <label class="block text-sm font-medium text-text-primary mb-2"> Display Name </label>
         <Input
           v-model="displayName"
           placeholder="Enter your display name"
@@ -76,12 +79,8 @@ function handleSave() {
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button variant="ghost" size="sm" @click="close">
-          Cancel
-        </Button>
-        <Button variant="primary" size="sm" @click="handleSave">
-          Save Changes
-        </Button>
+        <Button variant="ghost" size="sm" @click="close"> Cancel </Button>
+        <Button variant="primary" size="sm" @click="handleSave"> Save Changes </Button>
       </div>
     </template>
   </Modal>

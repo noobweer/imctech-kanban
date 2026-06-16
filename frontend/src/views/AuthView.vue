@@ -40,12 +40,15 @@ const handleSignUp = async (data: SignUpData) => {
     </section>
 
     <!-- Right: Auth form -->
-    <section class="flex-1 bg-surface-white flex flex-col justify-center items-center p-gutter lg:p-xl relative">
-
+    <section
+      class="flex-1 bg-surface-white flex flex-col justify-center items-center p-gutter lg:p-xl relative"
+    >
       <div class="w-full max-w-md space-y-lg">
         <!-- Header -->
         <div class="text-center md:text-left">
-          <h1 class="text-[28px] font-['Space_Grotesk'] md:text-[48px] font-bold text-text-primary tracking-tighter mb-sm">
+          <h1
+            class="text-[28px] font-['Space_Grotesk'] md:text-[48px] font-bold text-text-primary tracking-tighter mb-sm"
+          >
             Welcome to Kanban
           </h1>
           <p class="text-[16px] text-text-secondary">
@@ -60,7 +63,7 @@ const handleSignUp = async (data: SignUpData) => {
               'flex-1 py-md text-center text-[16px] font-semibold rounded-lg transition-all duration-200',
               activeTab === 'signup'
                 ? 'bg-surface-white shadow-card text-text-primary'
-                : 'text-neutral-gray hover:text-text-primary cursor-pointer'
+                : 'text-neutral-gray hover:text-text-primary cursor-pointer',
             ]"
             @click="activeTab = 'signup'"
           >
@@ -71,7 +74,7 @@ const handleSignUp = async (data: SignUpData) => {
               'flex-1 py-md text-center text-[16px] font-semibold rounded-lg transition-all duration-200',
               activeTab === 'login'
                 ? 'bg-surface-white shadow-card text-text-primary'
-                : 'text-neutral-gray hover:text-text-primary cursor-pointer'
+                : 'text-neutral-gray hover:text-text-primary cursor-pointer',
             ]"
             @click="activeTab = 'login'"
           >
@@ -85,11 +88,7 @@ const handleSignUp = async (data: SignUpData) => {
           :loading="authStore.loading"
           @submit="handleSignUp"
         />
-        <LoginForm
-          v-else
-          :loading="authStore.loading"
-          @submit="handleLogin"
-        />
+        <LoginForm v-else :loading="authStore.loading" @submit="handleLogin" />
 
         <p v-if="authStore.error" class="text-[14px] text-error text-center">
           {{ authStore.error }}

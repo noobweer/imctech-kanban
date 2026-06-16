@@ -31,7 +31,7 @@ watch(
       error.value = ''
       showDeleteConfirm.value = false
     }
-  }
+  },
 )
 
 function close() {
@@ -79,13 +79,16 @@ function handleDelete() {
 </script>
 
 <template>
-  <Modal :model-value="modelValue" title="Board Settings" max-width="500px" @update:model-value="emit('update:modelValue', $event)">
+  <Modal
+    :model-value="modelValue"
+    title="Board Settings"
+    max-width="500px"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <div class="space-y-6">
       <!-- Board Name -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-2">
-          Board Name
-        </label>
+        <label class="block text-sm font-medium text-text-primary mb-2"> Board Name </label>
         <Input
           v-model="boardTitle"
           placeholder="Enter board name"
@@ -118,10 +121,16 @@ function handleDelete() {
             class="w-full flex items-center justify-center gap-2"
             @click="handleArchive"
           >
-            <span class="text-sm">{{ board.status === 'archived' ? 'Restore Board' : 'Archive Board' }}</span>
+            <span class="text-sm">{{
+              board.status === 'archived' ? 'Restore Board' : 'Archive Board'
+            }}</span>
           </Button>
           <p class="mt-1 text-xs text-neutral-gray">
-            {{ board.status === 'archived' ? 'Move this board back to active boards.' : 'Move this board to archived. You can restore it later.' }}
+            {{
+              board.status === 'archived'
+                ? 'Move this board back to active boards.'
+                : 'Move this board to archived. You can restore it later.'
+            }}
           </p>
         </div>
 
@@ -137,7 +146,11 @@ function handleDelete() {
             </span>
           </Button>
           <p class="mt-1 text-xs text-error">
-            {{ showDeleteConfirm ? 'This action cannot be undone!' : 'Permanently delete this board and all its data.' }}
+            {{
+              showDeleteConfirm
+                ? 'This action cannot be undone!'
+                : 'Permanently delete this board and all its data.'
+            }}
           </p>
         </div>
       </div>
@@ -145,12 +158,8 @@ function handleDelete() {
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button variant="ghost" size="sm" @click="close">
-          Cancel
-        </Button>
-        <Button variant="primary" size="sm" @click="handleSave">
-          Save Changes
-        </Button>
+        <Button variant="ghost" size="sm" @click="close"> Cancel </Button>
+        <Button variant="primary" size="sm" @click="handleSave"> Save Changes </Button>
       </div>
     </template>
   </Modal>

@@ -22,19 +22,26 @@ const tasksStore = useTasksStore()
 const items = ref<ChecklistItem[]>(JSON.parse(JSON.stringify(props.modelValue)))
 let isLocalUpdate = false
 
-watch(() => props.modelValue, (newVal) => {
-  if (isLocalUpdate) return
-  items.value = JSON.parse(JSON.stringify(newVal))
-}, { deep: true })
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (isLocalUpdate) return
+    items.value = JSON.parse(JSON.stringify(newVal))
+  },
+  { deep: true },
+)
 
-watch(items, (newVal) => {
-  isLocalUpdate = true
-  emit('update:modelValue', newVal)
-  Promise.resolve().then(() => {
-    isLocalUpdate = false
-  })
-}, { deep: true })
-
+watch(
+  items,
+  (newVal) => {
+    isLocalUpdate = true
+    emit('update:modelValue', newVal)
+    Promise.resolve().then(() => {
+      isLocalUpdate = false
+    })
+  },
+  { deep: true },
+)
 
 async function addItem() {
   if (props.task) {
@@ -73,20 +80,24 @@ async function handleTitleChange(item: ChecklistItem) {
 
 async function handleDragEnd() {
   if (props.task) {
-    const orderedIds = items.value.map(i => i.id).filter(Boolean) as string[]
+    const orderedIds = items.value.map((i) => i.id).filter(Boolean) as string[]
     await tasksStore.reorderChecklist(props.task.id, orderedIds)
   }
 }
 </script>
 
 <template>
-  <div class="border border-border-gray rounded-xl p-5 md:p-6 flex flex-col h-full max-h-[400px] bg-white overflow-hidden min-h-[250px]">
+  <div
+    class="border border-border-gray rounded-xl p-5 md:p-6 flex flex-col h-full max-h-[400px] bg-white overflow-hidden min-h-[250px]"
+  >
     <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-4">
-      <div v-if="items.length === 0" class="text-sm text-text-secondary italic">No items added. Click below to add one.</div>
-      
-      <draggable 
-        v-model="items" 
-        group="checklist" 
+      <div v-if="items.length === 0" class="text-sm text-text-secondary italic">
+        No items added. Click below to add one.
+      </div>
+
+      <draggable
+        v-model="items"
+        group="checklist"
         handle=".drag-handle"
         :disabled="isMentor"
         item-key="id"
@@ -95,11 +106,15 @@ async function handleDragEnd() {
         class="space-y-3"
       >
         <template #item="{ element: item, index }">
-          <div class="flex items-center gap-2 md:gap-3 group bg-white border border-transparent hover:border-border-gray hover:shadow-card rounded-lg p-2 transition-all">
-            <div class="drag-handle cursor-grab active:cursor-grabbing text-neutral-gray opacity-40 hover:opacity-100 transition-opacity">
+          <div
+            class="flex items-center gap-2 md:gap-3 group bg-white border border-transparent hover:border-border-gray hover:shadow-card rounded-lg p-2 transition-all"
+          >
+            <div
+              class="drag-handle cursor-grab active:cursor-grabbing text-neutral-gray opacity-40 hover:opacity-100 transition-opacity"
+            >
               <GripVertical :size="16" />
             </div>
-            
+
             <div class="relative w-5 h-5 flex items-center justify-center shrink-0">
               <input
                 v-model="item.is_done"
@@ -110,7 +125,7 @@ async function handleDragEnd() {
               />
             </div>
 
-            <input 
+            <input
               v-model="item.title"
               :readonly="isMentor"
               class="text-sm font-medium focus:outline-none bg-transparent flex-1 min-w-0 placeholder:text-neutral-gray/50 transition-colors"
@@ -119,10 +134,10 @@ async function handleDragEnd() {
               @blur="handleTitleChange(item)"
               @keyup.enter="handleTitleChange(item)"
             />
-            
-            <button 
+
+            <button
               v-if="!isMentor"
-              type="button" 
+              type="button"
               class="text-text-secondary hover:text-error p-1 bg-surface-container-low hover:bg-error/10 rounded-md cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
               @click="removeItem(index, item)"
               title="Remove item"
@@ -133,7 +148,7 @@ async function handleDragEnd() {
         </template>
       </draggable>
     </div>
-    
+
     <div v-if="!isMentor" class="pt-4 mt-auto border-t border-border-gray border-dashed shrink-0">
       <button
         class="flex items-center gap-2 text-primary font-button text-sm hover:opacity-80 transition-opacity px-2 py-1 rounded-lg hover:bg-surface-container-low cursor-pointer"

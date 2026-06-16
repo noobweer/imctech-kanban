@@ -25,16 +25,16 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Modal
-    :model-value="isOpen"
-    max-width="440px"
-    @update:model-value="emit('close')"
-  >
+  <Modal :model-value="isOpen" max-width="440px" @update:model-value="emit('close')">
     <div class="flex gap-4 p-2 sm:p-4">
       <!-- Icon -->
-      <div 
+      <div
         class="shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
-        :class="isDestructive ? 'bg-error-container text-error' : 'bg-surface-container-high text-primary-container'"
+        :class="
+          isDestructive
+            ? 'bg-error-container text-error'
+            : 'bg-surface-container-high text-primary-container'
+        "
       >
         <AlertTriangle v-if="isDestructive" :size="24" />
         <Info v-else :size="24" />
@@ -53,17 +53,12 @@ const emit = defineEmits<{
 
     <template #footer>
       <div class="flex flex-col sm:flex-row sm:items-center justify-end gap-3 px-2 sm:px-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          class="w-full sm:w-auto" 
-          @click="emit('close')"
-        >
+        <Button variant="ghost" size="sm" class="w-full sm:w-auto" @click="emit('close')">
           {{ cancelText }}
         </Button>
-        <Button 
-          variant="primary" 
-          size="sm" 
+        <Button
+          variant="primary"
+          size="sm"
           class="w-full sm:w-auto"
           :class="{ 'btn-destructive': isDestructive }"
           @click="emit('confirm')"

@@ -33,10 +33,7 @@ function handleCreateBoard() {
         <!-- Row 1: Menu + Title + Create -->
         <div class="flex justify-between items-center gap-4">
           <div class="relative w-full">
-            <Search
-              :size="20"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-gray"
-            />
+            <Search :size="20" class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-gray" />
             <input
               v-model="boardsStore.searchQuery"
               class="w-full pl-10 pr-4 py-3 bg-white border border-border-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all"
@@ -149,7 +146,9 @@ function handleCreateBoard() {
       <!-- Board Grid -->
       <div v-if="hasBoards">
         <div class="mb-10">
-          <h1 class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary mb-2">
+          <h1
+            class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary mb-2"
+          >
             Your Boards
           </h1>
           <p class="font-['Inter'] text-[16px] leading-[1.38] text-neutral-gray max-w-2xl">
@@ -201,12 +200,13 @@ function handleCreateBoard() {
 
           <!-- Content -->
           <div class="space-y-3">
-            <h1 class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary">
+            <h1
+              class="font-['Space_Grotesk'] text-2xl md:text-[36px] font-bold leading-[1.22] tracking-[-0.5px] text-text-primary"
+            >
               No boards found
             </h1>
             <p class="font-['Inter'] text-[16px] leading-[1.38] text-neutral-gray max-w-sm mx-auto">
-              Organize your projects. Start by creating
-              your very first workspace.
+              Organize your projects. Start by creating your very first workspace.
             </p>
           </div>
 
@@ -223,7 +223,9 @@ function handleCreateBoard() {
         </div>
 
         <!-- Decorative Blobs (desktop only) -->
-        <div class="hidden md:block fixed bottom-0 left-0 right-0 pointer-events-none overflow-hidden h-32">
+        <div
+          class="hidden md:block fixed bottom-0 left-0 right-0 pointer-events-none overflow-hidden h-32"
+        >
           <div
             class="absolute bottom-[-100px] left-[-50px] w-[500px] h-[500px] bg-purple-subtle rounded-full blur-[100px] opacity-30"
           ></div>

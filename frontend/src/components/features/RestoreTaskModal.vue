@@ -20,23 +20,28 @@ const selectedColumnId = ref('')
 const isShaking = ref(false)
 
 const availableColumns = computed(() => {
-  return columnsStore.columns.filter(c => 
-    c.status === 'active' && (c.kind === 'board' || c.kind === 'backlog')
+  return columnsStore.columns.filter(
+    (c) => c.status === 'active' && (c.kind === 'board' || c.kind === 'backlog'),
   )
 })
 
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    // Default to backlog if available, otherwise first board column
-    const backlog = availableColumns.value.find(c => c.kind === 'backlog')
-    selectedColumnId.value = backlog?.id || availableColumns.value[0]?.id || ''
-  }
-})
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      // Default to backlog if available, otherwise first board column
+      const backlog = availableColumns.value.find((c) => c.kind === 'backlog')
+      selectedColumnId.value = backlog?.id || availableColumns.value[0]?.id || ''
+    }
+  },
+)
 
 function handleRestore() {
   if (!selectedColumnId.value || !props.task) {
     isShaking.value = true
-    setTimeout(() => { isShaking.value = false }, 500)
+    setTimeout(() => {
+      isShaking.value = false
+    }, 500)
     return
   }
   emit('restore', props.task.id, selectedColumnId.value)
@@ -44,19 +49,21 @@ function handleRestore() {
 </script>
 
 <template>
-  <Modal
-    :model-value="isOpen"
-    max-width="400px"
-    @update:model-value="emit('close')"
-  >
+  <Modal :model-value="isOpen" max-width="400px" @update:model-value="emit('close')">
     <div class="flex flex-col gap-6 p-2">
       <div>
         <h3 class="text-xl font-bold text-on-surface mb-2">Restore Task</h3>
-        <p class="text-sm text-text-secondary">Choose where you want to restore <span class="font-bold text-text-primary">"{{ task?.title }}"</span>.</p>
+        <p class="text-sm text-text-secondary">
+          Choose where you want to restore
+          <span class="font-bold text-text-primary">"{{ task?.title }}"</span>.
+        </p>
       </div>
 
       <div>
-        <label for="target-column" class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-2 block">
+        <label
+          for="target-column"
+          class="font-button text-[11px] text-text-secondary uppercase tracking-wider font-bold mb-2 block"
+        >
           Target Column
         </label>
         <select
@@ -75,12 +82,8 @@ function handleRestore() {
 
     <template #footer>
       <div class="flex items-center justify-end gap-3 px-2">
-        <Button variant="ghost" size="md" @click="emit('close')">
-          Cancel
-        </Button>
-        <Button variant="primary" size="md" @click="handleRestore">
-          Confirm Restore
-        </Button>
+        <Button variant="ghost" size="md" @click="emit('close')"> Cancel </Button>
+        <Button variant="primary" size="md" @click="handleRestore"> Confirm Restore </Button>
       </div>
     </template>
   </Modal>
@@ -88,13 +91,26 @@ function handleRestore() {
 
 <style scoped>
 .is-shaking {
-  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 @keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
 select {

@@ -35,10 +35,10 @@ const expirationMap: Record<string, number> = {
   '7 days': 7,
   '24 hours': 1,
   '30 days': 30,
-  'Never': 3650,
+  Never: 3650,
 }
 const maxUsesMap: Record<string, number | null> = {
-  'Unlimited': null,
+  Unlimited: null,
   '5 uses': 5,
   '10 uses': 10,
   '50 uses': 50,
@@ -149,7 +149,11 @@ async function handleLeaveTeam() {
                 <option>30 days</option>
                 <option>Never</option>
               </select>
-              <Icon name="chevron_down" size="sm" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline" />
+              <Icon
+                name="chevron_down"
+                size="sm"
+                class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline"
+              />
             </div>
           </div>
 
@@ -165,7 +169,11 @@ async function handleLeaveTeam() {
                 <option>10 uses</option>
                 <option>50 uses</option>
               </select>
-              <Icon name="chevron_down" size="sm" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline" />
+              <Icon
+                name="chevron_down"
+                size="sm"
+                class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline"
+              />
             </div>
           </div>
         </div>
@@ -197,11 +205,7 @@ async function handleLeaveTeam() {
 
         <!-- Loading skeleton -->
         <div v-if="boardsStore.membersLoading" class="space-y-3">
-          <div
-            v-for="i in 3"
-            :key="i"
-            class="flex items-center gap-4 p-3 animate-pulse"
-          >
+          <div v-for="i in 3" :key="i" class="flex items-center gap-4 p-3 animate-pulse">
             <div class="w-10 h-10 rounded-full bg-surface-container-high flex-shrink-0"></div>
             <div class="flex flex-col gap-2 flex-1">
               <div class="h-3 w-32 bg-surface-container-high rounded"></div>
@@ -217,7 +221,9 @@ async function handleLeaveTeam() {
             class="flex items-center justify-between p-3 bg-white border border-transparent hover:border-border-gray hover:shadow-card rounded-xl transition-all group"
           >
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-full border-2 border-primary-container/20 overflow-hidden flex-shrink-0">
+              <div
+                class="w-10 h-10 rounded-full border-2 border-primary-container/20 overflow-hidden flex-shrink-0"
+              >
                 <img
                   :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=7132f5&color=fff`"
                   :alt="member.name"

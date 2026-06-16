@@ -34,48 +34,46 @@ const segments = computed(() => {
   if (!data.value || data.value.total_tasks === 0) return []
   return data.value.columns.map((col, idx) => ({
     ...col,
-    color: COLORS[idx % COLORS.length]
+    color: COLORS[idx % COLORS.length],
   }))
 })
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="loading && !data" class="h-[16px] bg-[rgba(148,151,169,0.12)] rounded-[12px] w-full animate-pulse"></div>
-    
+    <div
+      v-if="loading && !data"
+      class="h-[16px] bg-[rgba(148,151,169,0.12)] rounded-[12px] w-full animate-pulse"
+    ></div>
+
     <template v-else-if="segments.length > 0">
       <!-- Progress Bar -->
-      <div class="relative h-[16px] bg-[rgba(148,151,169,0.12)] rounded-[12px] w-full flex overflow-hidden group">
-        <div 
-          v-for="segment in segments" 
+      <div
+        class="relative h-[16px] bg-[rgba(148,151,169,0.12)] rounded-[12px] w-full flex overflow-hidden group"
+      >
+        <div
+          v-for="segment in segments"
           :key="segment.id"
           class="h-full transition-all duration-1000 ease-out flex items-center justify-center group/segment hover:brightness-110 relative"
-          :style="{ 
+          :style="{
             width: animateIn ? `${segment.percent}%` : '0%',
-            backgroundColor: segment.color 
+            backgroundColor: segment.color,
           }"
           :title="`${segment.name}: ${segment.task_count} (${segment.percent}%)`"
-        >
-        </div>
+        ></div>
       </div>
 
       <!-- Legend -->
       <div class="flex flex-wrap gap-x-6 gap-y-3">
-        <div 
-          v-for="segment in segments" 
-          :key="segment.id"
-          class="flex items-center gap-2"
-        >
+        <div v-for="segment in segments" :key="segment.id" class="flex items-center gap-2">
           <div class="w-3 h-3 rounded-[3px]" :style="{ backgroundColor: segment.color }"></div>
           <span class="text-sm font-medium text-near-black">{{ segment.percent }}%</span>
           <span class="text-sm text-cool-gray">{{ segment.name }}</span>
         </div>
       </div>
     </template>
-    
-    <div v-else class="text-cool-gray text-sm py-4">
-      No tasks on the board yet.
-    </div>
+
+    <div v-else class="text-cool-gray text-sm py-4">No tasks on the board yet.</div>
   </div>
 </template>
 

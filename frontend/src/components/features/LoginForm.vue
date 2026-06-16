@@ -42,9 +42,7 @@ const handleSubmit = () => {
 <template>
   <form class="space-y-base" @submit.prevent="handleSubmit">
     <div class="space-y-sm">
-      <label class="block text-[14px] font-medium text-text-primary" for="login">
-        Username
-      </label>
+      <label class="block text-[14px] font-medium text-text-primary" for="login"> Username </label>
       <div class="relative">
         <input
           id="login"

@@ -17,7 +17,7 @@ const isOpen = ref(false)
 const selectRef = ref<HTMLElement | null>(null)
 
 const selectedOption = computed(() => {
-  return props.options.find(opt => opt.value === props.modelValue)
+  return props.options.find((opt) => opt.value === props.modelValue)
 })
 
 function toggleOpen() {
@@ -52,10 +52,12 @@ onUnmounted(() => {
       type="button"
       class="flex items-center justify-between w-full px-4 py-2 bg-white border rounded-[12px] text-sm font-semibold transition-all duration-200 outline-none"
       :class="[
-        isOpen 
-          ? 'border-[var(--color-primary-container)] ring-2 ring-[var(--color-primary-container)]/20 shadow-sm' 
+        isOpen
+          ? 'border-[var(--color-primary-container)] ring-2 ring-[var(--color-primary-container)]/20 shadow-sm'
           : 'border-border-gray hover:border-[var(--color-primary-container)]/50',
-        disabled ? 'opacity-50 cursor-not-allowed bg-surface-container-lowest' : 'cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)]'
+        disabled
+          ? 'opacity-50 cursor-not-allowed bg-surface-container-lowest'
+          : 'cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)]',
       ]"
       @click="toggleOpen"
       :disabled="disabled"
@@ -63,8 +65,8 @@ onUnmounted(() => {
       <span :class="selectedOption ? 'text-[#101114]' : 'text-neutral-gray'">
         {{ selectedOption ? selectedOption.label : placeholder || 'Select option' }}
       </span>
-      <ChevronDown 
-        :size="16" 
+      <ChevronDown
+        :size="16"
         class="text-neutral-gray transition-transform duration-300"
         :class="{ 'rotate-180 text-[var(--color-primary-container)]': isOpen }"
       />
@@ -78,7 +80,7 @@ onUnmounted(() => {
       leave-from-class="transform scale-y-100 opacity-100 translate-y-0"
       leave-to-class="transform scale-y-95 opacity-0 -translate-y-2"
     >
-      <div 
+      <div
         v-if="isOpen"
         class="absolute z-50 w-full mt-2 bg-white border border-border-gray rounded-[12px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] py-1.5 origin-top overflow-hidden"
       >
@@ -90,14 +92,18 @@ onUnmounted(() => {
           :class="[
             modelValue === option.value
               ? 'bg-[var(--color-primary-container)]/5 text-[var(--color-primary-container)] font-bold'
-              : 'text-[#101114] hover:bg-surface-container-low font-medium'
+              : 'text-[#101114] hover:bg-surface-container-low font-medium',
           ]"
           @click="selectOption(option.value)"
         >
           {{ option.label }}
-          <div 
+          <div
             class="transition-transform duration-200"
-            :class="modelValue === option.value ? 'scale-100 opacity-100' : 'scale-0 opacity-0 absolute right-4'"
+            :class="
+              modelValue === option.value
+                ? 'scale-100 opacity-100'
+                : 'scale-0 opacity-0 absolute right-4'
+            "
           >
             <Check :size="16" class="text-[var(--color-primary-container)]" />
           </div>

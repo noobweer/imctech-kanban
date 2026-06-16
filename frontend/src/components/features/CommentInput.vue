@@ -16,29 +16,33 @@ const inputWrapRef = ref<HTMLElement | null>(null)
 
 function handleSubmit() {
   if (isShaking.value) return
-  
+
   const content = text.value.trim()
   if (!content) {
     isShaking.value = true
-    
+
     // Auto-revert shake class to allow replay
     setTimeout(() => {
       isShaking.value = false
     }, 140) // var(--shake-dur-a)*2 + var(--shake-dur-b)*2 = 280, wait half or just enough to feel it
     return
   }
-  
+
   emit('submit', content)
   text.value = ''
 }
 </script>
 
 <template>
-  <div class="p-3 bg-surface-container-lowest border-t border-border-gray sticky bottom-0 z-10 w-full">
-    <div 
+  <div
+    class="p-3 bg-surface-container-lowest border-t border-border-gray sticky bottom-0 z-10 w-full"
+  >
+    <div
       ref="inputWrapRef"
       class="relative bg-white rounded-xl border border-border-gray t-input transition-all duration-200 focus-within:border-[#5800d8] focus-within:ring-2 focus-within:ring-[#5800d8]/20 outline-none"
-      :class="{ 'is-shaking border-error focus-within:border-error focus-within:ring-error/20': isShaking }"
+      :class="{
+        'is-shaking border-error focus-within:border-error focus-within:ring-error/20': isShaking,
+      }"
     >
       <textarea
         v-model="text"
@@ -48,7 +52,7 @@ function handleSubmit() {
         class="w-full bg-transparent outline-none focus:outline-none p-3 pr-12 text-on-surface text-[15px] resize-y min-h-[48px] max-h-[150px] custom-scrollbar disabled:opacity-50 disabled:cursor-not-allowed"
         @keydown.enter.exact.prevent="handleSubmit"
       ></textarea>
-      
+
       <button
         @click="handleSubmit"
         :disabled="disabled || !text.trim()"

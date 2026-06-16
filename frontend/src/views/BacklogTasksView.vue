@@ -32,30 +32,35 @@ const editingTask = ref<Task | null>(null)
 const viewingTask = ref<Task | null>(null)
 
 // Initialize and poll tasks
-watch(() => props.board, (newBoard) => {
-  if (newBoard) {
-    tasksStore.fetchTasks(newBoard.id)
-    tasksStore.startPolling(newBoard.id)
-  }
-}, { immediate: true })
-
-onUnmounted(() => {
-  tasksStore.stopPolling()
-})
+watch(
+  () => props.board,
+  (newBoard) => {
+    if (newBoard) {
+      tasksStore.fetchTasks(newBoard.id)
+    }
+  },
+  { immediate: true },
+)
 
 const localBacklogTasks = ref<Task[]>([...tasksStore.backlogTasks])
 
-watch(() => tasksStore.backlogTasks, (newTasks) => {
-  if (newTasks) {
-    localBacklogTasks.value = [...newTasks]
-  }
-}, { deep: true, immediate: true })
+watch(
+  () => tasksStore.backlogTasks,
+  (newTasks) => {
+    if (newTasks) {
+      localBacklogTasks.value = [...newTasks]
+    }
+  },
+  { deep: true, immediate: true },
+)
 
 const filteredTasks = computed(() => {
   let list = localBacklogTasks.value
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
-    list = list.filter(t => t.title.toLowerCase().includes(q) || t.content?.toLowerCase().includes(q))
+    list = list.filter(
+      (t) => t.title.toLowerCase().includes(q) || t.content?.toLowerCase().includes(q),
+    )
   }
   return list
 })
@@ -114,28 +119,35 @@ async function handlePushToBoard(task: Task) {
     alert('Please create a column on the board first.')
     return
   }
-  
+
   // Find where it should go in that column (bottom of the column)
   const targetTasks = tasksStore.getTasksByColumnId(firstActiveColumn.id)
   const position = targetTasks.length
-  
+
   await tasksStore.moveTask(task.id, firstActiveColumn.id, position)
 }
 </script>
 
 <template>
   <!-- Main Content -->
-  <main v-dragscroll="true" class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar cursor-grab active:cursor-grabbing">
+  <main
+    v-dragscroll="true"
+    class="h-full overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar cursor-grab active:cursor-grabbing"
+  >
     <div class="max-w-7xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4 flex-1">
-          <h2 class="font-section-heading text-[36px] font-bold text-on-surface whitespace-nowrap leading-tight tracking-tight">
+          <h2
+            class="font-section-heading text-[36px] font-bold text-on-surface whitespace-nowrap leading-tight tracking-tight"
+          >
             Backlog Tasks
           </h2>
-          <span class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-neutral-gray">
+          <span
+            class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-neutral-gray"
+          >
             {{ filteredTasks.length }} Tasks
           </span>
-          
+
           <!-- Integrated Search Bar -->
           <div class="relative w-full max-w-md hidden md:block">
             <Search :size="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-gray" />
@@ -147,33 +159,48 @@ async function handlePushToBoard(task: Task) {
             />
           </div>
         </div>
-        
+
         <div class="flex items-center gap-3">
           <!-- Search for mobile -->
-          <button class="p-2 border border-border-gray rounded-xl hover:bg-white transition-colors md:hidden text-neutral-gray">
+          <button
+            class="p-2 border border-border-gray rounded-xl hover:bg-white transition-colors md:hidden text-neutral-gray"
+          >
             <Search :size="20" />
           </button>
-          <Button v-if="!isMentor" variant="primary" size="sm" class="gap-2 whitespace-nowrap" @click="handleAddTask">
-            <Plus :size="20" /> 
+          <Button
+            v-if="!isMentor"
+            variant="primary"
+            size="sm"
+            class="gap-2 whitespace-nowrap"
+            @click="handleAddTask"
+          >
+            <Plus :size="20" />
             Add Task
           </Button>
-        </div>      
+        </div>
       </div>
 
       <!-- 4-column Grid -->
-      <div v-if="loadingBoard || tasksStore.loading && tasksStore.tasks.length === 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <div v-for="i in 8" :key="i" class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"></div>
+      <div
+        v-if="loadingBoard || (tasksStore.loading && tasksStore.tasks.length === 0)"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+      >
+        <div
+          v-for="i in 8"
+          :key="i"
+          class="h-48 border border-border-gray rounded-xl animate-pulse bg-surface-container-low/50"
+        ></div>
       </div>
 
-      <TransitionGroup 
-        v-else 
+      <TransitionGroup
+        v-else
         name="t-task"
-        tag="div" 
+        tag="div"
         class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 relative"
       >
-        <TaskCard 
-          v-for="task in filteredTasks" 
-          :key="task.id" 
+        <TaskCard
+          v-for="task in filteredTasks"
+          :key="task.id"
           :task="task"
           :allow-push-to-board="true"
           @click="handleViewTask"
@@ -182,18 +209,24 @@ async function handlePushToBoard(task: Task) {
           @push-to-board="handlePushToBoard"
         />
       </TransitionGroup>
-      
-      <div v-if="!tasksStore.loading && filteredTasks.length === 0" class="mt-12 text-center text-text-secondary">
-        <p>No tasks found in backlog. {{ searchQuery ? 'Try adjusting your search.' : 'Create one to get started!' }}</p>
+
+      <div
+        v-if="!tasksStore.loading && filteredTasks.length === 0"
+        class="mt-12 text-center text-text-secondary"
+      >
+        <p>
+          No tasks found in backlog.
+          {{ searchQuery ? 'Try adjusting your search.' : 'Create one to get started!' }}
+        </p>
       </div>
     </div>
-    
-    <TaskModal 
-      :isOpen="isModalOpen" 
+
+    <TaskModal
+      :isOpen="isModalOpen"
       :task="editingTask"
-      :boardId="board?.id" 
-      @close="isModalOpen = false" 
-      @save="handleSaveTask" 
+      :boardId="board?.id"
+      @close="isModalOpen = false"
+      @save="handleSaveTask"
     />
 
     <TaskViewModal

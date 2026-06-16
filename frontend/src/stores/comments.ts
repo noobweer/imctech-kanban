@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { commentsApi } from '@/api/comments'
-import type { TaskComment, TaskCommentStateOut, TaskCommentCreateIn, TaskCommentUpdateIn } from '@/types/comment'
+import type {
+  TaskComment,
+  TaskCommentStateOut,
+  TaskCommentCreateIn,
+  TaskCommentUpdateIn,
+} from '@/types/comment'
 import { useToast } from '@/composables/useToast'
 
 export const useCommentsStore = defineStore('comments', () => {
@@ -42,15 +47,15 @@ export const useCommentsStore = defineStore('comments', () => {
     try {
       const comment = await commentsApi.createComment(taskId, data)
       activeTaskComments.value.push(comment)
-      
+
       // Update state optimistically
       if (!boardStates.value[taskId]) {
-        boardStates.value[taskId] = { 
-          task_id: taskId, 
-          comments_state: 'read', 
+        boardStates.value[taskId] = {
+          task_id: taskId,
+          comments_state: 'read',
           comments_count: 1,
           has_comments: true,
-          has_unread_comments: false
+          has_unread_comments: false,
         }
       } else {
         boardStates.value[taskId].comments_count += 1
@@ -65,7 +70,7 @@ export const useCommentsStore = defineStore('comments', () => {
   async function updateComment(commentId: string, data: TaskCommentUpdateIn) {
     try {
       const updated = await commentsApi.updateComment(commentId, data)
-      const idx = activeTaskComments.value.findIndex(c => c.id === commentId)
+      const idx = activeTaskComments.value.findIndex((c) => c.id === commentId)
       if (idx !== -1) {
         activeTaskComments.value[idx] = updated
       }
@@ -79,12 +84,15 @@ export const useCommentsStore = defineStore('comments', () => {
   async function deleteComment(commentId: string) {
     try {
       await commentsApi.deleteComment(commentId)
-      const deletedComment = activeTaskComments.value.find(c => c.id === commentId)
+      const deletedComment = activeTaskComments.value.find((c) => c.id === commentId)
       const taskId = deletedComment?.task_id
-      
-      activeTaskComments.value = activeTaskComments.value.filter(c => c.id !== commentId)
+
+      activeTaskComments.value = activeTaskComments.value.filter((c) => c.id !== commentId)
       if (taskId && boardStates.value[taskId]) {
-        boardStates.value[taskId].comments_count = Math.max(0, boardStates.value[taskId].comments_count - 1)
+        boardStates.value[taskId].comments_count = Math.max(
+          0,
+          boardStates.value[taskId].comments_count - 1,
+        )
       }
     } catch (e: any) {
       toast.error(e.message || 'Failed to delete comment')
@@ -104,6 +112,50 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
+  function handleSocketEvent(type: string, payload: any) {
+    if (type === 'comment.created') {
+      const exists = activeTaskComments.value.some((c) => c.id === payload.id)
+      if (
+        !exists &&
+        activeTaskComments.value.length > 0 &&
+        activeTaskComments.value[0]?.task_id === payload.task_id
+      ) {
+        activeTaskComments.value.push(payload)
+      }
+
+      const taskId = payload.task_id
+      if (!boardStates.value[taskId]) {
+        boardStates.value[taskId] = {
+          task_id: taskId,
+          comments_state: 'unread',
+          comments_count: 1,
+          has_comments: true,
+          has_unread_comments: true,
+        }
+      } else {
+        boardStates.value[taskId].comments_count += 1
+        boardStates.value[taskId].comments_state = 'unread'
+        boardStates.value[taskId].has_unread_comments = true
+      }
+    } else if (type === 'comment.updated') {
+      const idx = activeTaskComments.value.findIndex((c) => c.id === payload.id)
+      if (idx !== -1) {
+        activeTaskComments.value[idx] = { ...activeTaskComments.value[idx], ...payload }
+      }
+    } else if (type === 'comment.deleted') {
+      activeTaskComments.value = activeTaskComments.value.filter((c) => c.id !== payload.comment_id)
+      const taskId = payload.task_id
+      if (boardStates.value[taskId]) {
+        boardStates.value[taskId].comments_count = Math.max(
+          0,
+          boardStates.value[taskId].comments_count - 1,
+        )
+      }
+    } else if (type === 'comments.read_state_updated') {
+      boardStates.value[payload.task_id] = payload
+    }
+  }
+
   return {
     boardStates,
     activeTaskComments,
@@ -114,6 +166,7 @@ export const useCommentsStore = defineStore('comments', () => {
     createComment,
     updateComment,
     deleteComment,
-    markAsRead
+    markAsRead,
+    handleSocketEvent,
   }
 })

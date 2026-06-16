@@ -25,11 +25,14 @@ function handleTaskClick(task: any) {
 
 <template>
   <div class="flex flex-col gap-10">
-    
     <div v-if="loading && !data" class="flex flex-col gap-4">
       <div class="h-6 w-32 bg-[rgba(148,151,169,0.12)] rounded animate-pulse mb-2"></div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="i in 3" :key="i" class="h-32 bg-[rgba(148,151,169,0.12)] rounded-xl animate-pulse"></div>
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="h-32 bg-[rgba(148,151,169,0.12)] rounded-xl animate-pulse"
+        ></div>
       </div>
     </div>
 
@@ -39,16 +42,18 @@ function handleTaskClick(task: any) {
         <h3 class="text-lg font-bold text-near-black mb-4 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-[var(--color-error)]"></span>
           Overdue
-          <span class="text-sm font-normal text-cool-gray ml-2">{{ data.overdue.length }} tasks</span>
+          <span class="text-sm font-normal text-cool-gray ml-2"
+            >{{ data.overdue.length }} tasks</span
+          >
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- We cast DeadlineTaskOut to Task conceptually or just map needed fields.
                TaskCard expects a full Task, so we might need to cast.
                Our DeadlineTaskOut provides id, title, deadline, column, assignees, priority, added_to_board_at. -->
-          <TaskCard 
-            v-for="(task, index) in data.overdue" 
+          <TaskCard
+            v-for="(task, index) in data.overdue"
             :key="task.id"
-            :task="(task as unknown as Task)"
+            :task="task as unknown as Task"
             :allow-push-to-board="false"
             class="animate-fade-up"
             :style="{ animationDelay: `${index * 50}ms` }"
@@ -62,13 +67,15 @@ function handleTaskClick(task: any) {
         <h3 class="text-lg font-bold text-near-black mb-4 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
           Due Soon
-          <span class="text-sm font-normal text-cool-gray ml-2">{{ data.due_soon.length }} tasks</span>
+          <span class="text-sm font-normal text-cool-gray ml-2"
+            >{{ data.due_soon.length }} tasks</span
+          >
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <TaskCard 
-            v-for="(task, index) in data.due_soon" 
+          <TaskCard
+            v-for="(task, index) in data.due_soon"
             :key="task.id"
-            :task="(task as unknown as Task)"
+            :task="task as unknown as Task"
             :allow-push-to-board="false"
             class="animate-fade-up"
             :style="{ animationDelay: `${index * 50}ms` }"
@@ -76,8 +83,11 @@ function handleTaskClick(task: any) {
           />
         </div>
       </section>
-      
-      <div v-if="data.overdue.length === 0 && data.due_soon.length === 0" class="flex flex-col items-center justify-center py-20 text-cool-gray">
+
+      <div
+        v-if="data.overdue.length === 0 && data.due_soon.length === 0"
+        class="flex flex-col items-center justify-center py-20 text-cool-gray"
+      >
         <p>No tasks with upcoming deadlines.</p>
       </div>
     </template>

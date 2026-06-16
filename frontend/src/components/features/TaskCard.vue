@@ -5,7 +5,13 @@ import { useAuthStore } from '@/stores/auth'
 import { useBoardsStore } from '@/stores/boards'
 import { useCommentsStore } from '@/stores/comments'
 import type { Task } from '@/types/task'
-import { CalendarDays, CheckSquare, MessageSquare, MoreVertical, ArchiveRestore } from 'lucide-vue-next'
+import {
+  CalendarDays,
+  CheckSquare,
+  MessageSquare,
+  MoreVertical,
+  ArchiveRestore,
+} from 'lucide-vue-next'
 import { computed } from 'vue'
 import { format } from 'date-fns'
 
@@ -61,7 +67,8 @@ const remainingTagsCount = computed(() => Math.max(0, tags.value.length - 1))
 
 const tagClass = computed(() => {
   if (isDone.value) return 'bg-surface-container-low text-neutral-gray'
-  if (firstTag.value && firstTag.value.toLowerCase() === 'bug') return 'bg-[var(--color-error)]/10 text-[var(--color-error)]'
+  if (firstTag.value && firstTag.value.toLowerCase() === 'bug')
+    return 'bg-[var(--color-error)]/10 text-[var(--color-error)]'
   return 'bg-surface-container-high text-on-surface'
 })
 
@@ -105,7 +112,7 @@ function getAssigneeName(username: string) {
       >
         {{ task.title }}
       </h3>
-      
+
       <button
         v-if="isArchiveMode && !isMentor"
         class="text-[var(--color-primary-container)] bg-[var(--color-primary-container)]/10 hover:bg-[var(--color-primary-container)]/20 transition-all shrink-0 p-2 rounded-xl active:scale-95 shadow-sm"
@@ -173,7 +180,10 @@ function getAssigneeName(username: string) {
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="tagClass">
             {{ firstTag }}
           </span>
-          <span v-if="remainingTagsCount > 0" class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-text-secondary">
+          <span
+            v-if="remainingTagsCount > 0"
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-text-secondary"
+          >
             +{{ remainingTagsCount }}
           </span>
         </template>

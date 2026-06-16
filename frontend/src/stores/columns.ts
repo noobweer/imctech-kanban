@@ -14,18 +14,16 @@ export const useColumnsStore = defineStore('columns', () => {
       .sort((a, b) => a.position - b.position)
   })
 
-  let pollingIntervalId: ReturnType<typeof setInterval> | null = null
-
   async function fetchColumns(boardId: string, silent = false) {
-    // Stale-While-Revalidate logic: 
+    // Stale-While-Revalidate logic:
     // If we're on the same board and have data, don't show loading state
     const isSameBoard = currentBoardId.value === boardId
     const hasData = columns.value.length > 0
-    
+
     if (!silent && (!isSameBoard || !hasData)) {
       loading.value = true
     }
-    
+
     // Clear data only if navigating to a DIFFERENT board
     if (!isSameBoard) {
       columns.value = []
@@ -35,7 +33,7 @@ export const useColumnsStore = defineStore('columns', () => {
     try {
       const response = await columnsApi.getBoardColumns(boardId)
       let newColumns: Column[] = []
-      
+
       if (response && typeof response === 'object' && 'items' in response) {
         newColumns = response.items
       } else if (Array.isArray(response)) {
@@ -52,20 +50,6 @@ export const useColumnsStore = defineStore('columns', () => {
       if (!isSameBoard) columns.value = []
     } finally {
       loading.value = false
-    }
-  }
-
-  function startPolling(boardId: string, intervalMs = 10000) {
-    stopPolling() // Clear existing to avoid duplicates
-    pollingIntervalId = setInterval(() => {
-      fetchColumns(boardId, true)
-    }, intervalMs)
-  }
-
-  function stopPolling() {
-    if (pollingIntervalId) {
-      clearInterval(pollingIntervalId)
-      pollingIntervalId = null
     }
   }
 
@@ -167,6 +151,27 @@ export const useColumnsStore = defineStore('columns', () => {
     }
   }
 
+  function handleSocketEvent(type: string, payload: any) {
+    if (type === 'column.created') {
+      const exists = columns.value.some((c) => c.id === payload.id)
+      if (!exists) columns.value.push(payload)
+    } else if (
+      type === 'column.updated' ||
+      type === 'column.moved' ||
+      type === 'column.archived' ||
+      type === 'column.restored'
+    ) {
+      const index = columns.value.findIndex((c) => c.id === payload.id)
+      if (index !== -1) {
+        columns.value[index] = { ...columns.value[index], ...payload }
+      }
+    } else if (type === 'column.cleared') {
+      if (currentBoardId.value) {
+        fetchColumns(currentBoardId.value, true)
+      }
+    }
+  }
+
   return {
     columns,
     loading,
@@ -179,7 +184,6 @@ export const useColumnsStore = defineStore('columns', () => {
     archiveColumn,
     restoreColumn,
     clearColumn,
-    startPolling,
-    stopPolling,
+    handleSocketEvent,
   }
 })

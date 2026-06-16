@@ -56,13 +56,17 @@ function handleRename() {
 
 const localTasks = ref<Task[]>([...(props.tasks || [])])
 
-watch(() => props.tasks, (newTasks) => {
-  // Only sync if they are different to prevent layout thrashing
-  // vuedraggable handles local array sorting instantly
-  if (newTasks) {
-    localTasks.value = [...newTasks]
-  }
-}, { deep: true, immediate: true })
+watch(
+  () => props.tasks,
+  (newTasks) => {
+    // Only sync if they are different to prevent layout thrashing
+    // vuedraggable handles local array sorting instantly
+    if (newTasks) {
+      localTasks.value = [...newTasks]
+    }
+  },
+  { deep: true, immediate: true },
+)
 
 function onTasksChange(evt: any) {
   if (evt.added) {
@@ -88,31 +92,41 @@ function onDragEnd() {
 </script>
 
 <template>
-  <section data-no-dragscroll class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors">
+  <section
+    data-no-dragscroll
+    class="flex flex-col w-[280px] md:w-80 min-h-[500px] shrink-0 bg-surface-container-lowest/40 rounded-xl p-2 border border-transparent hover:border-border-gray/50 transition-colors"
+  >
     <!-- Column Header -->
     <div class="mb-3 px-2 flex items-center justify-between group/header h-10">
       <div v-if="!isEditing" class="flex items-center gap-2 flex-1 min-w-0">
-        <h2 class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors" @click="!isStudent && startEditing()">
+        <h2
+          class="font-bold text-on-surface truncate cursor-pointer hover:text-primary transition-colors"
+          @click="!isStudent && startEditing()"
+        >
           {{ column.name }}
         </h2>
-        <span class="bg-surface-container text-xs font-bold px-2 py-0.5 rounded-full text-neutral-gray">
+        <span
+          class="bg-surface-container text-xs font-bold px-2 py-0.5 rounded-full text-neutral-gray"
+        >
           {{ tasks?.length || 0 }}
         </span>
       </div>
       <div v-else class="flex-1 min-w-0">
-        <Input 
-          v-model="editedName" 
-          size="sm" 
-          auto-focus 
-          @blur="handleRename" 
+        <Input
+          v-model="editedName"
+          size="sm"
+          auto-focus
+          @blur="handleRename"
           @keyup.enter="handleRename"
           @keyup.esc="isEditing = false"
         />
       </div>
 
-      <div class="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity">
+      <div
+        class="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity"
+      >
         <!-- Quick Add Task -->
-        <button 
+        <button
           v-if="!isMentor"
           class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary"
           title="Add task"
@@ -124,23 +138,41 @@ function onDragEnd() {
         <!-- Column Actions Menu -->
         <Dropdown position="bottom-right">
           <template #trigger>
-            <button class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary">
+            <button
+              class="p-1 hover:bg-surface-container rounded transition-colors text-text-secondary hover:text-primary"
+            >
               <MoreVertical :size="18" />
             </button>
           </template>
-          
+
           <div class="py-1">
-            <DropdownItem v-if="!isFirst && !isStudent" icon="chevron-left" @click="emit('move-left', column.id)">
+            <DropdownItem
+              v-if="!isFirst && !isStudent"
+              icon="chevron-left"
+              @click="emit('move-left', column.id)"
+            >
               Move Left
             </DropdownItem>
-            <DropdownItem v-if="!isLast && !isStudent" icon="chevron-right" @click="emit('move-right', column.id)">
+            <DropdownItem
+              v-if="!isLast && !isStudent"
+              icon="chevron-right"
+              @click="emit('move-right', column.id)"
+            >
               Move Right
             </DropdownItem>
-            <div v-if="(!isFirst || !isLast) && !isStudent" class="my-1 border-t border-border-gray/50"></div>
+            <div
+              v-if="(!isFirst || !isLast) && !isStudent"
+              class="my-1 border-t border-border-gray/50"
+            ></div>
             <DropdownItem v-if="!isMentor" icon="trash" @click="emit('clear-tasks', column.id)">
               Clear Tasks to Archive
             </DropdownItem>
-            <DropdownItem v-if="!isStudent" icon="archive" variant="danger" @click="emit('archive', column.id)">
+            <DropdownItem
+              v-if="!isStudent"
+              icon="archive"
+              variant="danger"
+              @click="emit('archive', column.id)"
+            >
               Archive Column
             </DropdownItem>
           </div>
@@ -163,16 +195,18 @@ function onDragEnd() {
       class="flex-1 flex flex-col gap-3 overflow-y-scroll max-h-[calc(100vh-300px)] custom-scrollbar pb-10 min-h-[100px]"
     >
       <template #item="{ element: task }">
-        <TaskCard 
+        <TaskCard
           :task="task"
           @click="emit('view-task', task)"
           @edit="emit('edit-task', task)"
           @archive="emit('archive-task', task)"
         />
       </template>
-      
+
       <template #footer v-if="!tasks?.length">
-        <div class="border-2 border-dashed border-border-gray/50 rounded-xl p-8 flex flex-col items-center justify-center text-text-secondary text-sm italic text-center h-full m-2">
+        <div
+          class="border-2 border-dashed border-border-gray/50 rounded-xl p-8 flex flex-col items-center justify-center text-text-secondary text-sm italic text-center h-full m-2"
+        >
           Drop tasks here
         </div>
       </template>

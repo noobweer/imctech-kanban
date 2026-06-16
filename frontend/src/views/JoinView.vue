@@ -45,12 +45,12 @@ async function handleJoin() {
   if (isErrorShaking.value) return
   joining.value = true
   error.value = null
-  
+
   try {
     const res = await invitesApi.joinByInvite(inviteId)
     joinedBoardId.value = res.board_id
     success.value = true
-    
+
     // Redirect to the specific board after a snappier 1s delay
     setTimeout(() => {
       if (joinedBoardId.value) {
@@ -59,16 +59,14 @@ async function handleJoin() {
         router.push('/boards')
       }
     }, 1000)
-    
   } catch (e: any) {
     const detail = e?.data?.detail || e?.message || 'Failed to join board.'
     error.value = detail
-    
+
     isErrorShaking.value = true
     setTimeout(() => {
       isErrorShaking.value = false
     }, 500)
-    
   } finally {
     joining.value = false
   }
@@ -85,13 +83,15 @@ function getStatusMessage(): string | null {
 
 <template>
   <main class="min-h-screen flex items-center justify-center bg-[var(--color-background)] px-4">
-    <div 
+    <div
       class="w-full max-w-md transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
       :class="enterPage ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-6 blur-sm'"
     >
-
       <!-- Loading Skeleton -->
-      <div v-if="loading" class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6">
+      <div
+        v-if="loading"
+        class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6"
+      >
         <div class="w-16 h-16 rounded-2xl bg-surface-container-high animate-pulse mx-auto"></div>
         <div class="space-y-3">
           <div class="h-4 w-40 bg-surface-container rounded mx-auto animate-pulse"></div>
@@ -101,8 +101,13 @@ function getStatusMessage(): string | null {
       </div>
 
       <!-- Error (invite not found) -->
-      <div v-else-if="error && !invite" class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6">
-        <div class="w-16 h-16 rounded-2xl bg-[var(--color-error)]/10 text-[var(--color-error)] flex items-center justify-center mx-auto">
+      <div
+        v-else-if="error && !invite"
+        class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 text-center space-y-6"
+      >
+        <div
+          class="w-16 h-16 rounded-2xl bg-[var(--color-error)]/10 text-[var(--color-error)] flex items-center justify-center mx-auto"
+        >
           <XCircle :size="32" stroke-width="1.5" />
         </div>
         <div class="space-y-2">
@@ -115,14 +120,16 @@ function getStatusMessage(): string | null {
       </div>
 
       <!-- Invite card -->
-      <div 
-        v-else-if="invite" 
+      <div
+        v-else-if="invite"
         class="bg-white rounded-2xl border border-border-gray shadow-modal p-6 sm:p-8 space-y-6 t-input"
         :class="{ 'is-shaking border-[var(--color-error)]': isErrorShaking }"
       >
         <!-- Board info -->
         <div class="text-center space-y-4">
-          <div class="w-16 h-16 rounded-2xl bg-[var(--color-primary-container)]/10 text-[var(--color-primary-container)] flex items-center justify-center mx-auto">
+          <div
+            class="w-16 h-16 rounded-2xl bg-[var(--color-primary-container)]/10 text-[var(--color-primary-container)] flex items-center justify-center mx-auto"
+          >
             <ClipboardList :size="32" stroke-width="1.5" />
           </div>
           <div class="space-y-1">
@@ -142,7 +149,10 @@ function getStatusMessage(): string | null {
         </div>
 
         <!-- API error -->
-        <div v-if="error && !isErrorShaking" class="px-4 py-3 bg-[var(--color-error)]/5 border border-[var(--color-error)]/20 rounded-xl text-sm font-medium text-[var(--color-error)] text-center">
+        <div
+          v-if="error && !isErrorShaking"
+          class="px-4 py-3 bg-[var(--color-error)]/5 border border-[var(--color-error)]/20 rounded-xl text-sm font-medium text-[var(--color-error)] text-center"
+        >
           {{ error }}
         </div>
 
@@ -155,7 +165,7 @@ function getStatusMessage(): string | null {
             :disabled="joining || success || !!getStatusMessage()"
             @click="handleJoin"
           >
-            {{ success ? 'Joined!' : (joining ? 'Joining…' : 'Join Board') }}
+            {{ success ? 'Joined!' : joining ? 'Joining…' : 'Join Board' }}
           </Button>
 
           <!-- Already joined? -->

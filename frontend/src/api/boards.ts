@@ -17,7 +17,9 @@ export interface UpdateBoardData {
 }
 
 export const boardsApi = {
-  async getBoards(status?: 'active' | 'archived'): Promise<Board[] | { items: Board[]; count: number }> {
+  async getBoards(
+    status?: 'active' | 'archived',
+  ): Promise<Board[] | { items: Board[]; count: number }> {
     return apiClient('/boards', {
       query: status ? { status } : {},
     })

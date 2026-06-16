@@ -1,6 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AtSign, LockOpen, User, GraduationCap, Star, Settings, LogOut, Users, Archive, Trash2, X, UserPlus, Copy, ChevronDown, UserMinus } from 'lucide-vue-next'
+import {
+  AtSign,
+  LockOpen,
+  User,
+  GraduationCap,
+  Star,
+  Settings,
+  LogOut,
+  Users,
+  Archive,
+  Trash2,
+  X,
+  UserPlus,
+  Copy,
+  ChevronDown,
+  UserMinus,
+} from 'lucide-vue-next'
 
 interface Props {
   name: string

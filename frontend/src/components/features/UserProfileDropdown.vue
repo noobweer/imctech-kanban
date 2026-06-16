@@ -25,7 +25,9 @@ function openSettings() {
   <div>
     <Dropdown position="bottom-right">
       <template #trigger>
-        <button class="h-8 w-8o rounded-full overflow-hidden border border-border-gray transition-all cursor-pointer">
+        <button
+          class="h-8 w-8o rounded-full overflow-hidden border border-border-gray transition-all cursor-pointer"
+        >
           <img
             v-if="authStore.user"
             :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user.name)}&background=7132f5&color=fff`"
@@ -38,7 +40,9 @@ function openSettings() {
       <!-- User Info Section -->
       <div class="px-4 py-3 border-b border-border-gray">
         <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-full overflow-hidden border border-border-gray flex-shrink-0">
+          <div
+            class="h-10 w-10 rounded-full overflow-hidden border border-border-gray flex-shrink-0"
+          >
             <img
               v-if="authStore.user"
               :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user.name)}&background=7132f5&color=fff`"
@@ -50,9 +54,7 @@ function openSettings() {
             <p class="text-sm font-semibold text-text-primary truncate">
               {{ authStore.user?.name }}
             </p>
-            <p class="text-xs text-neutral-gray truncate">
-              @{{ authStore.user?.username }}
-            </p>
+            <p class="text-xs text-neutral-gray truncate">@{{ authStore.user?.username }}</p>
           </div>
         </div>
         <div class="mt-2">
@@ -71,12 +73,8 @@ function openSettings() {
 
       <!-- Menu Items -->
       <div>
-        <DropdownItem icon="settings" @click="openSettings">
-          Profile Settings
-        </DropdownItem>
-        <DropdownItem icon="logout" variant="danger" @click="handleLogout">
-          Logout
-        </DropdownItem>
+        <DropdownItem icon="settings" @click="openSettings"> Profile Settings </DropdownItem>
+        <DropdownItem icon="logout" variant="danger" @click="handleLogout"> Logout </DropdownItem>
       </div>
     </Dropdown>
 

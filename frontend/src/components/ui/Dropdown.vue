@@ -57,7 +57,10 @@ defineExpose({ close })
             'left-0 bottom-full origin-bottom-left': position === 'top-left',
           },
         ]"
-        :style="{ marginTop: position.startsWith('bottom') ? `${offset}px` : undefined, marginBottom: position.startsWith('top') ? `${offset}px` : undefined }"
+        :style="{
+          marginTop: position.startsWith('bottom') ? `${offset}px` : undefined,
+          marginBottom: position.startsWith('top') ? `${offset}px` : undefined,
+        }"
         @click="close"
       >
         <slot />

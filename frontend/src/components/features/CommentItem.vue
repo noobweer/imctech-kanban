@@ -82,7 +82,9 @@ function cancelEdit() {
       <div class="relative flex items-start gap-2">
         <!-- Edit Mode -->
         <div v-if="isEditing" class="w-full min-w-[200px]">
-          <div class="bg-white border border-border-gray rounded-xl overflow-hidden focus-within:border-[#5800d8] focus-within:ring-2 focus-within:ring-[#5800d8]/20 transition-all">
+          <div
+            class="bg-white border border-border-gray rounded-xl overflow-hidden focus-within:border-[#5800d8] focus-within:ring-2 focus-within:ring-[#5800d8]/20 transition-all"
+          >
             <textarea
               ref="textareaRef"
               v-model="editContent"
@@ -91,15 +93,28 @@ function cancelEdit() {
               @keydown.enter.exact.prevent="saveEdit"
               @keydown.esc.prevent="cancelEdit"
             ></textarea>
-            <div class="flex justify-end gap-2 p-2 border-t border-border-gray bg-surface-container-lowest">
-              <button @click="cancelEdit" class="px-3 py-1.5 text-xs font-semibold text-text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer">Cancel</button>
-              <button @click="saveEdit" class="px-3 py-1.5 text-xs font-semibold text-white bg-primary-container hover:bg-primary rounded transition-colors shadow-sm cursor-pointer">Save</button>
+            <div
+              class="flex justify-end gap-2 p-2 border-t border-border-gray bg-surface-container-lowest"
+            >
+              <button
+                @click="cancelEdit"
+                class="px-3 py-1.5 text-xs font-semibold text-text-secondary hover:bg-surface-container rounded transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                @click="saveEdit"
+                class="px-3 py-1.5 text-xs font-semibold text-white bg-primary-container hover:bg-primary rounded transition-colors shadow-sm cursor-pointer"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
 
         <!-- View Mode -->
-        <div v-else
+        <div
+          v-else
           class="bg-surface-container hover:bg-surface-container-high transition-colors rounded-xl px-3 py-2 text-[15px] text-on-surface/90 w-fit min-w-[120px] max-w-full break-words whitespace-pre-wrap leading-[1.4]"
           :class="{ 'rounded-tl-sm': !hideAvatar }"
         >

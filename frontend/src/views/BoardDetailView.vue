@@ -44,8 +44,6 @@ async function loadColumns() {
   if (!isSilent) loadingColumns.value = true
   try {
     await columnsStore.fetchColumns(props.board.id, isSilent)
-    // Start polling after successful initial fetch
-    columnsStore.startPolling(props.board.id)
   } finally {
     loadingColumns.value = false
   }
@@ -54,7 +52,6 @@ async function loadColumns() {
 async function loadTasks() {
   if (!props.board) return
   await tasksStore.fetchTasks(props.board.id, true)
-  tasksStore.startPolling(props.board.id)
 }
 
 function getTasksForColumn(columnId: string) {
@@ -182,12 +179,13 @@ watch(
 
 onMounted(() => {
   loadColumns()
-  if (props.board) loadTasks()
+  if (props.board) {
+    loadTasks()
+  }
 })
 
 onUnmounted(() => {
-  columnsStore.stopPolling()
-  tasksStore.stopPolling()
+  // Layout handles WS disconnection
 })
 </script>
 

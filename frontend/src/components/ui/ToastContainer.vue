@@ -5,14 +5,16 @@ import { useToast, type ToastType } from '@/composables/useToast'
 const { toasts, remove } = useToast()
 
 function colorClasses(type: ToastType) {
-  if (type === 'success') return 'border-l-[3px] border-l-[var(--color-success-green)] bg-[var(--color-success-subtle)] text-[var(--color-success-green-text)]'
-  if (type === 'error')   return 'border-l-[3px] border-l-[var(--color-error)] bg-[rgba(186,26,26,0.1)] text-[var(--color-error)]'
-  return                         'border-l-[3px] border-l-[var(--color-primary-container)] bg-[rgba(113,50,245,0.1)] text-[var(--color-primary-container)]'
+  if (type === 'success')
+    return 'border-l-[3px] border-l-[var(--color-success-green)] bg-[var(--color-success-subtle)] text-[var(--color-success-green-text)]'
+  if (type === 'error')
+    return 'border-l-[3px] border-l-[var(--color-error)] bg-[rgba(186,26,26,0.1)] text-[var(--color-error)]'
+  return 'border-l-[3px] border-l-[var(--color-primary-container)] bg-[rgba(113,50,245,0.1)] text-[var(--color-primary-container)]'
 }
 
 function label(type: ToastType) {
   if (type === 'success') return 'Success'
-  if (type === 'error')   return 'Error'
+  if (type === 'error') return 'Error'
   return 'Info'
 }
 </script>

@@ -25,17 +25,20 @@ const selectedUsername = ref(props.initialUsername)
 const selectedFilter = ref<'date' | 'deadline'>('date')
 const selectedColumnId = ref<string>('')
 
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    selectedUsername.value = props.initialUsername
-    fetchTasks()
-  }
-})
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      selectedUsername.value = props.initialUsername
+      fetchTasks()
+    }
+  },
+)
 
 const tasks = ref<Task[]>([])
 const loading = ref(false)
 
-const activeColumns = props.members && props.members.length > 0 ? props.members[0]?.columns : []
+const activeColumns = props.members && props.members.length > 0 ? (props.members[0]?.columns || []) : []
 
 async function fetchTasks() {
   loading.value = true
@@ -51,7 +54,7 @@ async function fetchTasks() {
     if (selectedColumnId.value) {
       query.column_id = selectedColumnId.value
     }
-    
+
     // In our backend, list_tasks handles these filters now.
     // It returns paginated { items: [], count: n }
     const response = await apiClient<any>(`/boards/${props.board.id}/tasks`, { query })
@@ -84,21 +87,25 @@ function handleViewTask(task: Task) {
 </script>
 
 <template>
-  <Modal 
-    :model-value="isOpen && !isTaskViewOpen" 
-    max-width="1024px" 
+  <Modal
+    :model-value="isOpen && !isTaskViewOpen"
+    max-width="1024px"
     @update:model-value="emit('close')"
   >
     <!-- Header -->
     <template #header>
       <div class="flex items-center gap-4 flex-1 pr-4">
-        <h2 class="text-xl font-bold font-product text-on-surface whitespace-nowrap">Member Tasks</h2>
-        
+        <h2 class="text-xl font-bold font-product text-on-surface whitespace-nowrap">
+          Member Tasks
+        </h2>
+
         <!-- User Selector -->
         <div class="w-64">
-          <Select 
+          <Select
             v-model="selectedUsername"
-            :options="members.map(m => ({ label: `${m.name} (@${m.username})`, value: m.username }))"
+            :options="
+              members.map((m) => ({ label: `${m.name} (@${m.username})`, value: m.username }))
+            "
           />
         </div>
       </div>
@@ -106,17 +113,18 @@ function handleViewTask(task: Task) {
 
     <div class="flex flex-col gap-6">
       <!-- Filters Row -->
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0 pb-6 border-b border-border-gray">
-        
+      <div
+        class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0 pb-6 border-b border-border-gray"
+      >
         <!-- Column Filter -->
         <div class="flex items-center gap-3">
           <span class="text-sm font-semibold text-neutral-gray">Column:</span>
           <div class="w-48">
-            <Select 
+            <Select
               v-model="selectedColumnId"
               :options="[
                 { label: 'All Columns', value: '' },
-                ...activeColumns.map(col => ({ label: col.column_name, value: col.column_id }))
+                ...activeColumns.map((col) => ({ label: col.column_name, value: col.column_id })),
               ]"
             />
           </div>
@@ -124,23 +132,23 @@ function handleViewTask(task: Task) {
 
         <!-- Mutually Exclusive Filter (Date / Deadline) -->
         <div class="inline-flex p-1 bg-surface-container-high rounded-xl shrink-0">
-          <button 
+          <button
             :class="[
               'px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
               selectedFilter === 'date'
                 ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
-                : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+                : 'text-neutral-gray hover:text-primary-container cursor-pointer',
             ]"
             @click="selectedFilter = 'date'"
           >
             Date
           </button>
-          <button 
+          <button
             :class="[
               'px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
               selectedFilter === 'deadline'
                 ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
-                : 'text-neutral-gray hover:text-primary-container cursor-pointer'
+                : 'text-neutral-gray hover:text-primary-container cursor-pointer',
             ]"
             @click="selectedFilter = 'deadline'"
           >
@@ -154,18 +162,24 @@ function handleViewTask(task: Task) {
         <div v-if="loading" class="flex justify-center items-center h-full min-h-[300px]">
           <Loader2 class="animate-spin text-primary-container" :size="32" />
         </div>
-        
-        <div v-else-if="tasks.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <TaskCard 
-            v-for="task in tasks" 
+
+        <div
+          v-else-if="tasks.length > 0"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+        >
+          <TaskCard
+            v-for="task in tasks"
             :key="task.id"
             :task="task"
             :allow-push-to-board="false"
             @click="handleViewTask(task)"
           />
         </div>
-        
-        <div v-else class="flex flex-col justify-center items-center h-full min-h-[300px] text-text-secondary">
+
+        <div
+          v-else
+          class="flex flex-col justify-center items-center h-full min-h-[300px] text-text-secondary"
+        >
           <p>No tasks found for this user with the current filters.</p>
         </div>
       </div>

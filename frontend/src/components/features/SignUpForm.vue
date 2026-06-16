@@ -92,9 +92,7 @@ const handleSubmit = () => {
     </div>
 
     <div class="space-y-sm">
-      <label class="block text-[14px] font-medium text-text-primary" for="name">
-        Name
-      </label>
+      <label class="block text-[14px] font-medium text-text-primary" for="name"> Name </label>
       <div class="relative">
         <input
           id="name"
@@ -112,9 +110,7 @@ const handleSubmit = () => {
     </div>
 
     <div class="space-y-sm">
-      <label class="block text-[14px] font-medium text-text-primary">
-        I am a
-      </label>
+      <label class="block text-[14px] font-medium text-text-primary"> I am a </label>
       <div class="bg-surface-container-low p-xs rounded-xl flex">
         <button
           type="button"
@@ -122,7 +118,7 @@ const handleSubmit = () => {
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             role === 'student'
               ? 'bg-surface-white shadow-card text-text-primary'
-              : 'text-neutral-gray hover:text-text-primary cursor-pointer'
+              : 'text-neutral-gray hover:text-text-primary cursor-pointer',
           ]"
           @click="role = 'student'"
         >
@@ -135,7 +131,7 @@ const handleSubmit = () => {
             'flex-1 py-md flex items-center justify-center gap-2 text-[16px] font-semibold rounded-lg transition-all duration-200',
             role === 'mentor'
               ? 'bg-surface-white shadow-card text-text-primary'
-              : 'text-neutral-gray hover:text-text-primary cursor-pointer'
+              : 'text-neutral-gray hover:text-text-primary cursor-pointer',
           ]"
           @click="role = 'mentor'"
         >
