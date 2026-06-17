@@ -12,6 +12,7 @@ from .members import router as members_router
 from .tasks import router as tasks_router
 from .comments import router as comments_router
 from .overview import router as overview_router
+from .mentor_requests import router as mentor_requests_router
 
 router = Router()
 router.add_router("", projects_router, tags=["Projects"])
@@ -22,3 +23,4 @@ router.add_router("", members_router, tags=["Members"])
 router.add_router("", tasks_router, tags=["Tasks"])
 router.add_router("", comments_router, tags=["Comments"])
 router.add_router("/boards", overview_router, tags=["Overview"])
+router.add_router("/mentor-requests", mentor_requests_router, tags=["Mentor Requests"])

@@ -105,3 +105,47 @@ def can_delete_task_comment(user, comment) -> bool:
     if is_staff_or_superuser(user):
         return True
     return comment.owner == user
+
+
+def can_create_mentor_request(user, task) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+    
+    board_access = has_board_access(user, task.column.board)
+    if not board_access:
+        return False
+
+    if is_student(user) and task.assignees.filter(id=user.id).exists():
+        return True
+    return False
+
+
+def can_read_mentor_request(user, request_obj) -> bool:
+    return has_board_access(user, request_obj.task.column.board)
+
+
+def can_respond_mentor_request(user, task) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+    
+    board_access = has_board_access(user, task.column.board)
+    if not board_access:
+        return False
+        
+    return is_mentor(user)
+
+
+def can_resolve_mentor_request(user, request_obj) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+    return request_obj.created_by == user
+
+
+def can_cancel_mentor_request(user, request_obj) -> bool:
+    if is_staff_or_superuser(user):
+        return True
+        
+    if request_obj.created_by == user:
+        return True
+        
+    return can_respond_mentor_request(user, request_obj.task)

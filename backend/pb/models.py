@@ -259,6 +259,51 @@ class TaskCommentReadState(models.Model):
         return f"ReadState {self.id} for {self.user} on {self.task}"
 
 
+class TaskMentorRequestType(models.TextChoices):
+    HELP = "help", _("Help")
+    REVIEW = "review", _("Review")
+
+
+class TaskMentorRequestStatus(models.TextChoices):
+    OPEN = "open", _("Open")
+    IN_PROGRESS = "in_progress", _("In Progress")
+    RESOLVED = "resolved", _("Resolved")
+    CANCELLED = "cancelled", _("Cancelled")
+
+
+class TaskMentorRequest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="mentor_requests")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_mentor_requests")
+    request_type = models.CharField(max_length=20, choices=TaskMentorRequestType.choices)
+    status = models.CharField(max_length=20, choices=TaskMentorRequestStatus.choices, default=TaskMentorRequestStatus.OPEN)
+    message = models.TextField()
+    
+    started_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="started_mentor_requests")
+    started_comment = models.ForeignKey(TaskComment, on_delete=models.SET_NULL, null=True, blank=True, related_name="started_mentor_requests")
+    started_at = models.DateTimeField(null=True, blank=True)
+    
+    closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="closed_mentor_requests")
+    closed_at = models.DateTimeField(null=True, blank=True)
+    close_reason = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["task"],
+                condition=models.Q(status__in=[TaskMentorRequestStatus.OPEN, TaskMentorRequestStatus.IN_PROGRESS]),
+                name="unique_active_mentor_request_per_task",
+            )
+        ]
+
+    def __str__(self):
+        return f"Request {self.id} for {self.task}"
+
+
 class ActivityLog(models.Model):
     ACTION_TYPES = [
         ("task_created",      "Task Created"),
@@ -274,6 +319,10 @@ class ActivityLog(models.Model):
         ("column_cleared",    "Column Cleared"),
         ("member_joined",     "Member Joined"),
         ("member_left",       "Member Left"),
+        ("mentor_request_created", "Mentor Request Created"),
+        ("mentor_request_started", "Mentor Request Started"),
+        ("mentor_request_resolved", "Mentor Request Resolved"),
+        ("mentor_request_cancelled", "Mentor Request Cancelled"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

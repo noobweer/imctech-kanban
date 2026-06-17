@@ -303,3 +303,32 @@ def delete_task(request, task_id: uuid.UUID):
     task.refresh_from_db()
     broadcast_board_event(task.column.board_id, "task.archived", _serialize(TaskOut, task), request.auth.id)
     return {"success": True, "message": "Task archived"}
+
+
+# --- Mentor Requests ---
+
+from ..schemas import MentorRequestCreateIn, MentorRequestOut
+from ..services.mentor_request_service import create_mentor_request, get_active_request_for_task
+
+@router.post("/tasks/{task_id}/mentor-requests", response={201: MentorRequestOut}, auth=JWTAuth())
+def create_task_mentor_request(request, task_id: uuid.UUID, payload: MentorRequestCreateIn):
+    task = get_object_or_404(Task, id=task_id)
+    try:
+        req_obj = create_mentor_request(request.auth, task, payload.request_type, payload.message)
+        return 201, req_obj
+    except PermissionError as e:
+        raise HttpError(403, str(e))
+    except ValueError as e:
+        raise HttpError(400, str(e))
+
+
+@router.get("/tasks/{task_id}/mentor-request", response={200: MentorRequestOut, 204: None}, auth=JWTAuth())
+def get_task_active_mentor_request(request, task_id: uuid.UUID):
+    task = get_object_or_404(Task, id=task_id)
+    try:
+        req_obj = get_active_request_for_task(request.auth, task)
+        if not req_obj:
+            return 204, None
+        return 200, req_obj
+    except PermissionError as e:
+        raise HttpError(403, str(e))

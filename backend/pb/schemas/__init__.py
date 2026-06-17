@@ -15,6 +15,9 @@ from .overview import (
     ProgressColumnOut, ProgressOut, ActivityColumnOut, ActivityMemberOut, ActivityOut,
     DeadlineTaskOut, DeadlinesOut
 )
+from .mentor_requests import (
+    MentorRequestCreateIn, MentorRequestRespondIn, MentorRequestCancelIn, MentorRequestOut
+)
 
 __all__ = [
     "ProjectIn", "ProjectOut",
@@ -27,5 +30,6 @@ __all__ = [
     "TaskCommentCreateIn", "TaskCommentUpdateIn", "TaskCommentOut", "TaskCommentStateOut",
     "CommentFeedTaskOut", "CommentFeedOut",
     "ProgressColumnOut", "ProgressOut", "ActivityColumnOut", "ActivityMemberOut", "ActivityOut",
-    "DeadlineTaskOut", "DeadlinesOut"
+    "DeadlineTaskOut", "DeadlinesOut",
+    "MentorRequestCreateIn", "MentorRequestRespondIn", "MentorRequestCancelIn", "MentorRequestOut"
 ]
