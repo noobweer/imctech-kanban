@@ -193,7 +193,7 @@ onUnmounted(() => {
   <!-- Column Canvas -->
   <main
     v-dragscroll="!isDraggingTask"
-    class="h-full overflow-x-scroll p-4 md:p-6 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing"
+    class="h-full overflow-x-scroll px-4 pt-4 bg-background custom-scrollbar-x cursor-grab active:cursor-grabbing"
   >
     <div v-if="loadingBoard || loadingColumns" class="flex gap-4 min-h-full max-w-max">
       <div
@@ -205,7 +205,7 @@ onUnmounted(() => {
 
     <div
       v-else-if="columnsStore.activeColumns.length > 0"
-      class="flex items-start gap-4 pb-4 h-full w-max"
+      class="flex items-start gap-4 pb h-full w-max"
     >
       <TransitionGroup name="t-column">
         <ColumnCard
