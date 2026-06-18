@@ -13,14 +13,14 @@ Always follow the **karpathy-guidelines** skill when writing, reviewing, or refa
 
 A full-stack Kanban board application featuring a Django-based backend and a Vue 3 frontend. The project is containerized using Docker and uses modern package managers (`uv` for Python, `bun` for Node.js).
 
-- **Architecture:** Monorepo with `backend/` and `frontend/` directories.
-- **Backend:** Django 6.0.4, Django Ninja (API), Django Ninja JWT (Authentication), SQLite database.
+- **Architecture:** Monorepo with `backend/` and `frontend/` directories. Dockerized.
+- **Backend:** Django 6.0.4, Django Ninja (API), Django Channels (WebSockets via InMemoryChannelLayer), Django Ninja JWT (Authentication), PostgreSQL database.
 - **Frontend:** Vue 3 (Composition API), Vite 8, Pinia (State Management), TypeScript, Tailwind CSS 4.
-- **Communication:** Frontend uses `ofetch` to interact with the Django Ninja API (`/api/`).
+- **Communication:** Frontend uses `ofetch` to interact with the Django Ninja API (`/api/`) and native `WebSocket` for real-time board updates (`/ws/boards/...`).
 
 ## Building and Running
 
-### Docker (Recommended)
+### Docker
 
 ```bash
 # Start all services
@@ -30,33 +30,29 @@ docker-compose up
 docker-compose up --build
 ```
 
-### Manual Setup
+### Running Commands (Agent Instructions)
 
-#### Backend
+**Crucial:** Since the project is strictly dockerized, you MUST run all development and verification commands inside the running containers using `docker-compose exec` if you need to interact with the environment, or run them locally ONLY IF you are absolutely certain the local environment matches and it's safe (e.g. static type checks).
 
+#### Backend (Python/Django)
+To run django management commands, tests, or linters:
 ```bash
-cd backend
-# Install dependencies
-uv sync
-# Apply migrations
-uv run python manage.py migrate
-# Start dev server
-uv run python manage.py runserver
+docker-compose exec backend uv run python manage.py <command>
+# Example:
+docker-compose exec backend uv run python manage.py makemigrations
+docker-compose exec backend uv run python manage.py migrate
+docker-compose exec backend uv run python manage.py check
 ```
 
-- API Docs: `http://localhost:8000/api/docs` (Swagger)
-
-#### Frontend
-
+#### Frontend (Node/Bun)
+To run formatters, linters, or type-checks:
 ```bash
-cd frontend
-# Install dependencies
-bun install
-# Start dev server
-bun run dev
+docker-compose exec frontend bun run <script>
+# Example:
+docker-compose exec frontend bun run type-check
+docker-compose exec frontend bun run lint
+docker-compose exec frontend bun run format
 ```
-
-- Dev Server: `http://localhost:5173`
 
 ## Development Conventions
 
@@ -64,9 +60,9 @@ bun run dev
 
 - **Framework:** Django with [Django Ninja](https://django-ninja.rest-framework.com/) for type-safe APIs.
 - **Authentication:** JWT-based. Logic resides in the `users` app (`users/api.py`, `users/models.py`).
-- **Migrations:** Always run migrations inside the container: `docker compose exec backend uv run python manage.py makemigrations` and `docker compose exec backend uv run python manage.py migrate` after model changes.
+- **Migrations:** Always run migrations inside the container: `docker-compose exec backend uv run python manage.py makemigrations` and `docker-compose exec backend uv run python manage.py migrate` after model changes.
 - **Timezone:** `Asia/Vladivostok`.
-- **Verify:** Run `uv run manage.py check` inside the Docker container (`docker compose exec backend bash`).
+- **Verify:** Run verification inside the Docker container: `docker-compose exec backend uv run python manage.py check`.
 
 #### Backend Architecture: Layered Structure
 
@@ -75,27 +71,51 @@ The `pb` app follows a strict three-layer architecture. Never mix layers.
 ```
 backend/pb/
     models.py          # Data layer — Django ORM models only. No business logic.
-    schemas.py         # Serialization layer — Django Ninja Schema (in/out DTOs).
     permissions.py     # Permission helpers — pure functions, no HTTP.
     admin.py           # Django admin registrations.
     migrations/        # Auto-generated migrations.
 
+    schemas/           # Serialization layer — Django Ninja Schemas (in/out DTOs).
+        __init__.py
+        boards.py
+        columns.py
+        comments.py
+        invites.py
+        members.py
+        mentor_requests.py
+        projects.py
+        tasks.py
+
     services/          # Business logic layer
-        project_service.py
+        activity_service.py
+        archive_service.py
         board_service.py
         column_service.py
+        comment_service.py
         invite_service.py
         member_service.py
+        mentor_request_service.py
+        overview_service.py
+        project_service.py
+        task_lifecycle.py
         task_service.py
+        ws_service.py
 
     routers/           # HTTP layer (thin)
         __init__.py    # Combines all routers into one exported `router`
-        projects.py
         boards.py
         columns.py
+        comments.py
         invites.py
         members.py
+        mentor_requests.py
+        overview.py
+        projects.py
         tasks.py
+
+    websockets/        # WebSocket layer (Django Channels consumers)
+        consumers.py
+        routing.py
 
     api.py             # Stub: `from .routers import router` — do not add logic here.
 ```
@@ -140,10 +160,10 @@ backend/pb/
 - **State:** [Pinia](https://pinia.vuejs.org/) stores in `frontend/src/stores/`.
 - **API:** Centralized in `frontend/src/api/`. Uses `ofetch` with automated token refresh.
 - **Styling:** Tailwind CSS 4.
-- **Linting/Formatting:**
-  - `bun run lint` (uses `oxlint` and `eslint`)
-  - `bun run format` (uses `prettier`)
-  - `bun run type-check` (uses `vue-tsc`)
+- **Linting/Formatting (Run via docker-compose exec frontend):**
+  - `docker-compose exec frontend bun run lint`
+  - `docker-compose exec frontend bun run format`
+  - `docker-compose exec frontend bun run type-check`
 
 ### General
 

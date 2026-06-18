@@ -8,9 +8,10 @@
 
 - Django 6.0.4
 - Django Ninja (API)
+- Django Channels (WebSockets via InMemoryChannelLayer)
 - Python 3.12+
 - uv (менеджер пакетов)
-- SQLite
+- PostgreSQL
 
 **Frontend:**
 
@@ -23,18 +24,9 @@
 
 ## Требования
 
-- Docker и Docker Compose (рекомендуется)
-
-**Или для локальной разработки:**
-
-- Python 3.12+
-- Node.js 20.19+ или 22.12+
-- Bun
-- uv
+- Docker и Docker Compose
 
 ## Установка и запуск
-
-### Вариант 1: Docker (рекомендуется)
 
 1. Клонируйте репозиторий:
 
@@ -67,66 +59,6 @@ docker-compose up --build
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:8000
    - Django Admin: http://localhost:8000/admin
-
-### Вариант 2: Локальная разработка
-
-#### Backend
-
-1. Перейдите в директорию backend:
-
-```bash
-cd backend
-```
-
-2. Установите зависимости:
-
-```bash
-uv sync
-```
-
-3. Создайте файл `.env` в корне проекта (см. выше)
-
-4. Примените миграции:
-
-```bash
-uv run python manage.py migrate
-```
-
-5. Создайте суперпользователя (опционально):
-
-```bash
-uv run python manage.py createsuperuser
-```
-
-6. Запустите сервер:
-
-```bash
-uv run python manage.py runserver
-```
-
-Backend будет доступен на http://localhost:8000
-
-#### Frontend
-
-1. Откройте новый терминал и перейдите в директорию frontend:
-
-```bash
-cd frontend
-```
-
-2. Установите зависимости:
-
-```bash
-bun install
-```
-
-3. Запустите dev-сервер:
-
-```bash
-bun run dev
-```
-
-Frontend будет доступен на http://localhost:5173
 
 ## Полезные команды
 
