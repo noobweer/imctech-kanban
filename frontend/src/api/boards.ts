@@ -5,6 +5,7 @@ import type { CommentFeedOut } from '@/types/commentFeed'
 
 export interface CreateBoardData {
   name: string
+  project_name: string
   description?: string
   project_id?: string
   status?: 'active' | 'archived'

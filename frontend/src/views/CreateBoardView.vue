@@ -19,6 +19,7 @@ const router = useRouter()
 const boardsStore = useBoardsStore()
 
 const boardName = ref('')
+const projectName = ref('')
 const boardDescription = ref('')
 const columns = ref([
   { id: '2', name: 'To Do' },
@@ -79,12 +80,13 @@ function handleCancel() {
 }
 
 async function handleCreate() {
-  if (!boardName.value.trim()) return
+  if (!boardName.value.trim() || !projectName.value.trim()) return
 
   loading.value = true
   try {
     await boardsStore.createBoard({
       name: boardName.value.trim(),
+      project_name: projectName.value.trim(),
       description: boardDescription.value.trim(),
       columns: columns.value
         .filter((col) => col.name.trim() !== '')
@@ -152,6 +154,17 @@ async function handleCreate() {
                     v-model="boardName"
                     class="w-full bg-white border border-border-gray rounded-lg px-3 py-2 text-sm text-on-background placeholder-neutral-gray focus:ring-2 focus:ring-primary-container transition-all outline-none"
                     placeholder="e.g., Q4 Product Launch"
+                    type="text"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-neutral-badge-text mb-2">
+                    Project Name <span class="text-[var(--color-error)]">*</span>
+                  </label>
+                  <input
+                    v-model="projectName"
+                    class="w-full bg-white border border-border-gray rounded-lg px-3 py-2 text-sm text-on-background placeholder-neutral-gray focus:ring-2 focus:ring-primary-container transition-all outline-none"
+                    placeholder="e.g., Marketing Campaign"
                     type="text"
                   />
                 </div>

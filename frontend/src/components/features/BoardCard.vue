@@ -29,8 +29,11 @@ const formattedDate = computed(() => {
 
     <RouterLink :to="`/boards/${board.id}`" class="p-[16px] h-full flex flex-col">
       <div class="mb-4 pr-8">
-        <h3 class="text-xl font-semibold text-text-primary truncate">{{ board.name }}</h3>
-        <p class="text-sm text-text-secondary truncate">{{ board.project_name }}</p>
+        <h3 class="text-xl font-semibold text-text-primary truncate mb-1">{{ board.name }}</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold px-1.5 py-0.5 bg-surface-container-high rounded text-text-secondary leading-none uppercase shrink-0" :title="board.project_name">{{ board.project_name }}</span>
+          <span v-if="board.description" class="text-xs text-text-secondary truncate" :title="board.description">{{ board.description }}</span>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 text-sm text-neutral-gray mb-4">

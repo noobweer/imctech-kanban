@@ -7,6 +7,7 @@ from .columns import ColumnIn
 
 class BoardIn(Schema):
     name: str
+    project_name: str
     description: Optional[str] = None
     project_id: Optional[uuid.UUID] = None
     status: Optional[BoardStatus] = BoardStatus.ACTIVE

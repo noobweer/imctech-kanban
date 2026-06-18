@@ -6,6 +6,7 @@ import { boardsApi } from '@/api/boards'
 import type { Board } from '@/types/board'
 import UserProfileDropdown from '@/components/features/UserProfileDropdown.vue'
 import BoardMembersModal from '@/components/features/BoardMembersModal.vue'
+import BoardSettingsModal from '@/components/features/BoardSettingsModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBoardWebSocket } from '@/composables/useBoardWebSocket'
 
@@ -20,6 +21,7 @@ const boardId = ref(route.params.id as string)
 const board = ref<Board | null>(null)
 const loading = ref(true)
 const showMembersModal = ref(false)
+const showSettingsModal = ref(false)
 
 async function loadBoardData() {
   loading.value = true
@@ -115,7 +117,10 @@ watch(
             <h1 class="text-xl font-bold leading-tight text-text-primary truncate">
               {{ board.name }}
             </h1>
-            <p class="text-xs text-text-secondary truncate">{{ board.project_name }}</p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 bg-surface-container-high rounded text-text-secondary leading-none uppercase shrink-0" :title="board.project_name">{{ board.project_name }}</span>
+              <span v-if="board.description" class="text-xs text-text-secondary truncate max-w-[150px] md:max-w-sm" :title="board.description">{{ board.description }}</span>
+            </div>
           </div>
           <div v-else-if="loading" class="animate-pulse flex flex-col gap-2">
             <div class="h-6 w-48 bg-surface-container-high rounded"></div>
@@ -126,7 +131,9 @@ watch(
         <!-- Right Section: Actions + Profile -->
         <div class="flex items-center justify-end gap-2 md:gap-3 flex-1">
           <button
+            v-if="authStore.user?.role !== 'student'"
             class="hidden md:block px-4 py-1.5 border border-border-gray rounded-xl font-semibold hover:bg-surface-container-low transition-all text-neutral-gray hover:text-primary-container text-sm cursor-pointer"
+            @click="showSettingsModal = true"
           >
             Settings
           </button>
@@ -223,7 +230,8 @@ watch(
       <router-view v-if="board || loading" :board="board" :loading-board="loading" />
     </div>
 
-    <!-- Members Modal -->
+    <!-- Modals -->
     <BoardMembersModal v-if="board" v-model="showMembersModal" :board="board" />
+    <BoardSettingsModal v-if="board" v-model="showSettingsModal" :board="board" />
   </div>
 </template>

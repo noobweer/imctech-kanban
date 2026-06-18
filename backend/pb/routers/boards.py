@@ -31,7 +31,10 @@ def create_board(request, payload: BoardIn):
         if not has_project_access(user, project):
             return JsonResponse({"detail": "No access to this project"}, status=403)
     else:
-        project = project_service.create_project(payload.name)
+        project_name = payload.project_name.strip()
+        project = Project.objects.filter(name__iexact=project_name).first()
+        if not project:
+            project = project_service.create_project(project_name)
     board = board_service.create_board(user, payload, project)
     return 201, board
 
