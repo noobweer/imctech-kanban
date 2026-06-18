@@ -97,10 +97,14 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# CORS settings
+# CORS and CSRF settings
 cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS")
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_allowed.split(",")] if cors_allowed else ["http://localhost:5173"]
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Ninja JWT settings
 from datetime import timedelta
