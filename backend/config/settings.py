@@ -98,9 +98,8 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_allowed.split(",")] if cors_allowed else ["http://localhost:5173"]
 CORS_ALLOW_CREDENTIALS = True
 
 # Ninja JWT settings
