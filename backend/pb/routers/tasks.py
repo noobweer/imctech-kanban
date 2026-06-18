@@ -315,6 +315,7 @@ def create_task_mentor_request(request, task_id: uuid.UUID, payload: MentorReque
     task = get_object_or_404(Task, id=task_id)
     try:
         req_obj = create_mentor_request(request.auth, task, payload.request_type, payload.message)
+        broadcast_board_event(task.column.board_id, "mentor_request.created", _serialize(MentorRequestOut, req_obj), request.auth.id)
         return 201, req_obj
     except PermissionError as e:
         raise HttpError(403, str(e))

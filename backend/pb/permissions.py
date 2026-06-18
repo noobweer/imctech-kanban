@@ -115,9 +115,10 @@ def can_create_mentor_request(user, task) -> bool:
     if not board_access:
         return False
 
-    if is_student(user) and task.assignees.filter(id=user.id).exists():
-        return True
-    return False
+    if is_mentor(user):
+        return False
+        
+    return True
 
 
 def can_read_mentor_request(user, request_obj) -> bool:

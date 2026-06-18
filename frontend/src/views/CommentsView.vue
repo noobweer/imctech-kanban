@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { MessageSquare, Activity } from 'lucide-vue-next'
+import { ref, computed, watch } from 'vue'
+import { MessageSquare, Activity, LifeBuoy } from 'lucide-vue-next'
 import type { Board } from '@/types/board'
 import type { Task } from '@/types/task'
+import type { MentorRequest } from '@/types/mentorRequest'
 import type { CommentFeedTaskOut } from '@/types/commentFeed'
 import TaskCard from '@/components/features/TaskCard.vue'
 import TaskViewModal from '@/components/features/TaskViewModal.vue'
+import MentorRequestCard from '@/components/features/MentorRequestCard.vue'
 import { boardsApi } from '@/api/boards'
+import { tasksApi } from '@/api/tasks'
 import { useCommentsStore } from '@/stores/comments'
+import { useMentorRequestsStore } from '@/stores/mentorRequests'
 import { useToast } from '@/composables/useToast'
-import { useRoute } from 'vue-router'
 
 const props = defineProps<{
   board: Board | null
   loadingBoard: boolean
 }>()
 
-const activeTab = ref<'new' | 'activity'>('new')
+const activeTab = ref<'new' | 'activity' | 'requests'>('new')
 const loading = ref(false)
 
 const newTasks = ref<CommentFeedTaskOut[]>([])
@@ -26,6 +29,7 @@ const activityCount = ref(0)
 
 const toast = useToast()
 const commentsStore = useCommentsStore()
+const mentorRequestsStore = useMentorRequestsStore()
 
 const isViewModalOpen = ref(false)
 const viewingTask = ref<Task | null>(null)
@@ -37,6 +41,7 @@ async function loadFeedData() {
     const [newRes, activityRes] = await Promise.all([
       boardsApi.getCommentsFeed(props.board.id, 'new'),
       boardsApi.getCommentsFeed(props.board.id, 'activity'),
+      mentorRequestsStore.fetchBoardRequests(props.board.id),
     ])
 
     newTasks.value = newRes.tasks || []
@@ -44,7 +49,6 @@ async function loadFeedData() {
     newCount.value = newRes.total || 0
     activityCount.value = activityRes.total || 0
 
-    // Populate commentsStore with states to ensure TaskCard shows the badge correctly
     const allTasks = [...newTasks.value, ...activityTasks.value]
     allTasks.forEach((t) => {
       commentsStore.boardStates[t.id] = {
@@ -55,8 +59,8 @@ async function loadFeedData() {
         has_unread_comments: t.comments_state === 'unread',
       }
     })
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to load comments feed')
+  } catch (error) {
+    toast.error((error as Error).message || 'Failed to load comments feed')
   } finally {
     loading.value = false
   }
@@ -76,19 +80,23 @@ const currentTasks = computed(() => {
   return activeTab.value === 'new' ? newTasks.value : activityTasks.value
 })
 
-function handleViewTask(feedTask: CommentFeedTaskOut) {
-  // Cast to Task since TaskCard/TaskViewModal expects it
-  // Missing fields like 'content' are fine since they are optional/handled gracefully
-  const partialTask = {
-    ...feedTask,
-    checklist_total_count: 0,
-    checklist_done_count: 0,
-  } as unknown as Task
+async function handleViewTask(feedTask: CommentFeedTaskOut | MentorRequest) {
+  let fullTask: Task
+  if ('task_id' in feedTask) {
+    // MentorRequest
+    fullTask = await tasksApi.getTask(feedTask.task_id)
+  } else {
+    // CommentFeedTaskOut
+    fullTask = {
+      ...feedTask,
+      checklist_total_count: 0,
+      checklist_done_count: 0,
+    } as unknown as Task
+  }
 
-  viewingTask.value = partialTask
+  viewingTask.value = fullTask
   isViewModalOpen.value = true
 }
-
 </script>
 
 <template>
@@ -127,7 +135,11 @@ function handleViewTask(feedTask: CommentFeedTaskOut) {
           <span
             v-if="newCount > 0"
             class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-            :class="activeTab === 'new' ? 'bg-primary-container/10 text-primary-container' : 'bg-black/5 text-neutral-gray'"
+            :class="
+              activeTab === 'new'
+                ? 'bg-primary-container/10 text-primary-container'
+                : 'bg-black/5 text-neutral-gray'
+            "
           >
             {{ newCount }}
           </span>
@@ -146,9 +158,36 @@ function handleViewTask(feedTask: CommentFeedTaskOut) {
           <span
             v-if="activityCount > 0"
             class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-            :class="activeTab === 'activity' ? 'bg-primary-container/10 text-primary-container' : 'bg-black/5 text-neutral-gray'"
+            :class="
+              activeTab === 'activity'
+                ? 'bg-primary-container/10 text-primary-container'
+                : 'bg-black/5 text-neutral-gray'
+            "
           >
             {{ activityCount }}
+          </span>
+        </button>
+        <button
+          @click="activeTab = 'requests'"
+          :class="[
+            'flex items-center gap-2 px-5 py-1.5 text-sm font-semibold rounded-lg transition-all duration-150',
+            activeTab === 'requests'
+              ? 'bg-white text-primary-container shadow-sm active:scale-[0.98]'
+              : 'text-neutral-gray hover:text-primary-container cursor-pointer',
+          ]"
+        >
+          <LifeBuoy :size="16" />
+          Requests
+          <span
+            v-if="mentorRequestsStore.boardRequestsTotal > 0"
+            class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            :class="
+              activeTab === 'requests'
+                ? 'bg-[var(--color-error)] text-white'
+                : 'bg-[var(--color-error)] text-white'
+            "
+          >
+            {{ mentorRequestsStore.boardRequestsTotal }}
           </span>
         </button>
       </div>
@@ -159,7 +198,9 @@ function handleViewTask(feedTask: CommentFeedTaskOut) {
           <div :key="activeTab">
             <!-- Loading Skeletons -->
             <div
-              v-if="loadingBoard || loading"
+              v-if="
+                loadingBoard || loading || (activeTab === 'requests' && mentorRequestsStore.loading)
+              "
               class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
             >
               <div
@@ -169,20 +210,32 @@ function handleViewTask(feedTask: CommentFeedTaskOut) {
               ></div>
             </div>
 
-            <!-- Task Grid with Staggered Reveal -->
+            <!-- Requests Grid -->
             <TransitionGroup
-              v-else-if="currentTasks.length > 0"
+              v-else-if="activeTab === 'requests' && mentorRequestsStore.boardRequests.length > 0"
               name="t-task"
               tag="div"
               class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 items-stretch"
             >
-              <div
-                v-for="task in currentTasks"
-                :key="task.id"
-                class="h-full"
-              >
+              <div v-for="req in mentorRequestsStore.boardRequests" :key="req.id" class="h-full">
+                <MentorRequestCard
+                  :request="req"
+                  class="h-full hover:border-primary-container transition-all duration-300"
+                  @click="handleViewTask"
+                />
+              </div>
+            </TransitionGroup>
+
+            <!-- Task Grid with Staggered Reveal -->
+            <TransitionGroup
+              v-else-if="activeTab !== 'requests' && currentTasks.length > 0"
+              name="t-task"
+              tag="div"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-6 items-stretch"
+            >
+              <div v-for="task in currentTasks" :key="task.id" class="h-full">
                 <TaskCard
-                  :task="(task as unknown as Task)"
+                  :task="task as unknown as Task"
                   class="h-full hover:border-primary-container transition-all duration-300"
                   @click="handleViewTask(task)"
                   @edit="handleViewTask(task)"
@@ -195,10 +248,20 @@ function handleViewTask(feedTask: CommentFeedTaskOut) {
               <div
                 class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4"
               >
-                <MessageSquare :size="32" class="text-neutral-gray opacity-50" />
+                <component
+                  :is="activeTab === 'requests' ? LifeBuoy : MessageSquare"
+                  :size="32"
+                  class="text-neutral-gray opacity-50"
+                />
               </div>
               <p class="text-text-secondary text-lg">
-                {{ activeTab === 'new' ? 'No new comments to read.' : 'No recent comment activity.' }}
+                {{
+                  activeTab === 'new'
+                    ? 'No new comments to read.'
+                    : activeTab === 'requests'
+                      ? 'No active mentor requests.'
+                      : 'No recent comment activity.'
+                }}
               </p>
             </div>
           </div>

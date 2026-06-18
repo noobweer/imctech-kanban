@@ -38,7 +38,8 @@ watch(
 const tasks = ref<Task[]>([])
 const loading = ref(false)
 
-const activeColumns = props.members && props.members.length > 0 ? (props.members[0]?.columns || []) : []
+const activeColumns =
+  props.members && props.members.length > 0 ? props.members[0]?.columns || [] : []
 
 async function fetchTasks() {
   loading.value = true

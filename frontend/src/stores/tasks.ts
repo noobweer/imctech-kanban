@@ -163,7 +163,7 @@ export const useTasksStore = defineStore('tasks', () => {
         ...tasks.value[taskIndex],
         column_id: targetColumnId,
         position: optimisticPosition,
-        ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name })
+        ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name }),
       } as Task
     }
 
@@ -286,7 +286,7 @@ export const useTasksStore = defineStore('tasks', () => {
         const targetColumn = columnsStore.columns.find((c) => c.id === payload.task.column_id)
         updateTaskInStore({
           ...payload.task,
-          ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name })
+          ...(targetColumn && { column_kind: targetColumn.kind, column_name: targetColumn.name }),
         })
       }
       if (payload.reordered_tasks) {

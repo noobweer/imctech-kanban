@@ -12,6 +12,8 @@ const props = defineProps<{
 
 const commentsStore = useCommentsStore()
 
+import MentorRequestBlock from './MentorRequestBlock.vue'
+
 const emit = defineEmits<{
   edit: [comment: TaskComment]
   delete: [comment: TaskComment]
@@ -50,6 +52,8 @@ function shouldHideAvatar(comment: TaskComment, index: number) {
   <div class="flex flex-col h-full relative overflow-hidden bg-transparent">
     <!-- Comments Scroll Area -->
     <div class="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar flex flex-col">
+      <MentorRequestBlock :taskId="taskId" />
+
       <div
         v-if="commentsStore.loading && commentsStore.activeTaskComments.length === 0"
         class="m-auto text-neutral-gray text-sm"

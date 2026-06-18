@@ -63,4 +63,19 @@ export const boardsApi = {
       method: 'DELETE',
     })
   },
+
+  async getMentorRequests(
+    boardId: string,
+    params?: {
+      status?: string
+      request_type?: string
+      mine?: boolean
+      limit?: number
+      offset?: number
+    },
+  ): Promise<{ items: import('@/types/mentorRequest').MentorRequest[]; count: number }> {
+    return apiClient(`/boards/${boardId}/mentor-requests`, {
+      query: params,
+    })
+  },
 }

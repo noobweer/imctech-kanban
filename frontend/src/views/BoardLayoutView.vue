@@ -33,13 +33,53 @@ async function loadBoardData() {
   }
 }
 
-// Watch for ID changes in case we navigate between boards
+import { onUnmounted } from 'vue'
+import { useCommentsStore } from '@/stores/comments'
+import { useMentorRequestsStore } from '@/stores/mentorRequests'
+
+const commentsStore = useCommentsStore()
+const mentorRequestsStore = useMentorRequestsStore()
+
+onUnmounted(() => {
+  ws.disconnect()
+})
+
+const unreadCommentsCount = computed(() => {
+  return Object.values(commentsStore.boardStates).filter((s) => s.has_unread_comments).length
+})
+
+const mentorRequestsCount = computed(() => {
+  if (!isMentor.value) return 0
+  return mentorRequestsStore.boardRequests.filter((r) => r.status === 'open').length
+})
+
+const totalNotifications = computed(() => unreadCommentsCount.value + mentorRequestsCount.value)
+
+async function loadInitialData(id: string) {
+  try {
+    await Promise.all([
+      mentorRequestsStore.fetchBoardRequests(id),
+      commentsStore.fetchBoardStates(id),
+    ])
+  } catch (e) {
+    console.error('Failed to load board specific states:', e)
+  }
+}
+
+onMounted(() => {
+  loadBoardData()
+  if (boardId.value) {
+    loadInitialData(boardId.value)
+  }
+})
+
 watch(
   () => route.params.id,
   (newId) => {
     if (newId && newId !== boardId.value) {
       boardId.value = newId as string
       loadBoardData()
+      loadInitialData(boardId.value)
     }
   },
 )
@@ -53,15 +93,8 @@ watch(
       ws.disconnect()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
-
-import { onUnmounted } from 'vue'
-onUnmounted(() => {
-  ws.disconnect()
-})
-
-onMounted(loadBoardData)
 </script>
 
 <template>
@@ -171,7 +204,16 @@ onMounted(loadBoardData)
               : 'border-transparent text-text-secondary hover:text-primary-container',
           ]"
         >
-          <span class="flex items-center gap-2"><MessageSquare :size="16" /> Comments</span>
+          <span class="flex items-center gap-2">
+            <MessageSquare :size="16" />
+            Comments
+            <span
+              v-if="totalNotifications > 0"
+              class="bg-[var(--color-error)] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none min-w-[18px] text-center"
+            >
+              {{ totalNotifications > 99 ? '99+' : totalNotifications }}
+            </span>
+          </span>
         </router-link>
       </div>
     </nav>

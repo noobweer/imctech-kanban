@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useTasksStore } from '@/stores/tasks'
 import { useColumnsStore } from '@/stores/columns'
 import { useCommentsStore } from '@/stores/comments'
+import { useMentorRequestsStore } from '@/stores/mentorRequests'
 import { useAuthStore } from '@/stores/auth'
 
 export function useBoardWebSocket() {
@@ -14,6 +15,7 @@ export function useBoardWebSocket() {
   const tasksStore = useTasksStore()
   const columnsStore = useColumnsStore()
   const commentsStore = useCommentsStore()
+  const mentorRequestsStore = useMentorRequestsStore()
   const authStore = useAuthStore()
 
   function connect(boardId: string) {
@@ -51,7 +53,7 @@ export function useBoardWebSocket() {
       reconnectAttempts = 0
     }
 
-    ws.value.onmessage = (event) => {
+    ws.value.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data)
         const { type, payload, actor_id } = data
@@ -68,6 +70,14 @@ export function useBoardWebSocket() {
           columnsStore.handleSocketEvent(type, payload)
         } else if (type.startsWith('comment.') || type.startsWith('comments.')) {
           commentsStore.handleSocketEvent(type, payload)
+        } else if (type.startsWith('mentor_request.')) {
+          if (type === 'mentor_request.created') {
+            mentorRequestsStore.handleRequestCreated(payload)
+          } else if (type === 'mentor_request.started') {
+            mentorRequestsStore.handleRequestStarted(payload)
+          } else if (type === 'mentor_request.resolved' || type === 'mentor_request.cancelled') {
+            mentorRequestsStore.handleRequestClosed(payload)
+          }
         }
       } catch (err) {
         console.error('Failed to parse WebSocket message', err)

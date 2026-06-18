@@ -17,14 +17,6 @@ from ..permissions import (
     has_board_access,
 )
 
-# Optional websocket helper if it exists in the project
-try:
-    from .board_service import _send_board_event
-except ImportError:
-    def _send_board_event(board_id, event_type, payload):
-        pass
-
-
 def create_mentor_request(user, task: Task, request_type: str, message: str) -> TaskMentorRequest:
     if not can_create_mentor_request(user, task):
         raise PermissionError("MENTOR_REQUEST_CREATE_FORBIDDEN")
@@ -32,7 +24,6 @@ def create_mentor_request(user, task: Task, request_type: str, message: str) -> 
     if not message or not message.strip():
         raise ValueError("MESSAGE_REQUIRED")
 
-    # The UniqueConstraint handles DB-level uniqueness, but we can do a nice error here
     has_active = TaskMentorRequest.objects.filter(
         task=task,
         status__in=[TaskMentorRequestStatus.OPEN, TaskMentorRequestStatus.IN_PROGRESS]
@@ -54,16 +45,10 @@ def create_mentor_request(user, task: Task, request_type: str, message: str) -> 
         metadata={"task_id": str(task.id), "request_id": str(request_obj.id)}
     )
 
-    _send_board_event(task.column.board.id, "mentor_request.created", {
-        "request_id": str(request_obj.id),
-        "task_id": str(task.id)
-    })
-
     return request_obj
 
 
 def get_active_request_for_task(user, task: Task) -> Optional[TaskMentorRequest]:
-    # can_read implies board access, which we check
     if not has_board_access(user, task.column.board):
         raise PermissionError("BOARD_ACCESS_DENIED")
 
@@ -114,10 +99,8 @@ def respond_to_mentor_request(user, request_obj: TaskMentorRequest, content: str
     if request_obj.status not in [TaskMentorRequestStatus.OPEN, TaskMentorRequestStatus.IN_PROGRESS]:
         raise ValueError("REQUEST_NOT_ACTIVE")
 
-    # Create comment
     comment = create_task_comment(user, request_obj.task, content)
 
-    # If this is the first response, mark it in the request
     if request_obj.status == TaskMentorRequestStatus.OPEN:
         request_obj.status = TaskMentorRequestStatus.IN_PROGRESS
         request_obj.started_by = user
@@ -130,20 +113,6 @@ def respond_to_mentor_request(user, request_obj: TaskMentorRequest, content: str
             action_type="mentor_request_started",
             metadata={"task_id": str(request_obj.task.id), "request_id": str(request_obj.id)}
         )
-        
-        _send_board_event(request_obj.task.column.board.id, "mentor_request.started", {
-            "request_id": str(request_obj.id),
-            "task_id": str(request_obj.task.id)
-        })
-
-    # comment.created is already sent by create_task_comment if implemented there, 
-    # but in this codebase, we need to make sure websocket events happen correctly.
-    # We will just rely on the router or existing signals/helpers.
-    _send_board_event(request_obj.task.column.board.id, "comment.created", {
-        "comment_id": str(comment.id),
-        "task_id": str(request_obj.task.id),
-        "actor_id": user.id
-    })
 
     return request_obj, comment
 
@@ -166,11 +135,6 @@ def resolve_mentor_request(user, request_obj: TaskMentorRequest) -> TaskMentorRe
         metadata={"task_id": str(request_obj.task.id), "request_id": str(request_obj.id)}
     )
 
-    _send_board_event(request_obj.task.column.board.id, "mentor_request.resolved", {
-        "request_id": str(request_obj.id),
-        "task_id": str(request_obj.task.id)
-    })
-
     return request_obj
 
 
@@ -181,7 +145,6 @@ def cancel_mentor_request(user, request_obj: TaskMentorRequest, close_reason: Op
     if request_obj.status not in [TaskMentorRequestStatus.OPEN, TaskMentorRequestStatus.IN_PROGRESS]:
         raise ValueError("REQUEST_NOT_ACTIVE")
 
-    # Mentors should provide a close reason
     if request_obj.created_by != user and not close_reason:
         raise ValueError("CLOSE_REASON_REQUIRED")
 
@@ -198,9 +161,5 @@ def cancel_mentor_request(user, request_obj: TaskMentorRequest, close_reason: Op
         metadata={"task_id": str(request_obj.task.id), "request_id": str(request_obj.id)}
     )
 
-    _send_board_event(request_obj.task.column.board.id, "mentor_request.cancelled", {
-        "request_id": str(request_obj.id),
-        "task_id": str(request_obj.task.id)
-    })
-
     return request_obj
+

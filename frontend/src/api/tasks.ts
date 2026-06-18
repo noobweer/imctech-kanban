@@ -118,4 +118,21 @@ export const tasksApi = {
       body: { username },
     })
   },
+
+  // Mentor Requests
+  createMentorRequest(taskId: string, data: import('@/types/mentorRequest').MentorRequestCreate) {
+    return apiClient<import('@/types/mentorRequest').MentorRequest>(
+      `/tasks/${taskId}/mentor-requests`,
+      {
+        method: 'POST',
+        body: data,
+      },
+    )
+  },
+
+  getActiveMentorRequest(taskId: string) {
+    return apiClient<import('@/types/mentorRequest').MentorRequest | null>(
+      `/tasks/${taskId}/mentor-request`,
+    )
+  },
 }

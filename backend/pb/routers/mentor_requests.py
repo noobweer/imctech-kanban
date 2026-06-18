@@ -1,4 +1,5 @@
 import uuid
+import json
 from typing import Optional
 from ninja import Router
 from django.shortcuts import get_object_or_404
@@ -12,49 +13,44 @@ from ..services.mentor_request_service import (
     resolve_mentor_request,
     cancel_mentor_request,
 )
+from ..services.ws_service import broadcast_board_event
 
 router = Router(auth=JWTAuth())
 
+def _serialize(schema_cls, obj):
+    return json.loads(schema_cls.from_orm(obj).json())
 
 @router.get("/{request_id}", response=MentorRequestOut)
 def get_request(request, request_id: uuid.UUID):
-    """
-    Get a single mentor request by id.
-    """
     return get_mentor_request(request.user, request_id)
-
 
 @router.post("/{request_id}/respond", response={200: dict})
 def respond_request(request, request_id: uuid.UUID, payload: MentorRequestRespondIn):
-    """
-    Mentor responds to a request.
-    This creates a comment and sets the request to 'in_progress'.
-    Returns the updated request and the created comment.
-    """
     request_obj = get_object_or_404(TaskMentorRequest, id=request_id)
+    is_first_response = request_obj.status == "open"
     updated_req, comment = respond_to_mentor_request(request.user, request_obj, payload.content)
     
-    # We serialize manually or use schemas. We can return dict for simplicity
-    from ..schemas import MentorRequestOut, TaskCommentOut
+    board_id = updated_req.task.column.board_id
+    if is_first_response:
+        broadcast_board_event(board_id, "mentor_request.started", _serialize(MentorRequestOut, updated_req), request.user.id)
+    
+    broadcast_board_event(board_id, "comment.created", _serialize(TaskCommentOut, comment), request.user.id)
+    
     return 200, {
         "mentor_request": MentorRequestOut.from_orm(updated_req),
         "comment": TaskCommentOut.from_orm(comment)
     }
 
-
 @router.post("/{request_id}/resolve", response=MentorRequestOut)
 def resolve_request(request, request_id: uuid.UUID):
-    """
-    Author marks request as resolved.
-    """
     request_obj = get_object_or_404(TaskMentorRequest, id=request_id)
-    return resolve_mentor_request(request.user, request_obj)
-
+    updated_req = resolve_mentor_request(request.user, request_obj)
+    broadcast_board_event(updated_req.task.column.board_id, "mentor_request.resolved", _serialize(MentorRequestOut, updated_req), request.user.id)
+    return updated_req
 
 @router.post("/{request_id}/cancel", response=MentorRequestOut)
 def cancel_request(request, request_id: uuid.UUID, payload: MentorRequestCancelIn):
-    """
-    Cancel a request without a resolution.
-    """
     request_obj = get_object_or_404(TaskMentorRequest, id=request_id)
-    return cancel_mentor_request(request.user, request_obj, payload.close_reason)
+    updated_req = cancel_mentor_request(request.user, request_obj, payload.close_reason)
+    broadcast_board_event(updated_req.task.column.board_id, "mentor_request.cancelled", _serialize(MentorRequestOut, updated_req), request.user.id)
+    return updated_req

@@ -48,11 +48,14 @@ export const useCommentsStore = defineStore('comments', () => {
   async function createComment(taskId: string, data: TaskCommentCreateIn) {
     try {
       const comment = await commentsApi.createComment(taskId, data)
-      
+
       // Optimistic update
       const exists = activeTaskComments.value.some((c) => c.id === comment.id)
       if (!exists) {
-        if (activeTaskComments.value.length === 0 || activeTaskComments.value[0]?.task_id === taskId) {
+        if (
+          activeTaskComments.value.length === 0 ||
+          activeTaskComments.value[0]?.task_id === taskId
+        ) {
           activeTaskComments.value.push(comment)
         }
       } else {
@@ -135,13 +138,17 @@ export const useCommentsStore = defineStore('comments', () => {
       const exists = activeTaskComments.value.some((c) => c.id === payload.id)
       if (
         !exists &&
-        (activeTaskComments.value.length === 0 || activeTaskComments.value[0]?.task_id === payload.task_id) &&
+        (activeTaskComments.value.length === 0 ||
+          activeTaskComments.value[0]?.task_id === payload.task_id) &&
         payload.task_id // Need to be careful to only push if we are currently viewing this task
       ) {
         // Only push if we are currently viewing this task. We check if activeTaskComments is empty
         // or matches the task_id. But wait, if it's empty, we might not be viewing ANY task!
         // So we only push if activeTaskComments has the same task_id.
-        if (activeTaskComments.value.length > 0 && activeTaskComments.value[0]?.task_id === payload.task_id) {
+        if (
+          activeTaskComments.value.length > 0 &&
+          activeTaskComments.value[0]?.task_id === payload.task_id
+        ) {
           activeTaskComments.value.push(payload)
         }
       }

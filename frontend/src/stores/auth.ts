@@ -68,7 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       user.value = await authApi.getCurrentUser()
-    } catch (_e) {
+    } catch {
       // onResponseError already tried refresh, if we're here - it failed
       logout()
     }
